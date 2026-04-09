@@ -171,7 +171,7 @@ export default function TransactionsList() {
                       {renderTransactionIcon(tx)}
                       <div className="truncate">
                         <p className="font-semibold text-gray-900 truncate">
-                          {tx.type === 'transfer' ? 'Chuyển tiền' : (tx.category?.name || 'Khác')}
+                          {tx.type === 'transfer' ? 'Chuyển tiền' : (tx.category?.name || 'Chưa phân loại')}
                         </p>
                         <p className="text-xs text-gray-500 truncate">
                           {tx.type === 'transfer' ? `${tx.account?.name} → ${tx.to_account?.name}` : tx.account?.name}

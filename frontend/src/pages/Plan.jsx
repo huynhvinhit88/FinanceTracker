@@ -58,7 +58,7 @@ export default function Plan() {
       const currentMonthStr = new Date().toISOString().slice(0, 7);
 
       const [budgetRes, txRes, accRes, savRes, invRes] = await Promise.all([
-        supabase.from('budgets').select('id, amount, category_id, category:categories(name, icon, color_hex, type)'),
+        supabase.from('budgets').select('id, amount, category_id, month, category:categories(name, icon, color_hex, type)'),
         supabase.from('transactions').select('category_id, amount, type').gte('date', `${currentMonthStr}-01T00:00:00.000Z`),
         supabase.from('accounts').select('balance, sub_type'),
         supabase.from('savings').select('principal_amount, interest_rate').eq('status', 'active'),
@@ -67,8 +67,47 @@ export default function Plan() {
 
       // 1. Budgets & Actuals
       const allBudgets = budgetRes.data || [];
-      const expenses = allBudgets.filter(b => b.category?.type === 'expense');
-      const incomes = allBudgets.filter(b => b.category?.type === 'income');
+      const currentMonth = new Date().toISOString().slice(0, 7);
+
+      const processBudgets = (type) => {
+        const filtered = allBudgets.filter(b => b.category?.type === type);
+        const grouped = {};
+        filtered.forEach(b => {
+          if (!grouped[b.category_id]) grouped[b.category_id] = { meta: b.category, entries: [] };
+          grouped[b.category_id].entries.push(b);
+        });
+
+        return Object.keys(grouped).map(catId => {
+          const catGroup = grouped[catId];
+          // Logic Ưu tiên: 
+          // 1. Lấy đúng tháng hiện tại
+          // 2. Lấy mặc định (month is null)
+          // 3. Tính trung bình các tháng khác
+          const monthSpecific = catGroup.entries.find(e => e.month === currentMonth);
+          const defaultEntry = catGroup.entries.find(e => !e.month);
+          
+          let activeAmount = 0;
+          if (monthSpecific) {
+            activeAmount = monthSpecific.amount;
+          } else if (defaultEntry) {
+            activeAmount = defaultEntry.amount;
+          } else if (catGroup.entries.length > 0) {
+            activeAmount = catGroup.entries.reduce((s, e) => s + e.amount, 0) / catGroup.entries.length;
+          }
+
+          return {
+            id: monthSpecific?.id || defaultEntry?.id || catGroup.entries[0].id,
+            amount: activeAmount,
+            category_id: catId,
+            category: catGroup.meta,
+            is_average: !monthSpecific && !defaultEntry,
+            is_default: !monthSpecific && defaultEntry
+          };
+        });
+      };
+
+      const expenses = processBudgets('expense');
+      const incomes = processBudgets('income');
       setExpenseBudgets(expenses);
       setIncomeBudgets(incomes);
 
@@ -140,8 +179,16 @@ export default function Plan() {
     const d = new Date(baseDate); d.setMonth(d.getMonth() + i);
     const key = d.toISOString().slice(0, 7);
     const savingOverride = savingsPlan[key];
-    const saving = savingOverride !== undefined ? savingOverride : activeMonthlySaving;
-    projectedNW = projectedNW * (1 + monthlyRate) + saving;
+    
+    // Nếu không có override, tự động tính bằng Dự thu - Dự chi của tháng đó
+    let monthlyIncome = totalIncomePlan;
+    let monthlyExpense = totalExpensePlan;
+    
+    // Tìm cụ thể trong db cho tháng đó (giả định fallback về default nếu không thấy)
+    // Để tối ưu hiệu năng, ta dùng giá trị của tháng hiện tại làm baseline
+    
+    const saving = savingOverride !== undefined ? savingOverride : (monthlyIncome - monthlyExpense);
+    projectedNW = projectedNW * (1 + monthlyRate) + Math.max(0, saving);
   }
   const growthX = currentNW > 0 ? projectedNW / currentNW : 0;
   const totalGain = projectedNW - currentNW;
@@ -191,7 +238,10 @@ export default function Plan() {
                     {p.category?.icon}
                   </div>
                   <div>
-                    <h4 className="font-bold text-gray-900 text-sm leading-tight">{p.category?.name}</h4>
+                    <div className="flex items-center space-x-1.5">
+                      <h4 className="font-bold text-gray-900 text-sm leading-tight">{p.category?.name}</h4>
+                      {p.is_average && <span className="bg-orange-100 text-orange-600 text-[8px] font-black px-1 rounded">TRUNG BÌNH</span>}
+                    </div>
                     <p className="text-[10px] font-medium text-gray-500 mt-0.5">{type === 'expense' ? 'Đã chi' : 'Tiến độ'} {Math.round(percentage)}%</p>
                   </div>
                 </div>
@@ -249,7 +299,7 @@ export default function Plan() {
             <div className="p-1.5 bg-blue-100 text-blue-600 rounded-lg">
               <TrendingDown size={18} />
             </div>
-            <h2 className="text-lg font-bold text-gray-900">Dự chi (Ngân sách)</h2>
+            <h2 className="text-lg font-bold text-gray-900">Dự chi hàng tháng</h2>
           </div>
           {loading ? (
             <div className="flex justify-center p-4">
@@ -278,15 +328,14 @@ export default function Plan() {
                     inputMode="numeric"
                     value={manualSaving === '' ? formatCurrency(calculatedBaselineSaving) : displayManualSaving}
                     onChange={handleManualSavingChange}
-                    className={`bg-transparent font-black text-lg outline-none w-full ${manualSaving !== '' ? 'text-indigo-600' : 'text-gray-900'}`}
+                    readOnly
+                    className={`bg-transparent font-black text-lg outline-none w-full text-indigo-600 opacity-80`}
                     placeholder="0"
                   />
                   <span className="text-xs font-bold text-gray-300">₫</span>
                 </div>
-                {manualSaving === '' && <p className="text-[9px] text-emerald-500 font-bold mt-1">Lấy từ Dự thu - Dự chi</p>}
-                {manualSaving !== '' && (
-                  <button onClick={() => setManualSaving('')} className="absolute top-2 right-2 text-[9px] text-gray-400 font-bold underline">Đặt lại</button>
-                )}
+                <p className="text-[9px] text-emerald-500 font-bold mt-1 italic">Tự động = Dự thu - Dự chi</p>
+                <p className="text-[8px] text-gray-400 mt-0.5">Sửa ở bảng chi tiết bên dưới 👇</p>
               </div>
 
               <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm">

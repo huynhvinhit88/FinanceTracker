@@ -104,7 +104,7 @@ export default function Home() {
   const totalIncomeAmount = currentMonthIncome.reduce((sum, tx) => sum + tx.amount, 0);
 
   const chartData = Object.values(currentMonthExpenses.reduce((acc, tx) => {
-    const catName = tx.category?.name || 'Khác';
+    const catName = tx.category?.name || 'Chưa phân loại';
     if (!acc[catName]) {
       acc[catName] = { name: catName, value: 0, color: tx.category?.color_hex || '#9CA3AF' };
     }
@@ -144,7 +144,7 @@ export default function Home() {
     }
     return (
       <div className="truncate pr-4">
-        <p className="font-semibold text-gray-900 truncate">{tx.category?.name || 'Khác'}</p>
+        <p className="font-semibold text-gray-900 truncate">{tx.category?.name || 'Chưa phân loại'}</p>
         <p className="text-xs text-gray-500 truncate">{tx.account?.name} {tx.note && `• ${tx.note}`}</p>
       </div>
     );

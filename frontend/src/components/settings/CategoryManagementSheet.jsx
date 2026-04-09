@@ -61,13 +61,36 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
   };
 
   const handleDelete = async (catId) => {
-    if (!window.confirm('Chắc chắn xoá danh mục này? Các giao dịch cũ có thể bị mất danh mục.')) return;
+    if (!window.confirm('Chắc chắn xoá danh mục này? Các ngân sách liên quan sẽ bị xóa và các giao dịch cũ sẽ trở thành "Chưa phân loại".')) return;
+    
+    setLoading(true);
     try {
-      const { error } = await supabase.from('categories').delete().eq('id', catId);
-      if (error) throw error;
+      // 1. Xóa các ngân sách liên quan đến danh mục này
+      const { error: budgetError } = await supabase
+        .from('budgets')
+        .delete()
+        .eq('category_id', catId);
+      if (budgetError) throw budgetError;
+
+      // 2. Gỡ danh mục khỏi các giao dịch liên quan (set null)
+      const { error: txError } = await supabase
+        .from('transactions')
+        .update({ category_id: null })
+        .eq('category_id', catId);
+      if (txError) throw txError;
+
+      // 3. Cuối cùng mới xóa danh mục
+      const { error: catError } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', catId);
+      if (catError) throw catError;
+
       fetchCategories();
     } catch (err) {
       alert('Không thể xóa: ' + err.message);
+    } finally {
+      setLoading(false);
     }
   };
 

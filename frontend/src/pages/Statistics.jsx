@@ -90,7 +90,7 @@ export default function Statistics() {
       .filter(tx => tx.type === 'expense')
       .forEach(tx => {
         const cat = categories.find(c => c.id === tx.category_id);
-        const name = cat ? cat.name : 'Khác';
+        const name = cat ? cat.name : 'Chưa phân loại';
         expenseMap[name] = (expenseMap[name] || 0) + tx.amount;
       });
 

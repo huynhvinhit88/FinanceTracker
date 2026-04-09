@@ -93,10 +93,15 @@ export function EditBudgetSheet({ isOpen, onClose, budget, onSuccess }) {
           <div className={`w-12 h-12 rounded-full flex items-center justify-center bg-white text-2xl shadow-sm`}>
             {budget.category?.icon}
           </div>
-          <div>
-            <h4 className="font-bold text-gray-900">{budget.category?.name}</h4>
+          <div className="flex-1">
+            <div className="flex justify-between items-start">
+              <h4 className="font-bold text-gray-900">{budget.category?.name}</h4>
+              <span className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-tighter ${budget.month ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-200 text-gray-500'}`}>
+                {budget.month ? `Tháng ${budget.month.split('-').reverse().join('/')}` : 'Mặc định'}
+              </span>
+            </div>
             <p className="text-xs text-gray-500">
-              {isIncome ? 'Đang thiết lập mục tiêu thu' : 'Đang thiết lập hạn mức chi'}
+              {isIncome ? 'Đang thiết lập mục tiêu thu' : 'Đ đang thiết lập hạn mức chi'}
             </p>
           </div>
         </div>

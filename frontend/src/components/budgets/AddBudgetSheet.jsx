@@ -7,10 +7,11 @@ import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 export function AddBudgetSheet({ isOpen, onClose, onSuccess }) {
   const { user } = useAuth();
   
-  const [planType, setPlanType] = useState('expense'); // 'income' or 'expense'
+  const [planType, setPlanType] = useState('expense'); // 'expense' or 'income'
   const [categories, setCategories] = useState([]);
   const [categoryId, setCategoryId] = useState('');
-  
+  const [applyType, setApplyType] = useState('default'); // 'default' or 'monthly'
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -19,18 +20,21 @@ export function AddBudgetSheet({ isOpen, onClose, onSuccess }) {
   useEffect(() => {
     if (isOpen) {
       fetchCategories();
+    } else {
+      resetForm();
     }
   }, [isOpen, user, planType]);
 
   const fetchCategories = async () => {
     if (!user) return;
     try {
-      const { data, error } = await supabase
+      const { data, error: catError } = await supabase
         .from('categories')
         .select('*')
-        .eq('type', planType);
+        .eq('type', planType)
+        .order('name');
         
-      if (error) throw error;
+      if (catError) throw catError;
       setCategories(data || []);
       if (data && data.length > 0) {
         setCategoryId(data[0].id);
@@ -50,7 +54,7 @@ export function AddBudgetSheet({ isOpen, onClose, onSuccess }) {
       return;
     }
     if (!categoryId) {
-      setError('Vui lòng chọn danh mục chi tiêu');
+      setError('Vui lòng chọn danh mục');
       return;
     }
     
@@ -58,17 +62,17 @@ export function AddBudgetSheet({ isOpen, onClose, onSuccess }) {
     setError('');
 
     try {
-      // Upsert: Because we have unique(user_id, category_id) constrain
+      const payload = {
+        user_id: user.id,
+        category_id: categoryId,
+        amount: rawAmount,
+        month: applyType === 'monthly' ? selectedMonth : null
+      };
+
+      // Upsert: Using the new unique logic (cat_id, month)
       const { error: upsertError } = await supabase
         .from('budgets')
-        .upsert(
-          {
-            user_id: user.id,
-            category_id: categoryId,
-            amount: rawAmount
-          },
-          { onConflict: 'user_id, category_id' }
-        );
+        .upsert(payload, { onConflict: 'user_id, category_id, month' });
 
       if (upsertError) throw upsertError;
       
@@ -85,13 +89,14 @@ export function AddBudgetSheet({ isOpen, onClose, onSuccess }) {
   const resetForm = () => {
     resetAmount();
     if (categories.length > 0) setCategoryId(categories[0].id);
+    setApplyType('default');
   };
 
   return (
     <BottomSheet 
       isOpen={isOpen} 
       onClose={onClose} 
-      title={planType === 'expense' ? 'Thiết lập ngân sách chi' : 'Thiết lập kế hoạch thu'}
+      title={planType === 'expense' ? 'Thiết lập dự chi' : 'Thiết lập dự thu'}
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         
@@ -109,7 +114,7 @@ export function AddBudgetSheet({ isOpen, onClose, onSuccess }) {
               planType === 'expense' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'
             }`}
           >
-            Chi tiêu
+            Dự chi
           </button>
           <button
             type="button"
@@ -118,34 +123,61 @@ export function AddBudgetSheet({ isOpen, onClose, onSuccess }) {
               planType === 'income' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500'
             }`}
           >
-            Thu nhập
+            Dự thu
           </button>
         </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            {planType === 'expense' ? 'Hạn mức chi tiêu 1 tháng' : 'Mục tiêu thu về 1 tháng'}
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              inputMode="numeric"
-              value={displayValue}
-              onChange={handleInputChange}
-              placeholder="0"
-              className={`w-full bg-gray-50 text-gray-900 text-3xl font-bold py-4 pr-24 pl-4 rounded-2xl border-none focus:ring-2 transition-all outline-none ${
-                planType === 'expense' ? 'focus:ring-blue-500' : 'focus:ring-emerald-500'
-              }`}
-            />
-            <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
-              <span className="text-xl font-bold text-gray-400">.000</span>
-              <span className="text-xl font-bold text-gray-400">₫</span>
+        <div className="space-y-4 pt-1">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {planType === 'expense' ? 'Hạn mức hàng tháng' : 'Mục tiêu thu về hàng tháng'}
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                inputMode="numeric"
+                value={displayValue}
+                onChange={handleInputChange}
+                placeholder="0"
+                className={`w-full bg-gray-50 text-gray-900 text-3xl font-bold py-4 pr-24 pl-4 rounded-2xl border-none focus:ring-2 transition-all outline-none ${
+                  planType === 'expense' ? 'focus:ring-blue-500' : 'focus:ring-emerald-500'
+                }`}
+              />
+              <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
+                <span className="text-xl font-bold text-gray-400">.000</span>
+                <span className="text-xl font-bold text-gray-400">₫</span>
+              </div>
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+             <div className="space-y-1">
+               <label className="block text-xs font-semibold text-gray-500 ml-1">Áp dụng cho</label>
+               <select 
+                 value={applyType} 
+                 onChange={(e) => setApplyType(e.target.value)}
+                 className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm font-bold"
+               >
+                 <option value="default">Mặc định (Tất cả các tháng)</option>
+                 <option value="monthly">Tháng cụ thể</option>
+               </select>
+             </div>
+             {applyType === 'monthly' && (
+               <div className="space-y-1">
+                 <label className="block text-xs font-semibold text-gray-500 ml-1">Chọn tháng</label>
+                 <input 
+                   type="month" 
+                   value={selectedMonth} 
+                   onChange={(e) => setSelectedMonth(e.target.value)}
+                   className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm font-bold outline-none"
+                 />
+               </div>
+             )}
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Áp dụng cho danh mục</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Hạng mục</label>
           <select
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
@@ -156,8 +188,10 @@ export function AddBudgetSheet({ isOpen, onClose, onSuccess }) {
               <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
             ))}
           </select>
-          <p className="text-xs text-gray-500 mt-2">
-            Mỗi danh mục sẽ chỉ có 1 kế hoạch mặc định được áp dụng tự động cho các giao dịch trong tháng.
+          <p className="text-[10px] text-gray-400 mt-2 px-1">
+            {applyType === 'default' 
+              ? 'Kế hoạch mặc định sẽ được áp dụng cho mọi tháng nếu tháng đó chưa có kế hoạch riêng.' 
+              : `Kế hoạch này sẽ chỉ áp dụng duy nhất cho tháng ${selectedMonth.split('-').reverse().join('/')}.`}
           </p>
         </div>
 

@@ -3,12 +3,16 @@ import { BottomSheet } from '../ui/BottomSheet';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
+import { useLoans } from '../../hooks/useLoans';
+import { Landmark, Info, Calculator } from 'lucide-react';
+import { formatCurrency } from '../../utils/format';
 
 const DEFAULT_CATEGORIES = [
   { name: 'Ăn uống', type: 'expense', icon: '🍔', color_hex: '#EF4444' },
   { name: 'Di chuyển', type: 'expense', icon: '🚗', color_hex: '#3B82F6' },
   { name: 'Mua sắm', type: 'expense', icon: '🛍️', color_hex: '#ec4899' },
   { name: 'Hóa đơn', type: 'expense', icon: '🧾', color_hex: '#8B5CF6' },
+  { name: 'Trả nợ vay', type: 'expense', icon: '🏦', color_hex: '#EF4444' },
   { name: 'Lương', type: 'income', icon: '💰', color_hex: '#10B981' },
   { name: 'Thưởng', type: 'income', icon: '🎁', color_hex: '#F59E0B' },
   { name: 'Khác', type: 'transfer', icon: '🔄', color_hex: '#6B7280' },
@@ -16,8 +20,9 @@ const DEFAULT_CATEGORIES = [
 
 export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
   const { user } = useAuth();
+  const { loans, fetchLoans, updateLoanBalance, suggestInterest } = useLoans();
   
-  const [type, setType] = useState('expense'); // expense, income, transfer
+  const [type, setType] = useState('expense'); // expense, income, transfer, repayment
   const [accounts, setAccounts] = useState([]);
   const [categories, setCategories] = useState([]);
   
@@ -27,62 +32,41 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
   const [note, setNote] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   
+  // Loan Repayment State
+  const [isLoanMode, setIsLoanMode] = useState(false);
+  const [loanId, setLoanId] = useState('');
+  const [repaymentType, setRepaymentType] = useState('periodic'); // periodic, payoff
+  const { displayValue: principalDisplay, value: principalRaw, handleInputChange: handlePrincipalChange, reset: resetPrincipal, suffix: principalSuffix, setExternalValue: setExternalPrincipal } = useCurrencyInput(0);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { displayValue, value: rawAmount, handleInputChange, reset: resetAmount } = useCurrencyInput('');
+  const { displayValue, value: rawAmount, handleInputChange, reset: resetAmount, suffix, setExternalValue } = useCurrencyInput(0);
 
   useEffect(() => {
     if (isOpen) {
       fetchDependencies();
+      fetchLoans();
     }
   }, [isOpen, user]);
 
   const fetchDependencies = async () => {
     if (!user) return;
     try {
-      // 1. Fetch accounts
-      const { data: accData, error: accErr } = await supabase
-        .from('accounts')
-        .select('*')
-        .order('name');
-      if (accErr) throw accErr;
+      const { data: accData } = await supabase.from('accounts').select('*').order('name');
       setAccounts(accData || []);
-      
-      // Auto-select first account if possible
-      if (accData?.length > 0) {
-        setAccountId(accData[0].id);
-        if (accData.length > 1) setToAccountId(accData[1].id);
-      }
+      if (accData?.length > 0) setAccountId(accData[0].id);
 
-      // 2. Fetch categories
-      const { data: catData, error: catErr } = await supabase
-        .from('categories')
-        .select('*');
-      if (catErr) throw catErr;
-      
+      const { data: catData } = await supabase.from('categories').select('*');
       let localCats = catData || [];
       
-      // Auto-seed default categories if empty
       if (localCats.length === 0) {
-        const seedCats = DEFAULT_CATEGORIES.map(c => ({
-          ...c,
-          user_id: user.id,
-          is_default: true
-        }));
-        
-        const { data: newCats, error: insertErr } = await supabase
-          .from('categories')
-          .insert(seedCats)
-          .select();
-          
-        if (!insertErr && newCats) {
-          localCats = newCats;
-        }
+        const seedCats = DEFAULT_CATEGORIES.map(c => ({ ...c, user_id: user.id, is_default: true }));
+        const { data: newCats } = await supabase.from('categories').insert(seedCats).select();
+        if (newCats) localCats = newCats;
       }
       
       setCategories(localCats);
-      // Auto-select category based on active type
       const relevantCats = localCats.filter(c => c.type === type);
       if (relevantCats.length > 0) setCategoryId(relevantCats[0].id);
 
@@ -92,32 +76,57 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
     }
   };
 
-  // Re-evaluate category selection when type changes
+  useEffect(() => {
+    if (type === 'repayment') {
+      setIsLoanMode(true);
+      if (loans.length > 0 && !loanId) setLoanId(loans[0].id);
+    } else {
+      const selectedCat = categories.find(c => c.id === categoryId);
+      const isLoanCat = selectedCat?.name === 'Trả nợ vay' || selectedCat?.icon === '🏦';
+      if (isLoanCat) {
+        setIsLoanMode(true);
+        if (loans.length > 0 && !loanId) setLoanId(loans[0].id);
+      } else {
+        setIsLoanMode(false);
+      }
+    }
+  }, [type, categoryId, categories, loans]);
+
   useEffect(() => {
     const relevantCats = categories.filter(c => c.type === type);
     if (relevantCats.length > 0) {
-      // Don't overwrite if the user just switched tabs and the selected one is still valid? No, valid type check:
       const isValid = relevantCats.some(c => c.id === categoryId);
       if (!isValid) setCategoryId(relevantCats[0].id);
-    } else {
-      setCategoryId('');
     }
   }, [type, categories]);
 
+  // Khi chọn khoản vay, gợi ý tiền lãi và gốc
+  useEffect(() => {
+    if (isLoanMode && loanId && loans.length > 0) {
+      const loan = loans.find(l => l.id === loanId);
+      if (loan) {
+        const interest = suggestInterest(loan);
+        
+        if (repaymentType === 'payoff') {
+          // Tất toán: Tổng tiền = Toàn bộ dư nợ + Lãi dự kiến (Dùng số tuyệt đối)
+          const totalPayoff = loan.remaining_principal + interest;
+          setExternalValue(totalPayoff);
+        } else {
+          // Trả định kỳ: Gợi ý Gốc = Gốc gốc / Kỳ hạn
+          const suggestedPrincipal = Math.ceil((loan.principal_amount / loan.term_months) / 1000) * 1000;
+          setExternalPrincipal(suggestedPrincipal);
+          
+          // Tổng tiền gợi ý = Gốc gợi ý + Lãi
+          setExternalValue(suggestedPrincipal + interest);
+        }
+      }
+    }
+  }, [loanId, isLoanMode, repaymentType]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (rawAmount <= 0) {
-      setError('Số tiền phải lớn hơn 0');
-      return;
-    }
-    if (!accountId) {
-      setError('Vui lòng chọn tài khoản nguồn');
-      return;
-    }
-    if (type === 'transfer' && (!toAccountId || accountId === toAccountId)) {
-      setError('Tài khoản nhận không hợp lệ (trùng với nguồn)');
-      return;
-    }
+    if (rawAmount <= 0) { setError('Số tiền phải lớn hơn 0'); return; }
+    if (!accountId) { setError('Vui lòng chọn tài khoản nguồn'); return; }
     
     setLoading(true);
     setError('');
@@ -126,20 +135,27 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
       const payload = {
         user_id: user.id,
         account_id: accountId,
-        category_id: type !== 'transfer' ? categoryId : null,
+        category_id: (type !== 'transfer' && type !== 'repayment') ? categoryId : null,
         to_account_id: type === 'transfer' ? toAccountId : null,
         amount: rawAmount,
-        type: type,
+        type: type === 'repayment' ? 'expense' : type,
         date: new Date(date).toISOString(),
-        note: note.trim()
+        note: note.trim() || (type === 'repayment' ? `Trả nợ ${loans.find(l=>l.id===loanId)?.name}` : ''),
+        // Loan fields
+        loan_id: isLoanMode ? loanId : null,
+        loan_payment_type: isLoanMode ? repaymentType : null,
+        loan_principal_amount: isLoanMode ? (repaymentType === 'payoff' ? rawAmount : principalRaw) : 0
       };
 
-      const { error: insertError } = await supabase
-        .from('transactions')
-        .insert([payload]);
-
+      const { error: insertError } = await supabase.from('transactions').insert([payload]);
       if (insertError) throw insertError;
       
+      // Nếu là trả nợ vay, cập nhật số dư nợ
+      if (isLoanMode && loanId) {
+        const principalToDeduct = repaymentType === 'payoff' ? rawAmount : principalRaw;
+        await updateLoanBalance(loanId, principalToDeduct);
+      }
+
       resetForm();
       onSuccess();
       onClose();
@@ -150,149 +166,166 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
     }
   };
 
+  const handleTypeChange = (newType) => {
+    if (type !== newType) {
+      // Chỉ xóa số tiền nếu đang chuyển từ tab Trả nợ sang các tab khác
+      // (vì tab Trả nợ có tính năng tự điền số tiền gợi ý)
+      if (type === 'repayment') {
+        resetAmount();
+        resetPrincipal();
+      }
+      setType(newType);
+      setError('');
+    }
+  };
+
   const resetForm = () => {
     resetAmount();
+    resetPrincipal();
     setNote('');
     setDate(new Date().toISOString().split('T')[0]);
     setType('expense');
+    setIsLoanMode(false);
   };
 
   const activeCategories = categories.filter(c => c.type === type);
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title="Thêm giao dịch mới">
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-5 h-[80vh] overflow-y-auto px-4 pb-10 no-scrollbar">
         
-        {/* Type selector */}
         <div className="flex bg-gray-100 p-1 rounded-xl">
-          {[
-            { id: 'expense', name: 'Khoản chi' },
-            { id: 'income', name: 'Khoản thu' },
-            { id: 'transfer', name: 'Chuyển tiền' }
-          ].map(t => (
+          {['expense', 'income', 'transfer', 'repayment'].map(t => (
             <button
-              key={t.id}
-              type="button"
-              onClick={() => setType(t.id)}
-              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
-                type === t.id 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              key={t} type="button" onClick={() => handleTypeChange(t)}
+              className={`flex-1 py-2 text-[10px] font-black uppercase tracking-tight rounded-lg transition-all ${type === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
             >
-              {t.name}
+              {t === 'expense' ? 'Chi' : t === 'income' ? 'Thu' : t === 'transfer' ? 'Chuyển' : 'Trả nợ'}
             </button>
           ))}
         </div>
 
-        {error && (
-          <div className="p-3 bg-red-50 text-red-600 rounded-xl text-sm font-medium">
-            {error}
-          </div>
-        )}
+        {error && <div className="p-3 bg-red-50 text-red-600 rounded-xl text-sm font-medium">{error}</div>}
 
-        {/* Amount */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Số tiền</label>
+          <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1 mb-1">
+            {isLoanMode ? 'Tổng số tiền trả (Gốc + Lãi)' : 'Số tiền'}
+          </label>
           <div className="relative">
             <input
-              type="text"
-              inputMode="numeric"
-              value={displayValue}
-              onChange={handleInputChange}
-              placeholder="0"
-              className="w-full bg-gray-50 text-green-600 text-3xl font-bold py-4 pr-24 pl-4 rounded-2xl border-none focus:ring-2 focus:ring-green-500 transition-all outline-none"
+              type="text" inputMode="numeric" value={displayValue} onChange={handleInputChange}
+              className="w-full bg-gray-50 text-gray-900 text-3xl font-black py-4 pr-24 pl-4 rounded-2xl border-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-all outline-none"
             />
             <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
-              <span className="text-xl font-bold text-gray-400">.000</span>
-              <span className="text-xl font-bold text-gray-400">₫</span>
+              <span className="text-xl font-bold text-gray-300">{suffix}</span>
             </div>
           </div>
         </div>
 
-        {/* Accounts */}
         <div className={type === 'transfer' ? 'grid grid-cols-2 gap-3' : ''}>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Từ tài khoản</label>
-            <select
-              value={accountId}
-              onChange={(e) => setAccountId(e.target.value)}
-              className="w-full bg-gray-50 border border-transparent focus:border-blue-500 rounded-xl px-4 py-3 outline-none"
-            >
-              {accounts.map(acc => (
-                <option key={acc.id} value={acc.id}>{acc.name} ({acc.type})</option>
-              ))}
+          <div className="space-y-1">
+            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Nguồn tiền</label>
+            <select value={accountId} onChange={(e) => setAccountId(e.target.value)} className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 font-semibold">
+              {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
             </select>
           </div>
-          
           {type === 'transfer' && (
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Đến tài khoản</label>
-              <select
-                value={toAccountId}
-                onChange={(e) => setToAccountId(e.target.value)}
-                className="w-full bg-gray-50 border border-transparent focus:border-blue-500 rounded-xl px-4 py-3 outline-none"
-              >
-                {accounts.map(acc => (
-                  <option key={acc.id} value={acc.id}>{acc.name} ({acc.type})</option>
-                ))}
+            <div className="space-y-1">
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Đến ví</label>
+              <select value={toAccountId} onChange={(e) => setToAccountId(e.target.value)} className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 font-semibold">
+                {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
               </select>
             </div>
           )}
         </div>
 
-        {/* Categories (Not for Transfers) */}
-        {type !== 'transfer' && (
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Danh mục</label>
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full bg-gray-50 border border-transparent focus:border-blue-500 rounded-xl px-4 py-3 outline-none"
-            >
-              {activeCategories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
-              ))}
+        {type !== 'transfer' && type !== 'repayment' && (
+          <div className="space-y-1">
+            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Hạng mục</label>
+            <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 font-semibold">
+              {activeCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>)}
             </select>
-            {activeCategories.length === 0 && (
-              <p className="text-xs text-red-500 mt-1">Không có danh mục nào cho loại này!</p>
-            )}
           </div>
         )}
 
-        {/* Date and Note */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Ngày thực hiện</label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-gray-50 border border-transparent focus:border-blue-500 rounded-xl px-4 py-3 outline-none"
-            />
+        {/* LOAN SPECIFIC FIELDS */}
+        {isLoanMode && (
+          <div className="bg-blue-50/50 p-5 rounded-[2rem] border border-blue-100 space-y-5 animate-in slide-in-from-top-2">
+            <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] flex items-center">
+              <Landmark size={14} className="mr-2" /> Chi tiết trả nợ vay
+            </h4>
+
+            <div className="space-y-1">
+              <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">Chọn khoản vay</label>
+              <select value={loanId} onChange={(e) => setLoanId(e.target.value)} className="w-full bg-white border border-blue-100 rounded-xl px-4 py-3 text-sm font-bold">
+                {loans.map(l => <option key={l.id} value={l.id}>{l.name} (Dư nợ: {formatCurrency(l.remaining_principal)}₫)</option>)}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+               {['periodic', 'payoff'].map(mode => (
+                 <button
+                   key={mode} type="button" onClick={() => setRepaymentType(mode)}
+                   className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                     repaymentType === mode ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-gray-400 border-gray-100'
+                   }`}
+                 >
+                   {mode === 'periodic' ? 'Trả định kỳ' : 'Tất toán'}
+                 </button>
+               ))}
+            </div>
+
+            {repaymentType === 'periodic' ? (
+              <div className="space-y-1">
+                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1 flex justify-between">
+                  <span>Số tiền gốc trả (.000 ₫)</span>
+                  <span className="text-blue-500 font-black italic">
+                    Lãi dự kiến: {formatCurrency(suggestInterest(loans.find(l => l.id === loanId)))}₫
+                  </span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text" inputMode="numeric" value={principalDisplay} onChange={handlePrincipalChange}
+                    className="w-full bg-white border border-blue-100 rounded-xl py-3 pl-4 pr-16 text-sm font-black text-blue-600 outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+                    placeholder="VD: 5.000"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-300">{principalSuffix}</span>
+                </div>
+                <p className="text-[9px] text-gray-400 ml-1">Tổng tiền = Gốc ({formatCurrency(principalRaw)}₫) + Lãi ({formatCurrency(rawAmount - principalRaw)}₫)</p>
+              </div>
+            ) : (
+              <div className="p-3 bg-blue-600 rounded-2xl text-white">
+                <div className="flex items-center space-x-2 mb-1">
+                   <Calculator size={14} />
+                   <span className="text-[10px] font-bold uppercase tracking-widest">Tất toán toàn bộ</span>
+                </div>
+                <p className="text-xs font-medium opacity-90">Hệ thống đã tính toán toàn bộ dư nợ gốc + lãi dự kiến vào ô "Tổng số tiền" ở trên.</p>
+              </div>
+            )}
+            
+            <div className="flex items-start space-x-2 text-[9px] text-blue-400 font-bold italic leading-relaxed">
+               <Info size={12} className="mt-0.5 flex-shrink-0" />
+               <p>Hệ thống sẽ tự động trừ số tiền gốc vào dư nợ và tính toán lại lãi các tháng sau.</p>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Ghi chú (Tùy chọn)</label>
-            <input
-              type="text"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="VD: Ăn lẩu..."
-              className="w-full bg-gray-50 border border-transparent focus:border-blue-500 rounded-xl px-4 py-3 outline-none"
-            />
+        )}
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Ngày tháng</label>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 font-semibold"/>
+          </div>
+          <div className="space-y-1">
+            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Ghi chú</label>
+            <input type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Tùy chọn..." className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 font-semibold"/>
           </div>
         </div>
 
         <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-4 mt-4 bg-gray-900 text-white font-semibold rounded-2xl shadow-lg shadow-gray-200 active:scale-[0.98] transition-transform flex items-center justify-center"
+          type="submit" disabled={loading}
+          className="w-full py-4 mt-2 bg-gray-900 text-white font-black text-lg rounded-[2rem] shadow-xl shadow-gray-200 active:scale-95 transition-all flex items-center justify-center space-x-2"
         >
-          {loading ? (
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          ) : (
-            'Lưu giao dịch'
-          )}
+          {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Xác nhận giao dịch'}
         </button>
       </form>
     </BottomSheet>

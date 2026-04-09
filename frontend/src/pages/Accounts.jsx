@@ -9,6 +9,9 @@ import { AddSavingsSheet } from '../components/wealth/AddSavingsSheet';
 import { EditSavingsSheet } from '../components/wealth/EditSavingsSheet';
 import { AddInvestmentSheet } from '../components/wealth/AddInvestmentSheet';
 import { EditInvestmentSheet } from '../components/wealth/EditInvestmentSheet';
+import { AddLoanSheet } from '../components/loans/AddLoanSheet';
+import { LoanDetailSheet } from '../components/loans/LoanDetailSheet';
+import { useLoans } from '../hooks/useLoans';
 
 export default function Accounts() {
   const { user } = useAuth();
@@ -19,6 +22,11 @@ export default function Accounts() {
   const [savings, setSavings] = useState([]);
   const [investments, setInvestments] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const { loans, loading: loansLoading, fetchLoans } = useLoans();
+  const [isAddLoanOpen, setIsAddLoanOpen] = useState(false);
+  const [selectedLoan, setSelectedLoan] = useState(null);
+  const [isLoanDetailOpen, setIsLoanDetailOpen] = useState(false);
 
   // Sheets
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
@@ -35,6 +43,7 @@ export default function Accounts() {
 
   useEffect(() => {
     fetchWealthData();
+    fetchLoans();
   }, [user]);
 
   const fetchWealthData = async () => {
@@ -76,6 +85,11 @@ export default function Accounts() {
     setIsEditInvestOpen(true);
   };
 
+  const handleLoanClick = (loan) => {
+    setSelectedLoan(loan);
+    setIsLoanDetailOpen(true);
+  };
+
   // --- Calculations ---
   
   const totalCashAndDebt = accounts.reduce((acc, curr) => {
@@ -114,8 +128,9 @@ export default function Accounts() {
     return acc + (curr.buy_price * curr.quantity);
   }, 0);
 
-  const diffInvest = totalInvestmentCurrent - totalInvestmentCost;
-  const isInvestProfit = diffInvest >= 0;
+  const totalLoanRemaining = loans.reduce((acc, l) => acc + (l.status === 'active' ? l.remaining_principal : 0), 0);
+  const activeLoans = loans.filter(l => l.status === 'active');
+  const paidOffLoans = loans.filter(l => l.status === 'paid_off');
 
   // --- Renderers ---
 
@@ -190,7 +205,6 @@ export default function Accounts() {
 
   const renderSavingsTab = () => (
     <div className="space-y-6">
-      {/* Savings Overview */}
       <div className="bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
         <div className="absolute -bottom-4 -right-4 opacity-20"><PiggyBank size={100} /></div>
         <p className="text-emerald-100 font-medium mb-1 relative z-10">Khối lượng Tiết kiệm</p>
@@ -268,7 +282,7 @@ export default function Accounts() {
               const principal = isRE ? (marketValue - loan) : (inv.buy_price * inv.quantity);
               const currentEquity = isRE ? principal : marketValue;
               
-              const diff = isRE ? 0 : (marketValue - principal); // Simplified for RE for now
+              const diff = isRE ? 0 : (marketValue - principal); 
               const profitStr = diff >= 0 ? `+${formatCurrency(diff)}` : formatCurrency(diff);
               
               let icon = '📦';
@@ -297,7 +311,7 @@ export default function Accounts() {
                       <p className="font-black text-gray-900">{formatCurrency(marketValue)} ₫</p>
                       {!isRE && (
                         <p className={`text-[10px] font-bold ${diff >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                          {profitStr} ({((diff / principal) * 100).toFixed(1)}%)
+                          {profitStr} ({((diff / (principal || 1)) * 100).toFixed(1)}%)
                         </p>
                       )}
                     </div>
@@ -324,17 +338,106 @@ export default function Accounts() {
     </div>
   );
 
+  const renderLoanCard = (loan) => {
+    const progress = Math.round(((loan.principal_amount - loan.remaining_principal) / loan.principal_amount) * 100);
+    return (
+      <div 
+        key={loan.id} 
+        onClick={() => handleLoanClick(loan)}
+        className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm active:scale-[0.98] transition-transform cursor-pointer relative overflow-hidden"
+      >
+        <div className="flex justify-between items-start mb-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-2xl bg-red-50 flex items-center justify-center text-red-500">
+              <HandCoins size={20} />
+            </div>
+            <div>
+              <h4 className="font-bold text-gray-900 leading-tight">{loan.name}</h4>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
+                Lãi suất: {loan.interest_rate}%/năm
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="font-black text-gray-900 text-lg">{formatCurrency(loan.remaining_principal)} ₫</p>
+            <p className="text-[9px] font-black text-emerald-500 uppercase">Đã trả {progress}%</p>
+          </div>
+        </div>
+        
+        <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div className="h-full bg-red-400 rounded-full transition-all duration-1000" style={{ width: `${progress}%` }} />
+        </div>
+
+        {loan.linked_investment && (
+           <div className="mt-4 pt-3 border-t border-dashed border-gray-100 flex items-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+             <Building size={12} className="mr-1.5 text-blue-400" /> Gắn với: {loan.linked_investment.symbol}
+           </div>
+        )}
+      </div>
+    );
+  };
+
+  // --- Loans Section (always visible, below tabs) ---
+  const renderLoansSection = () => {
+    if (loansLoading) return null;
+
+    return (
+      <div className="mt-8 pt-6 border-t border-gray-200">
+        {/* Section Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 rounded-xl bg-red-100 flex items-center justify-center">
+              <HandCoins size={16} className="text-red-600" />
+            </div>
+            <div>
+              <h2 className="font-bold text-gray-900 text-lg leading-tight">Quản lý Nợ vay</h2>
+              {totalLoanRemaining > 0 && (
+                <p className="text-xs text-red-500 font-semibold">
+                  Dư nợ: {formatCurrency(totalLoanRemaining)} ₫
+                </p>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={() => setIsAddLoanOpen(true)}
+            className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold active:scale-95 transition-transform"
+          >
+            <Plus size={18} />
+          </button>
+        </div>
+
+        {loans.length === 0 ? (
+          <div className="bg-white border border-dashed border-gray-200 rounded-2xl py-8 text-center">
+            <HandCoins size={28} className="text-gray-300 mx-auto mb-2" />
+            <p className="text-gray-400 text-sm font-medium">Chưa có hồ sơ vay nào.</p>
+            <p className="text-gray-300 text-xs mt-1">Nhấn + để thêm khoản vay mới</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {activeLoans.map(renderLoanCard)}
+            {paidOffLoans.length > 0 && (
+              <>
+                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] pt-2 px-1">Đã tất toán</h4>
+                {paidOffLoans.map(renderLoanCard)}
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
 
   return (
     <>
       <div className="p-4 safe-top pb-24 min-h-screen bg-gray-50">
         <h1 className="text-2xl font-bold text-gray-900 mb-4 mt-4">Danh mục Tài sản</h1>
         
-        {/* Custom Tabs */}
+        {/* Custom Tabs - 3 tabs only */}
         <div className="flex bg-gray-200/60 p-1 rounded-xl mb-6">
-          <button onClick={() => setActiveTab('cash')} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'cash' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}>Tiền mặt</button>
-          <button onClick={() => setActiveTab('savings')} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'savings' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500'}`}>Tiết kiệm</button>
-          <button onClick={() => setActiveTab('invest')} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'invest' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500'}`}>Đầu tư</button>
+          <button onClick={() => setActiveTab('cash')} className={`flex-1 py-2 text-[11px] font-bold rounded-lg transition-all ${activeTab === 'cash' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}>Tiền mặt</button>
+          <button onClick={() => setActiveTab('savings')} className={`flex-1 py-2 text-[11px] font-bold rounded-lg transition-all ${activeTab === 'savings' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500'}`}>Tiết kiệm</button>
+          <button onClick={() => setActiveTab('invest')} className={`flex-1 py-2 text-[11px] font-bold rounded-lg transition-all ${activeTab === 'invest' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500'}`}>Đầu tư</button>
         </div>
 
         {loading ? (
@@ -344,6 +447,9 @@ export default function Accounts() {
             {activeTab === 'cash' && renderCashTab()}
             {activeTab === 'savings' && renderSavingsTab()}
             {activeTab === 'invest' && renderInvestTab()}
+
+            {/* Loan Section - always visible below the active tab */}
+            {renderLoansSection()}
           </div>
         )}
       </div>
@@ -354,6 +460,8 @@ export default function Accounts() {
       <EditSavingsSheet isOpen={isEditSavingsOpen} onClose={() => setIsEditSavingsOpen(false)} savings={selectedSavings} onSuccess={fetchWealthData} />
       <AddInvestmentSheet isOpen={isAddInvestOpen} onClose={() => setIsAddInvestOpen(false)} onSuccess={fetchWealthData} />
       <EditInvestmentSheet isOpen={isEditInvestOpen} onClose={() => setIsEditInvestOpen(false)} investment={selectedInvestment} onSuccess={fetchWealthData} />
+      <AddLoanSheet isOpen={isAddLoanOpen} onClose={() => setIsAddLoanOpen(false)} onSuccess={fetchLoans} />
+      <LoanDetailSheet isOpen={isLoanDetailOpen} onClose={() => setIsLoanDetailOpen(false)} loan={selectedLoan} onUpdated={fetchLoans} />
     </>
   );
 }

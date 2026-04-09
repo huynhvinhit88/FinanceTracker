@@ -164,7 +164,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
       const payload = {
         user_id: user.id,
         account_id: accountId,
-        category_id: (type !== 'transfer' && type !== 'repayment') ? categoryId : null,
+        category_id: type !== 'transfer' ? categoryId : null,
         to_account_id: type === 'transfer' ? toAccountId : null,
         amount: rawAmount,
         type: type === 'repayment' ? 'expense' : type,
@@ -203,6 +203,13 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
         resetAmount();
         resetPrincipal();
       }
+      
+      // Tự động tìm danh mục "Trả nợ vay" nếu là tab Trả nợ
+      if (newType === 'repayment') {
+        const loanCat = categories.find(c => c.name === 'Trả nợ vay' || c.icon === '🏦');
+        if (loanCat) setCategoryId(loanCat.id);
+      }
+
       setType(newType);
       setError('');
     }
@@ -268,7 +275,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
           )}
         </div>
 
-        {type !== 'transfer' && type !== 'repayment' && (
+        {type !== 'transfer' && (
           <div className="space-y-1">
             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Hạng mục</label>
             <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 font-semibold">

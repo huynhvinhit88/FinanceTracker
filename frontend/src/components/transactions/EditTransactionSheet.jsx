@@ -3,10 +3,15 @@ import { BottomSheet } from '../ui/BottomSheet';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
-import { Trash2 } from 'lucide-react';
+import { useLoans } from '../../hooks/useLoans';
+import { Trash2, Landmark, Info, Calculator } from 'lucide-react';
+import { formatCurrency } from '../../utils/format';
+import { calculateLoanSchedule } from '../../utils/loanCalculator';
 
 export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }) {
   const { user } = useAuth();
+  
+  const { loans, fetchLoans, updateLoanBalance, suggestInterest } = useLoans();
   
   const [type, setType] = useState('expense');
   const [accounts, setAccounts] = useState([]);
@@ -17,29 +22,131 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
   const [categoryId, setCategoryId] = useState('');
   const [note, setNote] = useState('');
   const [date, setDate] = useState('');
-  
+
+  // Loan Repayment State
+  const [isLoanMode, setIsLoanMode] = useState(false);
+  const [loanId, setLoanId] = useState('');
+  const [repaymentType, setRepaymentType] = useState('periodic');
+  const [oldLoanInfo, setOldLoanInfo] = useState(null); // { loanId: string, principal: number }
+
+  const { displayValue: principalDisplay, value: principalRaw, handleInputChange: handlePrincipalChange, reset: resetPrincipal, suffix: principalSuffix, setExternalValue: setExternalPrincipal } = useCurrencyInput(0, { useShortcut: false });
+
   const [loading, setLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState('');
 
-  const { displayValue, value: rawAmount, handleInputChange, setExternalValue, suffix } = useCurrencyInput('', { useShortcut: true });
+  const { displayValue, value: rawAmount, handleInputChange, setExternalValue, suffix } = useCurrencyInput('', { useShortcut: type !== 'repayment' });
 
   useEffect(() => {
     if (isOpen && transaction) {
-      setType(transaction.type);
+      // Xác định type thực sự dựa trên loan_id
+      const isRepayment = !!transaction.loan_id;
+      setType(isRepayment ? 'repayment' : transaction.type);
+      
       setExternalValue(transaction.amount);
       setAccountId(transaction.account_id || '');
       setToAccountId(transaction.to_account_id || '');
       setCategoryId(transaction.category_id || '');
       setNote(transaction.note || '');
+
+      if (isRepayment) {
+        setIsLoanMode(true);
+        setLoanId(transaction.loan_id);
+        setRepaymentType(transaction.loan_payment_type || 'periodic');
+        setExternalPrincipal(transaction.loan_principal_amount || 0);
+        setOldLoanInfo({
+          loanId: transaction.loan_id,
+          principal: transaction.loan_principal_amount || 0
+        });
+      } else {
+        setIsLoanMode(false);
+        setLoanId('');
+        setRepaymentType('periodic');
+        setExternalPrincipal(0);
+        setOldLoanInfo(null);
+      }
       
       // format date to YYYY-MM-DD
       const d = new Date(transaction.date);
       setDate(d.toISOString().split('T')[0]);
       
       fetchDependencies();
+      fetchLoans();
     }
   }, [isOpen, transaction]);
+
+  // Đồng bộ isLoanMode khi thay đổi type hoặc category
+  useEffect(() => {
+    if (type === 'repayment') {
+      setIsLoanMode(true);
+      if (loans.length > 0 && !loanId) setLoanId(loans[0].id);
+    } else {
+      const selectedCat = categories.find(c => c.id === categoryId);
+      const isLoanCat = selectedCat?.name === 'Trả nợ vay' || selectedCat?.icon === '🏦';
+      if (isLoanCat) {
+        setIsLoanMode(true);
+        if (loans.length > 0 && !loanId) setLoanId(loans[0].id);
+      } else {
+        setIsLoanMode(false);
+      }
+    }
+  }, [type, categoryId, categories, loans]);
+
+  // Gợi ý tiền lãi và gốc (Giống AddTransactionSheet)
+  useEffect(() => {
+    // Chỉ tự động gợi ý nếu người dùng vừa mới chọn khoản vay hoặc đổi loại trả nợ
+    // Không chạy khi mới mở sheet (để giữ giá trị cũ của transaction)
+    if (isLoanMode && loanId && loans.length > 0) {
+      const loan = loans.find(l => l.id === loanId);
+      if (loan) {
+        // Kiểm tra xem đây có phải là loan đang sửa của transaction không
+        // Nếu đúng thì không tự động ghi đè giá trị gợi ý khi vừa mở
+        const isSameAsOriginal = transaction?.loan_id === loanId;
+        if (isSameAsOriginal && repaymentType === transaction?.loan_payment_type) {
+           return; 
+        }
+
+        if (repaymentType === 'payoff') {
+          const interest = suggestInterest(loan);
+          const totalPayoff = loan.remaining_principal + interest;
+          setExternalValue(totalPayoff);
+          setExternalPrincipal(loan.remaining_principal);
+        } else {
+          const { schedule } = calculateLoanSchedule({
+            principal: loan.principal_amount,
+            termMonths: loan.term_months,
+            promoRate: loan.promo_rate,
+            promoMonths: loan.promo_months,
+            baseRate: loan.base_rate,
+            marginRate: loan.margin_rate,
+            penaltyConfig: loan.penalty_config,
+            startDate: loan.start_date,
+            firstPaymentDate: loan.first_payment_date,
+            extraPayment: loan.extra_payment,
+            offsetThreshold: loan.offset_threshold,
+            periods: loan.periods || [],
+          });
+
+          const now = new Date();
+          const currentMonth = now.getMonth();
+          const currentYear = now.getFullYear();
+
+          const match = schedule.find(row => {
+            const d = new Date(row.dateObj);
+            return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+          });
+
+          if (match) {
+            setExternalPrincipal(match.principal);
+            setExternalValue(match.total);
+          } else {
+            setExternalPrincipal('');
+            setExternalValue('');
+          }
+        }
+      }
+    }
+  }, [loanId, repaymentType, loans]);
 
   const fetchDependencies = async () => {
     if (!user) return;
@@ -78,9 +185,13 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
         category_id: type !== 'transfer' ? categoryId : null,
         to_account_id: type === 'transfer' ? toAccountId : null,
         amount: rawAmount,
-        type: type,
+        type: type === 'repayment' ? 'expense' : type,
         date: new Date(date).toISOString(),
-        note: note.trim()
+        note: note.trim(),
+        // Loan fields
+        loan_id: isLoanMode ? loanId : null,
+        loan_payment_type: isLoanMode ? repaymentType : null,
+        loan_principal_amount: isLoanMode ? (repaymentType === 'payoff' ? rawAmount : principalRaw) : 0
       };
 
       const { error: updateError } = await supabase
@@ -90,6 +201,17 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
         .eq('user_id', user.id);
 
       if (updateError) throw updateError;
+
+      // Xử lý cập nhật số dư nợ (Rollback & Apply)
+      if (oldLoanInfo) {
+        // Rollback: Hoàn trả gốc cũ (cộng lại vào dư nợ)
+        await updateLoanBalance(oldLoanInfo.loanId, -oldLoanInfo.principal);
+      }
+      if (isLoanMode && loanId) {
+        // Apply: Trừ gốc mới
+        const principalToDeduct = repaymentType === 'payoff' ? rawAmount : principalRaw;
+        await updateLoanBalance(loanId, principalToDeduct);
+      }
       
       onSuccess();
       onClose();
@@ -116,6 +238,11 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
 
       if (deleteError) throw deleteError;
 
+      // Rollback dư nợ nếu là giao dịch trả nợ
+      if (oldLoanInfo) {
+        await updateLoanBalance(oldLoanInfo.loanId, -oldLoanInfo.principal);
+      }
+
       onSuccess();
       onClose();
     } catch (err) {
@@ -137,17 +264,32 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
           {[
             { id: 'expense', name: 'Khoản chi' },
             { id: 'income', name: 'Khoản thu' },
-            { id: 'transfer', name: 'Chuyển tiền' }
+            { id: 'transfer', name: 'Chuyển tiền' },
+            { id: 'repayment', name: 'Trả nợ' }
           ].map(t => (
             <button
               key={t.id}
               type="button"
               onClick={() => {
+                if (type === 'repayment' && t.id !== 'repayment') {
+                  setExternalPrincipal(0);
+                }
+                
+                // Tự động tìm danh mục "Trả nợ vay" nếu là tab Trả nợ
+                if (t.id === 'repayment') {
+                  const loanCat = categories.find(c => c.name === 'Trả nợ vay' || c.icon === '🏦');
+                  if (loanCat) setCategoryId(loanCat.id);
+                }
+
                 setType(t.id);
-                const relevantCats = categories.filter(c => c.type === t.id);
-                setCategoryId(relevantCats.length > 0 ? relevantCats[0].id : '');
+                const relevantCats = categories.filter(c => c.type === (t.id === 'repayment' ? 'expense' : t.id));
+                // Nếu đổi sang tab nợ vay mà chưa có category được chọn, hoặc category hiện tại không thuộc Expense
+                const isCatValid = relevantCats.some(c => c.id === categoryId);
+                if (!isCatValid && relevantCats.length > 0) {
+                  setCategoryId(relevantCats[0].id);
+                }
               }}
-              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+              className={`flex-1 py-2 text-[10px] font-black uppercase tracking-tight rounded-lg transition-all ${
                 type === t.id 
                   ? 'bg-white text-gray-900 shadow-sm' 
                   : 'text-gray-500 hover:text-gray-700'
@@ -165,17 +307,19 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
         )}
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Số tiền</label>
+          <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1 mb-1">
+            {isLoanMode ? 'Tổng số tiền trả (Gốc + Lãi)' : 'Số tiền'}
+          </label>
           <div className="relative">
             <input
               type="text"
               inputMode="numeric"
               value={displayValue}
               onChange={handleInputChange}
-              className="w-full bg-gray-50 text-green-600 text-3xl font-bold py-4 pr-24 pl-4 rounded-2xl border-none focus:ring-2 focus:ring-green-500 transition-all outline-none"
+              className="w-full bg-gray-50 text-gray-900 text-3xl font-black py-4 pr-24 pl-4 rounded-2xl border-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-all outline-none"
             />
             <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
-              <span className="text-xl font-bold text-gray-400">{suffix}</span>
+              <span className="text-xl font-bold text-gray-300">{suffix}</span>
             </div>
           </div>
         </div>
@@ -212,37 +356,99 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
         </div>
 
         {type !== 'transfer' && (
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Danh mục</label>
+          <div className="space-y-1">
+            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Danh mục</label>
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full bg-gray-50 border border-transparent focus:border-blue-500 rounded-xl px-4 py-3 outline-none"
+              className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 font-semibold outline-none"
             >
-              {activeCategories.map(cat => (
+              {categories.filter(c => c.type === (type === 'repayment' ? 'expense' : type)).map(cat => (
                 <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
               ))}
             </select>
           </div>
         )}
 
+        {/* LOAN SPECIFIC FIELDS */}
+        {isLoanMode && (
+          <div className="bg-blue-50/50 p-5 rounded-[2rem] border border-blue-100 space-y-5 animate-in slide-in-from-top-2">
+            <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] flex items-center">
+              <Landmark size={14} className="mr-2" /> Chi tiết trả nợ vay
+            </h4>
+
+            <div className="space-y-1">
+              <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">Chọn khoản vay</label>
+              <select value={loanId} onChange={(e) => setLoanId(e.target.value)} className="w-full bg-white border border-blue-100 rounded-xl px-4 py-3 text-sm font-bold">
+                {loans.map(l => <option key={l.id} value={l.id}>{l.name} (Dư nợ: {formatCurrency(l.remaining_principal)}₫)</option>)}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+               {['periodic', 'payoff'].map(mode => (
+                 <button
+                   key={mode} type="button" onClick={() => setRepaymentType(mode)}
+                   className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                     repaymentType === mode ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-gray-400 border-gray-100'
+                   }`}
+                 >
+                   {mode === 'periodic' ? 'Trả định kỳ' : 'Tất toán'}
+                 </button>
+               ))}
+            </div>
+
+            {repaymentType === 'periodic' ? (
+              <div className="space-y-1">
+                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1 flex justify-between">
+                  <span>Số tiền gốc trả</span>
+                  <span className="text-blue-500 font-black italic">
+                    Lãi dự kiến: {formatCurrency(suggestInterest(loans.find(l => l.id === loanId)))}₫
+                  </span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text" inputMode="numeric" value={principalDisplay} onChange={handlePrincipalChange}
+                    className="w-full bg-white border border-blue-100 rounded-xl py-3 pl-4 pr-16 text-sm font-black text-blue-600 outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+                    placeholder="VD: 5.000.000"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-300">{principalSuffix}</span>
+                </div>
+                <p className="text-[9px] text-gray-400 ml-1">Tổng tiền = Gốc ({formatCurrency(principalRaw)}₫) + Lãi ({formatCurrency(rawAmount - principalRaw)}₫)</p>
+              </div>
+            ) : (
+              <div className="p-3 bg-blue-600 rounded-2xl text-white">
+                <div className="flex items-center space-x-2 mb-1">
+                   <Calculator size={14} />
+                   <span className="text-[10px] font-bold uppercase tracking-widest">Tất toán toàn bộ</span>
+                </div>
+                <p className="text-xs font-medium opacity-90">Hệ thống đã tính toán toàn bộ dư nợ gốc + lãi dự kiến vào ô "Tổng số tiền" ở trên.</p>
+              </div>
+            )}
+            
+            <div className="flex items-start space-x-2 text-[9px] text-blue-400 font-bold italic leading-relaxed">
+               <Info size={12} className="mt-0.5 flex-shrink-0" />
+               <p>Hệ thống sẽ tự động trừ số tiền gốc vào dư nợ và tính toán lại lãi các tháng sau.</p>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Ngày thực hiện</label>
+          <div className="space-y-1">
+            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Ngày thực hiện</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-gray-50 border border-transparent focus:border-blue-500 rounded-xl px-4 py-3 outline-none"
+              className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 font-semibold outline-none"
             />
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Ghi chú</label>
+          <div className="space-y-1">
+            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Ghi chú</label>
             <input
               type="text"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="w-full bg-gray-50 border border-transparent focus:border-blue-500 rounded-xl px-4 py-3 outline-none"
+              className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 font-semibold outline-none"
             />
           </div>
         </div>

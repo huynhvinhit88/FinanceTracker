@@ -324,7 +324,7 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Số tiền vay giải ngân</label>
               <div className="relative">
-                <input type="text" inputMode="numeric" value={displayPrincipal} onChange={handlePrincipalChange} placeholder="VD: 1.500.000 (1,5 Tỷ)" className="w-full bg-gray-50 text-gray-900 text-xl font-bold py-3 pr-16 pl-4 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+                <input type="text" inputMode="numeric" value={displayPrincipal} onChange={handlePrincipalChange} placeholder="VD: 1.500.000.000" className="w-full bg-gray-50 text-gray-900 text-xl font-bold py-3 pr-16 pl-4 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 font-semibold text-gray-400">{suffix}</span>
               </div>
             </div>
@@ -399,7 +399,7 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
                               className="w-full bg-white rounded-lg px-3 py-2 pr-10 text-sm font-bold shadow-sm outline-none focus:ring-1 focus:ring-purple-400"
                               placeholder="Ngân sách"
                             />
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gray-400">.000 ₫</span>
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gray-400">₫</span>
                           </div>
                         </div>
                       </div>

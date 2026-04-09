@@ -5,8 +5,8 @@ import { formatCurrency } from '../../utils/format';
 import { LineChart } from 'lucide-react';
 
 export function CompoundInterestSheet({ isOpen, onClose }) {
-  const { displayValue: displayInitial, value: initialDeposit, handleInputChange: handleInitialChange } = useCurrencyInput('');
-  const { displayValue: displayMonthly, value: monthlyDeposit, handleInputChange: handleMonthlyChange } = useCurrencyInput('');
+  const { displayValue: displayInitial, value: initialDeposit, handleInputChange: handleInitialChange, suffix: initSuffix } = useCurrencyInput('');
+  const { displayValue: displayMonthly, value: monthlyDeposit, handleInputChange: handleMonthlyChange, suffix: monSuffix } = useCurrencyInput('');
   const [interestRate, setInterestRate] = useState('');
   const [years, setYears] = useState('');
 
@@ -56,12 +56,11 @@ export function CompoundInterestSheet({ isOpen, onClose }) {
                 inputMode="numeric"
                 value={displayInitial}
                 onChange={handleInitialChange}
-                placeholder="VD: 100.000 (Tức 100 triệu)"
+                placeholder="VD: 100.000.000"
                 className="w-full bg-gray-50 text-gray-900 font-bold py-3 pr-24 pl-4 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none"
               />
               <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
-                <span className="text-xl font-bold text-gray-400">.000</span>
-                <span className="text-xl font-bold text-gray-400">₫</span>
+                <span className="text-xl font-bold text-gray-400">{monSuffix}</span>
               </div>
             </div>
           </div>
@@ -74,12 +73,11 @@ export function CompoundInterestSheet({ isOpen, onClose }) {
                 inputMode="numeric"
                 value={displayMonthly}
                 onChange={handleMonthlyChange}
-                placeholder="VD: 5.000"
+                placeholder="VD: 5.000.000"
                 className="w-full bg-gray-50 text-gray-900 font-bold py-3 pr-24 pl-4 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none"
               />
               <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
-                <span className="text-xl font-bold text-gray-400">.000</span>
-                <span className="text-xl font-bold text-gray-400">₫</span>
+                <span className="text-xl font-bold text-gray-400">{monSuffix}</span>
               </div>
             </div>
           </div>

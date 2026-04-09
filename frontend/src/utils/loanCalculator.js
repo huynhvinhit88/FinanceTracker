@@ -148,6 +148,7 @@ export function calculateLoanSchedule(profile) {
     schedule.push({
       month: m,
       date: currentPayDate.toLocaleDateString('vi-VN'),
+      dateObj: new Date(currentPayDate),
       interest: Math.round(interestThisMonth),
       principal: Math.round(principalThisMonth),
       prepay: Math.round(prepayEvent),

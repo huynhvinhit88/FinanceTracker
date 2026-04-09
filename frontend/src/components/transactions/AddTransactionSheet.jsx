@@ -6,6 +6,7 @@ import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { useLoans } from '../../hooks/useLoans';
 import { Landmark, Info, Calculator } from 'lucide-react';
 import { formatCurrency } from '../../utils/format';
+import { calculateLoanSchedule } from '../../utils/loanCalculator';
 
 const DEFAULT_CATEGORIES = [
   { name: 'Ăn uống', type: 'expense', icon: '🍔', color_hex: '#EF4444' },
@@ -36,12 +37,12 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
   const [isLoanMode, setIsLoanMode] = useState(false);
   const [loanId, setLoanId] = useState('');
   const [repaymentType, setRepaymentType] = useState('periodic'); // periodic, payoff
-  const { displayValue: principalDisplay, value: principalRaw, handleInputChange: handlePrincipalChange, reset: resetPrincipal, suffix: principalSuffix, setExternalValue: setExternalPrincipal } = useCurrencyInput(0);
+  const { displayValue: principalDisplay, value: principalRaw, handleInputChange: handlePrincipalChange, reset: resetPrincipal, suffix: principalSuffix, setExternalValue: setExternalPrincipal } = useCurrencyInput(0, { useShortcut: false });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { displayValue, value: rawAmount, handleInputChange, reset: resetAmount, suffix, setExternalValue } = useCurrencyInput(0);
+  const { displayValue, value: rawAmount, handleInputChange, reset: resetAmount, suffix, setExternalValue } = useCurrencyInput(0, { useShortcut: type !== 'repayment' });
 
   useEffect(() => {
     if (isOpen) {
@@ -100,28 +101,56 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
     }
   }, [type, categories]);
 
-  // Khi chọn khoản vay, gợi ý tiền lãi và gốc
+  // Khi chọn khoản vay, gợi ý tiền lãi và gốc từ bảng kế hoạch
   useEffect(() => {
     if (isLoanMode && loanId && loans.length > 0) {
       const loan = loans.find(l => l.id === loanId);
       if (loan) {
-        const interest = suggestInterest(loan);
-        
         if (repaymentType === 'payoff') {
           // Tất toán: Tổng tiền = Toàn bộ dư nợ + Lãi dự kiến (Dùng số tuyệt đối)
+          const interest = suggestInterest(loan);
           const totalPayoff = loan.remaining_principal + interest;
           setExternalValue(totalPayoff);
+          setExternalPrincipal(loan.remaining_principal);
         } else {
-          // Trả định kỳ: Gợi ý Gốc = Gốc gốc / Kỳ hạn
-          const suggestedPrincipal = Math.ceil((loan.principal_amount / loan.term_months) / 1000) * 1000;
-          setExternalPrincipal(suggestedPrincipal);
-          
-          // Tổng tiền gợi ý = Gốc gợi ý + Lãi
-          setExternalValue(suggestedPrincipal + interest);
+          // Trả định kỳ: Tìm trong bảng kế hoạch dòng có tháng và năm khớp với hệ thống
+          // Cần map đúng các key mà calculateLoanSchedule mong đợi
+          const { schedule } = calculateLoanSchedule({
+            principal: loan.principal_amount,
+            termMonths: loan.term_months,
+            promoRate: loan.promo_rate,
+            promoMonths: loan.promo_months,
+            baseRate: loan.base_rate,
+            marginRate: loan.margin_rate,
+            penaltyConfig: loan.penalty_config,
+            startDate: loan.start_date,
+            firstPaymentDate: loan.first_payment_date,
+            extraPayment: loan.extra_payment,
+            offsetThreshold: loan.offset_threshold,
+            periods: loan.periods || [],
+          });
+
+          const now = new Date();
+          const currentMonth = now.getMonth();
+          const currentYear = now.getFullYear();
+
+          const match = schedule.find(row => {
+            const d = new Date(row.dateObj);
+            return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+          });
+
+          if (match) {
+            setExternalPrincipal(match.principal);
+            setExternalValue(match.total);
+          } else {
+            // Trường hợp không tìm thấy kỳ khớp (quá hạn hoặc chưa đến kỳ): Để trống
+            setExternalPrincipal('');
+            setExternalValue('');
+          }
         }
       }
     }
-  }, [loanId, isLoanMode, repaymentType]);
+  }, [loanId, isLoanMode, repaymentType, loans]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -278,7 +307,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
             {repaymentType === 'periodic' ? (
               <div className="space-y-1">
                 <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1 flex justify-between">
-                  <span>Số tiền gốc trả (.000 ₫)</span>
+                  <span>Số tiền gốc trả</span>
                   <span className="text-blue-500 font-black italic">
                     Lãi dự kiến: {formatCurrency(suggestInterest(loans.find(l => l.id === loanId)))}₫
                   </span>
@@ -287,7 +316,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
                   <input
                     type="text" inputMode="numeric" value={principalDisplay} onChange={handlePrincipalChange}
                     className="w-full bg-white border border-blue-100 rounded-xl py-3 pl-4 pr-16 text-sm font-black text-blue-600 outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
-                    placeholder="VD: 5.000"
+                    placeholder="VD: 5.000.000"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-300">{principalSuffix}</span>
                 </div>

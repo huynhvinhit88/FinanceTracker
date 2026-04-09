@@ -17,7 +17,7 @@ export function EditInvestmentSheet({ isOpen, onClose, investment, onSuccess }) 
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { displayValue: displayBuyRow, value: buyPrice, handleInputChange: handleBuyPriceChange, setExternalValue: setBuyPrice } = useCurrencyInput('');
+  const { displayValue: displayBuyRow, value: buyPrice, handleInputChange: handleBuyPriceChange, setExternalValue: setBuyPrice, suffix } = useCurrencyInput('');
   const { displayValue: displayCurrentRow, value: currentPrice, handleInputChange: handleCurrentPriceChange, setExternalValue: setCurrentPrice } = useCurrencyInput('');
   const { displayValue: displayLoanRow, value: loanAmount, handleInputChange: handleLoanAmountChange, setExternalValue: setLoanAmount } = useCurrencyInput('');
 
@@ -158,8 +158,7 @@ export function EditInvestmentSheet({ isOpen, onClose, investment, onSuccess }) 
                   className="w-full bg-gray-50 text-indigo-600 text-xl font-bold py-3 pr-24 pl-4 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
-                  <span className="text-xl font-bold text-gray-400">.000</span>
-                  <span className="text-xl font-bold text-gray-400">₫</span>
+                  <span className="text-xl font-bold text-gray-400">{suffix}</span>
                 </div>
               </div>
             </div>
@@ -175,8 +174,7 @@ export function EditInvestmentSheet({ isOpen, onClose, investment, onSuccess }) 
                   className="w-full bg-gray-50 text-red-500 text-xl font-bold py-3 pr-24 pl-4 rounded-xl focus:ring-2 focus:ring-red-500 outline-none"
                 />
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
-                  <span className="text-xl font-bold text-gray-400">.000</span>
-                  <span className="text-xl font-bold text-gray-400">₫</span>
+                  <span className="text-xl font-bold text-gray-400">{suffix}</span>
                 </div>
               </div>
             </div>
@@ -202,8 +200,7 @@ export function EditInvestmentSheet({ isOpen, onClose, investment, onSuccess }) 
                   className="w-full bg-gray-50 text-purple-600 text-xl font-bold py-3 pr-24 pl-4 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none"
                 />
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
-                  <span className="text-xl font-bold text-gray-400">.000</span>
-                  <span className="text-xl font-bold text-gray-400">₫</span>
+                  <span className="text-xl font-bold text-gray-400">{suffix}</span>
                 </div>
               </div>
             </div>
@@ -219,8 +216,7 @@ export function EditInvestmentSheet({ isOpen, onClose, investment, onSuccess }) 
                   className="w-full bg-gray-50 text-gray-900 border border-gray-100 text-xl font-bold py-3 pr-24 pl-4 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none"
                 />
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
-                  <span className="text-xl font-bold text-gray-400">.000</span>
-                  <span className="text-xl font-bold text-gray-400">₫</span>
+                  <span className="text-xl font-bold text-gray-400">{suffix}</span>
                 </div>
               </div>
             </div>

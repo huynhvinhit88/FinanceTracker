@@ -14,7 +14,7 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { displayValue, value: principalAmount, handleInputChange, reset: resetPrincipal } = useCurrencyInput('');
+  const { displayValue, value: principalAmount, handleInputChange, reset: resetPrincipal, suffix } = useCurrencyInput('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -80,8 +80,7 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
               className="w-full bg-gray-50 text-blue-600 text-2xl font-bold py-3 pr-24 pl-4 rounded-xl border-none focus:ring-2 focus:ring-blue-500 outline-none"
             />
             <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
-              <span className="text-xl font-bold text-gray-400">.000</span>
-              <span className="text-xl font-bold text-gray-400">₫</span>
+              <span className="text-xl font-bold text-gray-400">{suffix}</span>
             </div>
           </div>
         </div>

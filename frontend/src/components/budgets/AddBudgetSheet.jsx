@@ -15,7 +15,7 @@ export function AddBudgetSheet({ isOpen, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { displayValue, value: rawAmount, handleInputChange, reset: resetAmount } = useCurrencyInput('');
+  const { displayValue, value: rawAmount, handleInputChange, reset: resetAmount, suffix } = useCurrencyInput('', { useShortcut: true });
 
   useEffect(() => {
     if (isOpen) {
@@ -144,8 +144,7 @@ export function AddBudgetSheet({ isOpen, onClose, onSuccess }) {
                 }`}
               />
               <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
-                <span className="text-xl font-bold text-gray-400">.000</span>
-                <span className="text-xl font-bold text-gray-400">₫</span>
+                <span className="text-xl font-bold text-gray-400">{suffix}</span>
               </div>
             </div>
           </div>

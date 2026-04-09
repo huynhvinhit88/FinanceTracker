@@ -77,9 +77,9 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
         linked_investment_id: loan.linked_investment_id || '',
         penalty_config: loan.penalty_config || '3, 3, 3, 1, 0',
       });
-      setExternalPrincipal(Math.round((loan.principal_amount || 0) / 1000));
-      setExternalExtra(Math.round((loan.extra_payment || 0) / 1000));
-      setExternalThreshold(Math.round((loan.offset_threshold || 0) / 1000));
+      setExternalPrincipal(loan.principal_amount || 0);
+      setExternalExtra(loan.extra_payment || 0);
+      setExternalThreshold(loan.offset_threshold || 0);
       setPromoRate(loan.promo_rate || 0);
       setPromoMonths(loan.promo_months || 0);
       setBaseRate(loan.base_rate || 0);
@@ -241,30 +241,42 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                   </div>
                 </div>
                 <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
-                  <div className="max-h-[420px] overflow-y-auto">
-                    <table className="w-full text-left font-mono" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      <thead className="bg-gray-50/50 sticky top-0 z-10 border-b border-gray-100">
-                        <tr className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">
-                          <th className="pl-4 pr-1 py-3 w-8 text-center">#</th>
-                          <th className="px-1 py-3 text-center">Gốc</th>
-                          <th className="px-1 py-3 text-center">Lãi</th>
-                          <th className="pl-1 pr-4 py-3 text-center text-gray-900 font-black">Tổng</th>
+                  <div className="max-h-[420px] overflow-y-auto overflow-x-auto">
+                    <table className="w-full text-right font-mono whitespace-nowrap" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      <thead className="bg-gray-50 text-[10px] text-gray-400 font-bold uppercase tracking-widest border-b border-gray-100">
+                        <tr>
+                          <th className="px-3 py-3 text-center">Kỳ</th>
+                          <th className="px-3 py-3 text-left">Ngày</th>
+                          <th className="px-3 py-3">Gốc</th>
+                          <th className="px-3 py-3">Lãi</th>
+                          <th className="px-3 py-3 text-blue-600">Tổng</th>
+                          <th className="px-3 py-3 text-red-600 bg-red-50/50">Tất toán</th>
+                          <th className="px-3 py-3 pr-4">Dư nợ</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
                         {schedule.map((row, idx) => (
-                          <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                            <td className="pl-4 pr-1 py-2.5 text-[10px] font-black text-gray-400">
+                          <tr key={idx} className={`transition-colors hover:bg-gray-50/50 ${row.prepay > 0 ? 'bg-orange-50/50' : ''}`}>
+                            <td className="px-3 py-2.5 text-[10px] font-black text-gray-400 text-center">
                               {row.month}
                             </td>
-                            <td className="px-1 py-2.5 text-[10px] font-bold text-gray-900 text-right">
+                            <td className="px-3 py-2.5 text-[10px] font-bold text-gray-600 text-left">
+                              {row.date}
+                            </td>
+                            <td className="px-3 py-2.5 text-[10px] font-bold text-gray-900">
                               {formatCurrency(row.principal)}
                             </td>
-                            <td className="px-1 py-2.5 text-[10px] font-bold text-red-500 text-right">
+                            <td className="px-3 py-2.5 text-[10px] font-bold text-red-500">
                               {formatCurrency(row.interest)}
                             </td>
-                            <td className="pl-1 pr-4 py-2.5 text-[10px] font-black text-gray-900 bg-gray-50/30 text-right">
+                            <td className="px-3 py-2.5 text-[10px] font-black text-gray-900 bg-gray-50/30">
                               {formatCurrency(row.total)}
+                            </td>
+                            <td className="px-3 py-2.5 text-[10px] font-black text-red-600">
+                              {row.prepay > 0 ? formatCurrency(row.prepay) : '-'}
+                            </td>
+                            <td className="px-3 py-2.5 pr-4 text-[10px] font-black text-gray-900">
+                              {formatCurrency(row.remaining)}
                             </td>
                           </tr>
                         ))}
@@ -311,7 +323,7 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
             {/* Số tiền & Kỳ hạn */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1 block">Số tiền vay (.000 ₫)</label>
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1 block">Số tiền vay</label>
                 <div className="relative">
                   <input type="text" inputMode="numeric" value={displayPrincipal} onChange={handlePrincipalChange}
                     className="w-full bg-gray-50 rounded-2xl py-4 px-4 pr-16 text-gray-900 font-bold focus:ring-2 focus:ring-blue-500/20 outline-none" />
@@ -372,7 +384,7 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-gray-400 ml-1">Ngân sách/tháng (.000₫)</label>
+                  <label className="text-[9px] font-bold text-gray-400 ml-1">Ngân sách/tháng</label>
                   <div className="relative">
                     <input type="text" inputMode="numeric" value={displayExtra} onChange={handleExtraChange}
                       className="w-full bg-white border border-gray-100 rounded-xl py-3 px-4 pr-10 text-sm font-bold text-gray-800 outline-none focus:ring-2 focus:ring-blue-300" />
@@ -380,7 +392,7 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-gray-400 ml-1">Ngưỡng tất toán (.000₫)</label>
+                  <label className="text-[9px] font-bold text-gray-400 ml-1">Ngưỡng tất toán</label>
                   <div className="relative">
                     <input type="text" inputMode="numeric" value={displayThreshold} onChange={handleThresholdChange}
                       className="w-full bg-white border border-gray-100 rounded-xl py-3 px-4 pr-10 text-sm font-bold text-gray-800 outline-none focus:ring-2 focus:ring-blue-300" />
@@ -428,7 +440,7 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                             className="w-full bg-purple-50 border border-purple-100 rounded-lg px-3 py-2 pr-10 text-sm font-bold outline-none focus:ring-1 focus:ring-purple-400"
                             placeholder="Ngân sách"
                           />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gray-400">.000 ₫</span>
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gray-400">₫</span>
                         </div>
                       </div>
                     </div>

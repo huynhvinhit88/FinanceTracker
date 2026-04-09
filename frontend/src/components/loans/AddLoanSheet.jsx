@@ -249,7 +249,7 @@ export function AddLoanSheet({ isOpen, onClose, onSuccess, initialProfile = null
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1 block">Số tiền vay (Nghìn ₫)</label>
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1 block">Số tiền vay</label>
               <div className="relative">
                 <input
                   type="text"
@@ -358,32 +358,32 @@ export function AddLoanSheet({ isOpen, onClose, onSuccess, initialProfile = null
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1 block">Ngân sách trả nợ hàng tháng (.000 ₫)</label>
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1 block">Ngân sách trả nợ hàng tháng</label>
             <div className="relative">
               <input
                 type="text"
                 inputMode="numeric"
                 value={displayExtra}
                 onChange={handleExtraChange}
-                placeholder="VD: 25.000 → 25 triệu/tháng"
+                placeholder="VD: 25.000.000"
                 className="w-full bg-white border border-gray-100 rounded-xl py-3 px-4 pr-16 text-sm font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-300"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gray-400">.000 ₫</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gray-400">{extraSuffix}</span>
             </div>
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1 block">Ngưỡng kích hoạt Tất Toán (.000 ₫)</label>
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1 block">Ngưỡng kích hoạt Tất Toán</label>
             <div className="relative">
               <input
                 type="text"
                 inputMode="numeric"
                 value={displayThreshold}
                 onChange={handleThresholdChange}
-                placeholder="VD: 50.000 → 50 triệu"
+                placeholder="VD: 50.000.000"
                 className="w-full bg-white border border-gray-100 rounded-xl py-3 px-4 pr-16 text-sm font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-300"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gray-400">.000 ₫</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gray-400">{thresholdSuffix}</span>
             </div>
           </div>
         </div>
@@ -451,7 +451,7 @@ export function AddLoanSheet({ isOpen, onClose, onSuccess, initialProfile = null
                           className="w-full bg-purple-50 border border-purple-100 rounded-lg px-3 py-2 pr-10 text-sm font-bold outline-none focus:ring-1 focus:ring-purple-400"
                           placeholder="Ngân sách"
                         />
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gray-400">.000 ₫</span>
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gray-400">₫</span>
                       </div>
                     </div>
                   </div>

@@ -13,7 +13,7 @@ export function FundGoalSheet({ isOpen, onClose, onSuccess, goal }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { displayValue, value: rawAmount, handleInputChange, reset: resetAmount } = useCurrencyInput('');
+  const { displayValue, value: rawAmount, handleInputChange, reset: resetAmount, suffix } = useCurrencyInput('');
 
   useEffect(() => {
     if (isOpen && user) {
@@ -109,8 +109,7 @@ export function FundGoalSheet({ isOpen, onClose, onSuccess, goal }) {
               className="w-full bg-gray-50 text-green-600 text-3xl font-bold py-4 pr-24 pl-4 rounded-2xl border-none focus:ring-2 focus:ring-green-500 transition-all outline-none"
             />
             <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
-              <span className="text-xl font-bold text-gray-400">.000</span>
-              <span className="text-xl font-bold text-gray-400">₫</span>
+              <span className="text-xl font-bold text-gray-300">{suffix}</span>
             </div>
           </div>
         </div>

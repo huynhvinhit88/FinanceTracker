@@ -15,13 +15,22 @@ Tài liệu này quy định các tiêu chuẩn về giao diện (UI) và trải
 
 ## 2. Nhập liệu Số tiền (Currency Input)
 
-Để tối ưu hóa nhập liệu trên thiết bị di động (PWA), chúng ta sử dụng quy tắc "Đơn vị Nghìn":
-- **Giá trị lưu trữ**: Tất cả số tiền nhập vào được hiểu là đơn vị **Nghìn đồng** (khi lưu vào DB phải nhân với 1.000).
-- **Giao diện TextBox**:
-    - Hiển thị 3 số không mờ (`.000 ₫`) ở phía cuối (hậu tố) để người dùng biết họ đang nhập đơn vị nghìn.
-    - Không tự động thêm dấu phân cách hàng ngàn trong khi gõ (để tránh lỗi nhảy con trỏ trên mobile).
-    - Sử dụng `inputMode="numeric"` để mở bàn phím số.
-- **Hook hỗ trợ**: Luôn sử dụng `useCurrencyInput` từ `src/hooks/useCurrencyInput.js` để quản lý trạng thái hiển thị và giá trị thực tế.
+Ứng dụng hỗ trợ hai cơ chế nhập liệu linh hoạt thông qua hook `useCurrencyInput`:
+
+- **Cơ chế Viết tắt (Shortcut Mode - x1000)**:
+    - **Áp dụng cho**: Thêm giao dịch (Thu, Chi, Chuyển khoản) và Lập kế hoạch ngân sách (Dự thu/Dự chi hàng tháng).
+    - **Hành vi**: Tự động nhân giá trị nhập với 1.000 (Ví dụ: gõ `50` -> lưu `50.000`).
+    - **Giao diện**: Hiển thị hậu tố `.000 ₫` mờ ở cuối ô nhập.
+
+- **Cơ chế Đầy đủ (Full Mode)**:
+    - **Áp dụng cho**: Số dư tài khoản, Mục tiêu tiết kiệm, Sổ tiết kiệm, Tài sản đầu tư, Khoản vay, và Tab **Trả nợ** trong Thêm giao dịch.
+    - **Hành vi**: Nhập số thực đầy đủ, không tự động nhân thêm.
+    - **Giao diện**: Hiển thị hậu tố ` ₫` để xác nhận đơn vị tiền tệ.
+
+- **Kỹ thuật chung**:
+    - Không tự động thêm dấu phân cách hàng ngàn trong khi gõ để tránh nhảy con trỏ.
+    - Sử dụng `inputMode="numeric"` để mở bàn phím số trên mobile.
+    - Luôn sử dụng hook `useCurrencyInput(initialValue, { useShortcut: boolean })`.
 
 ## 3. Lãi suất (Interest Rates)
 

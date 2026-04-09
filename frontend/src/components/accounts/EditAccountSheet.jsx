@@ -23,7 +23,7 @@ export function EditAccountSheet({ isOpen, onClose, onSuccess, account }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState('');
   
-  const { displayValue, value: rawBalance, handleInputChange, setExternalValue } = useCurrencyInput('');
+  const { displayValue, value: rawBalance, handleInputChange, setExternalValue, suffix } = useCurrencyInput('');
 
   useEffect(() => {
     if (isOpen && account) {
@@ -133,8 +133,7 @@ export function EditAccountSheet({ isOpen, onClose, onSuccess, account }) {
               className="w-full bg-gray-50 text-gray-900 text-3xl font-bold py-4 pr-24 pl-4 rounded-2xl border-none focus:ring-2 focus:ring-blue-500 transition-all outline-none"
             />
             <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
-              <span className="text-xl font-bold text-gray-400">.000</span>
-              <span className="text-xl font-bold text-gray-400">₫</span>
+              <span className="text-xl font-bold text-gray-400">{suffix}</span>
             </div>
           </div>
         </div>

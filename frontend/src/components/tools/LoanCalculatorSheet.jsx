@@ -404,28 +404,28 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
 
             {showSchedule && schedule.length > 0 && (
               <div className="mt-4 bg-white border border-gray-100 rounded-xl overflow-x-auto shadow-sm">
-                <table className="w-full text-[10px] text-right whitespace-nowrap">
+                <table className="w-full text-[9px] text-right whitespace-nowrap">
                   <thead className="bg-gray-50 text-gray-400 font-bold uppercase tracking-widest border-b">
                     <tr>
-                      <th className="px-3 py-3 text-center">Kỳ</th>
-                      <th className="px-3 py-3 text-left">Ngày</th>
-                      <th className="px-3 py-3">Gốc</th>
-                      <th className="px-3 py-3">Lãi</th>
-                      <th className="px-3 py-3 text-blue-600">Tổng</th>
-                      <th className="px-3 py-3 text-red-600 bg-red-50/50">Tất toán</th>
-                      <th className="px-3 py-3 pr-4">Dư nợ</th>
+                      <th className="px-1.5 py-3 text-center w-8">Kỳ</th>
+                      <th className="px-2 py-3 text-left">Ngày</th>
+                      <th className="px-2 py-3">Gốc</th>
+                      <th className="px-2 py-3">Lãi</th>
+                      <th className="px-2 py-3 text-blue-600">Tổng</th>
+                      <th className="px-2 py-3 text-red-600 bg-red-50">Tất toán</th>
+                      <th className="px-2 py-3 pr-4">Dư nợ</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50 font-semibold text-gray-600">
                     {schedule.map((row) => (
-                      <tr key={row.month} className={row.prepay > 0 ? 'bg-orange-50/50' : ''}>
-                        <td className="px-3 py-3 text-center text-gray-400">{row.month}</td>
-                        <td className="px-3 py-3 text-left">{row.dateStr}</td>
-                        <td className="px-3 py-3">{formatCurrency(row.principal)}</td>
-                        <td className="px-3 py-3 text-red-400">{formatCurrency(row.interest)}</td>
-                        <td className="px-3 py-3 font-bold text-gray-900">{formatCurrency(row.total)}</td>
-                        <td className="px-3 py-3 text-red-600 font-black">{row.prepay > 0 ? formatCurrency(row.prepay) : '-'}</td>
-                        <td className="px-3 py-3 pr-4 font-black text-gray-900">{formatCurrency(row.remaining)}</td>
+                      <tr key={row.month} className={`${row.prepay > 0 ? 'bg-orange-50/50' : 'hover:bg-gray-50/50'}`}>
+                        <td className="px-1.5 py-3 text-center text-gray-400 border-r border-gray-50">{row.month}</td>
+                        <td className="px-2 py-3 text-left text-[8px] font-normal">{row.dateStr}</td>
+                        <td className="px-2 py-3">{formatCurrency(row.principal)}</td>
+                        <td className="px-2 py-3 text-red-400/80">{formatCurrency(row.interest)}</td>
+                        <td className="px-2 py-3 font-bold text-gray-900">{formatCurrency(row.total)}</td>
+                        <td className="px-2 py-3 text-red-600 font-black bg-red-50/30">{row.prepay > 0 ? formatCurrency(row.prepay) : '-'}</td>
+                        <td className="px-2 py-3 pr-4 font-black text-gray-900">{formatCurrency(row.remaining)}</td>
                       </tr>
                     ))}
                   </tbody>

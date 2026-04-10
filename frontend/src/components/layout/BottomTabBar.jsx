@@ -28,23 +28,27 @@ export function BottomTabBar() {
               to={tab.path}
               className={({ isActive }) =>
                 cn(
-                  'flex flex-col items-center justify-center space-y-1 h-12 flex-1 transition-all active:scale-90 tap-highlight-transparent',
+                  'flex flex-col items-center justify-center space-y-1 h-12 flex-1 transition-all active:scale-90',
                   isActive ? 'text-blue-600' : 'text-gray-400'
                 )
               }
             >
-              <div className={cn(
-                "p-1.5 rounded-xl transition-colors",
-                "active:bg-gray-100"
-              )}>
-                <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-              </div>
-              <span className={cn(
-                "text-[9px] font-bold tracking-tight uppercase",
-                isActive ? "opacity-100" : "opacity-60"
-              )}>
-                {tab.name}
-              </span>
+              {({ isActive }) => (
+                <>
+                  <div className={cn(
+                    "p-1.5 rounded-xl transition-colors",
+                    isActive ? "bg-blue-50/50" : "active:bg-gray-100"
+                  )}>
+                    <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+                  </div>
+                  <span className={cn(
+                    "text-[9px] font-bold tracking-tight uppercase",
+                    isActive ? "opacity-100" : "opacity-60"
+                  )}>
+                    {tab.name}
+                  </span>
+                </>
+              )}
             </NavLink>
           );
         })}

@@ -5,6 +5,11 @@
   --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+* {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
 .safe-top {
   padding-top: var(--safe-area-inset-top);
 }

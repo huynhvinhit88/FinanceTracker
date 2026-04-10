@@ -319,10 +319,10 @@ export default function Plan() {
 
   return (
     <>
-      <div className="p-4 safe-top pb-32 min-h-screen bg-gray-50">
+      <div className="px-4 pt-safe pb-32 min-h-screen bg-gray-50">
         
         {/* --- HEADER & NAVIGATION --- */}
-        <div className="mt-4 mb-6">
+        <div className="mb-6">
           <div className="flex justify-between items-center px-1 mb-4">
             <h1 className="text-2xl font-black text-gray-900 tracking-tight">Kế hoạch</h1>
             <button 

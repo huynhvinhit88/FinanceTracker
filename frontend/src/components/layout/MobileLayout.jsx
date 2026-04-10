@@ -10,7 +10,7 @@ export function MobileLayout() {
   return (
     <div className="min-h-screen bg-gray-50 flex justify-center">
       <div className="w-full max-w-md bg-white min-h-screen relative shadow-sm flex flex-col">
-        <main className="flex-1 overflow-y-auto pb-[80px]">
+        <main className="flex-1 overflow-y-auto pb-[calc(80px+env(safe-area-inset-bottom,0px))]">
           {/* SafeArea is automatically handled if we use viewport-fit=cover in general */}
           <Outlet />
         </main>

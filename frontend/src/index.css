@@ -1,5 +1,26 @@
 @import "tailwindcss";
 
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-top {
+  padding-top: var(--safe-area-inset-top);
+}
+
+.safe-bottom {
+  padding-bottom: var(--safe-area-inset-bottom);
+}
+
+.pt-safe {
+  padding-top: calc(var(--safe-area-inset-top) + 1rem);
+}
+
+.pb-safe {
+  padding-bottom: calc(var(--safe-area-inset-bottom) + 0.5rem);
+}
+
 /* Hide spin-buttons in number inputs */
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {

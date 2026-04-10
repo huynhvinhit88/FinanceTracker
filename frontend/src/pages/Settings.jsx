@@ -249,24 +249,26 @@ export default function Settings() {
 
   return (
     <div className="pb-24 animate-in fade-in">
-      {/* Header - Aligned to 44px Axis */}
-      <div className="bg-gradient-to-br from-blue-600 to-indigo-700 px-6 pt-16 pb-10 rounded-b-[2.5rem] shadow-lg">
-        <h1 className="text-3xl font-black text-white text-left mb-6 tracking-tight pl-5">Cài đặt</h1>
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-3xl flex items-center space-x-4 ml-5">
-          <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shrink-0 text-white text-2xl font-black shadow-inner">
-            {initials}
-          </div>
-          <div className="text-white overflow-hidden flex-1 min-w-0">
-            <p className="font-black text-xl truncate tracking-tight">{displayName}</p>
-            <p className="text-sm text-blue-100/80 truncate font-medium">{user?.email}</p>
+      {/* Header - Left Aligned to Icon Axis */}
+      <div className="bg-gradient-to-br from-blue-600 to-indigo-700 pt-16 pb-12 rounded-b-[3rem] shadow-lg">
+        <h1 className="text-3xl font-extrabold text-white text-left mb-8 tracking-tighter pl-11">Cài đặt</h1>
+        <div className="px-6">
+          <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-5 rounded-[2rem] flex items-center space-x-4">
+            <div className="w-16 h-16 bg-white/30 rounded-2xl flex items-center justify-center shrink-0 text-white text-2xl font-black shadow-inner border border-white/20">
+              {initials}
+            </div>
+            <div className="text-white overflow-hidden flex-1 min-w-0">
+              <p className="font-black text-xl truncate tracking-tight">{displayName}</p>
+              <p className="text-sm text-blue-100/70 truncate font-medium">{user?.email}</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="px-6 mt-10 space-y-8">
+      <div className="px-6 mt-10 space-y-9">
 
         <div>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 pl-5">Công cụ & Phân tích</p>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 pl-11">Công cụ & Phân tích</p>
           <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
             <button
               onClick={() => setShowLoanSheet(true)}
@@ -302,7 +304,7 @@ export default function Settings() {
         </div>
 
         <div>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 pl-5">Tuỳ chỉnh Ứng dụng</p>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 pl-11">Tuỳ chỉnh Ứng dụng</p>
           <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
             <button
               onClick={() => setShowCategorySheet(true)}
@@ -324,7 +326,7 @@ export default function Settings() {
 
         {/* Section: Dữ liệu */}
         <div>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 pl-5">Quản lý Dữ liệu</p>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 pl-11">Quản lý Dữ liệu</p>
           <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
             <div>
               <button
@@ -345,7 +347,7 @@ export default function Settings() {
 
               {showExportPanel && (
                 <div className="px-5 pb-5 bg-sky-50/30 border-t border-sky-100/50 space-y-3">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest pt-5 mb-2 pl-5">Cấu hình báo cáo:</p>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] pt-4 mb-2 pl-5">Cấu hình báo cáo:</p>
                   {[
                     { key: 'transactions', label: 'Lịch sử Giao dịch', desc: 'Tất cả thu/chi/chuyển khoản', icon: '📋' },
                     { key: 'accounts',     label: 'Tài khoản & Số dư',  desc: 'Danh sách ví và số dư hiện tại', icon: '🏦' },
@@ -400,19 +402,19 @@ export default function Settings() {
         </div>
 
         {/* Footer: Đăng xuất */}
-        <div className="pt-4">
+        <div className="pt-6 px-6">
           <button
             onClick={handleSignOut}
-            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-4 rounded-2xl flex items-center justify-center space-x-2 active:scale-95 transition-transform"
+            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-5 rounded-[2rem] flex items-center justify-center space-x-2 active:scale-95 transition-transform"
           >
             <LogOut size={18} />
-            <span>Đăng xuất Tài khoản</span>
+            <span className="tracking-tight">Đăng xuất Tài khoản</span>
           </button>
         </div>
 
         {/* App version info */}
-        <div className="text-center pt-2 pb-4">
-          <p className="text-xs text-gray-300 font-medium">FinanceTracker v1.0.0</p>
+        <div className="text-center pt-4 pb-8">
+          <p className="text-[10px] text-gray-300 font-black uppercase tracking-widest">FinanceTracker v1.1.0</p>
         </div>
       </div>
 

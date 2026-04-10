@@ -38,8 +38,22 @@ export default function Plan() {
   const [currentNW, setCurrentNW] = useState(0);
   const [expectedAnnualReturn, setExpectedAnnualReturn] = useState(0); // VND amount
   const [projectionMonths, setProjectionMonths] = useState(12);
+  const [targetProjectionMonth, setTargetProjectionMonth] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-12`;
+  });
   const [showPlanTable, setShowPlanTable] = useState(false);
   const { displayValue: displayManualSaving, value: manualSaving, handleInputChange: handleManualSavingChange, setExternalValue: setManualSaving } = useCurrencyInput('');
+
+  useEffect(() => {
+    const [tYear, tMonth] = targetProjectionMonth.split('-').map(Number);
+    const now = new Date();
+    const cYear = now.getFullYear();
+    const cMonth = now.getMonth() + 1; // 1-indexed
+    
+    const diff = (tYear - cYear) * 12 + (tMonth - cMonth);
+    setProjectionMonths(Math.max(1, diff));
+  }, [targetProjectionMonth]);
 
   useEffect(() => {
     fetchAllData();
@@ -434,21 +448,18 @@ export default function Plan() {
           <div className="space-y-4">
              {/* Year Slider */}
              <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-              <div className="flex justify-between items-center mb-3">
-                <label className="text-sm font-bold text-gray-700">Thời gian dự báo</label>
-                <span className="bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-bold">
-                  {Math.floor(projectionMonths / 12)} năm {projectionMonths % 12 > 0 ? `${projectionMonths % 12} th` : ''}
-                </span>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-sm font-bold text-gray-700">Dự báo đến mốc</label>
+                <input 
+                  type="month"
+                  value={targetProjectionMonth}
+                  onChange={e => setTargetProjectionMonth(e.target.value)}
+                  className="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-xl text-xs font-bold outline-none border-none focus:ring-1 focus:ring-indigo-400"
+                />
               </div>
-              <input
-                type="range" min="12" max="240" step="12"
-                value={projectionMonths}
-                onChange={e => setProjectionMonths(parseInt(e.target.value))}
-                className="w-full h-2 bg-indigo-50 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-              />
-              <div className="flex justify-between text-[10px] text-gray-300 mt-2 font-black px-1">
-                <span>1 NĂM</span><span>20 NĂM</span>
-              </div>
+              <p className="text-[10px] text-gray-400 font-medium">
+                Khoảng {Math.floor(projectionMonths / 12)} năm {projectionMonths % 12 > 0 ? `${projectionMonths % 12} tháng` : ''} tính từ hiện tại
+              </p>
             </div>
 
             {/* Result Card */}

@@ -4,14 +4,14 @@ import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 
-export function AddBudgetSheet({ isOpen, onClose, onSuccess }) {
+export function AddBudgetSheet({ isOpen, onClose, onSuccess, initialMonth }) {
   const { user } = useAuth();
   
   const [planType, setPlanType] = useState('expense'); // 'expense' or 'income'
   const [categories, setCategories] = useState([]);
   const [categoryId, setCategoryId] = useState('');
-  const [applyType, setApplyType] = useState('default'); // 'default' or 'monthly'
-  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [applyType, setApplyType] = useState(initialMonth ? 'monthly' : 'default'); // 'default' or 'monthly'
+  const [selectedMonth, setSelectedMonth] = useState(initialMonth || new Date().toISOString().slice(0, 7));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -19,11 +19,15 @@ export function AddBudgetSheet({ isOpen, onClose, onSuccess }) {
 
   useEffect(() => {
     if (isOpen) {
+      if (initialMonth) {
+        setSelectedMonth(initialMonth);
+        setApplyType('monthly');
+      }
       fetchCategories();
     } else {
       resetForm();
     }
-  }, [isOpen, user, planType]);
+  }, [isOpen, user, planType, initialMonth]);
 
   const fetchCategories = async () => {
     if (!user) return;

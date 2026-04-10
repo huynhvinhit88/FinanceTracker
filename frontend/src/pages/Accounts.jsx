@@ -102,13 +102,15 @@ export default function Accounts() {
     const daysPassed = Math.max(0, Math.floor((new Date() - new Date(sav.start_date)) / (1000 * 60 * 60 * 24)));
     const dailyRate = (sav.interest_rate / 100) / 365;
     const accruedInterest = sav.principal_amount * dailyRate * daysPassed;
-    return { accruedInterest: Math.floor(accruedInterest), daysPassed };
+    // Lãi dự kiến cho cả kỳ
+    const expectedTotalInterest = sav.principal_amount * (sav.interest_rate / 100) * (sav.term_months / 12);
+    return { accruedInterest: Math.floor(accruedInterest), expectedTotalInterest: Math.floor(expectedTotalInterest), daysPassed };
   };
 
   const totalSavingsValue = savings.reduce((acc, curr) => {
     if (curr.status !== 'active') return acc;
-    const { accruedInterest } = computeSavingsMath(curr);
-    return acc + curr.principal_amount + accruedInterest;
+    // Khối lượng tiết kiệm chỉ tính tổng tiền gốc
+    return acc + curr.principal_amount;
   }, 0);
 
   // Investment Math
@@ -221,7 +223,7 @@ export default function Accounts() {
         {savings.length > 0 && (
           <div className="grid grid-cols-1 gap-4">
             {savings.map(sav => {
-              const { accruedInterest, daysPassed } = computeSavingsMath(sav);
+              const { expectedTotalInterest } = computeSavingsMath(sav);
               const isSettled = sav.status !== 'active';
               return (
                 <div 
@@ -241,8 +243,8 @@ export default function Accounts() {
                       <p className="font-semibold text-gray-900">{formatCurrency(sav.principal_amount)} ₫</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-emerald-600 mb-0.5 font-medium">Lãi tạm tính ({daysPassed} ngày)</p>
-                      <p className="font-bold text-emerald-600 text-lg">+{formatCurrency(accruedInterest)} ₫</p>
+                      <p className="text-xs text-emerald-600 mb-0.5 font-medium">Lãi dự kiến ({sav.term_months} tháng)</p>
+                      <p className="font-bold text-emerald-600 text-lg">+{formatCurrency(expectedTotalInterest)} ₫</p>
                     </div>
                   </div>
                 </div>

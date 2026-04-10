@@ -5,18 +5,20 @@ import { supabase } from '../../lib/supabase';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { Trash2 } from 'lucide-react';
 
-export function EditBudgetSheet({ isOpen, onClose, budget, onSuccess }) {
+export function EditBudgetSheet({ isOpen, onClose, budget, onSuccess, viewMonth }) {
   const { user } = useAuth();
   
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [error, setError] = useState('');
+  const [applyToAll, setApplyToAll] = useState(false);
 
   const { displayValue, value: rawAmount, handleInputChange, setExternalValue, suffix } = useCurrencyInput('', { useShortcut: true });
 
   useEffect(() => {
     if (isOpen && budget) {
       setExternalValue(budget.amount);
+      setApplyToAll(!budget.month);
       setError('');
     }
   }, [isOpen, budget]);
@@ -26,7 +28,7 @@ export function EditBudgetSheet({ isOpen, onClose, budget, onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (rawAmount <= 0) {
-      setError('Hạn mức ngân sách phải lớn hơn 0');
+      setError('Số tiền phải lớn hơn 0');
       return;
     }
     
@@ -34,17 +36,36 @@ export function EditBudgetSheet({ isOpen, onClose, budget, onSuccess }) {
     setError('');
 
     try {
-      const { error: updateError } = await supabase
-        .from('budgets')
-        .update({ amount: rawAmount })
-        .eq('id', budget.id);
-
-      if (updateError) throw updateError;
+      if (budget.month) {
+        const { error: updateError } = await supabase
+          .from('budgets')
+          .update({ amount: rawAmount })
+          .eq('id', budget.id);
+        if (updateError) throw updateError;
+      } else {
+        if (applyToAll) {
+          const { error: updateError } = await supabase
+            .from('budgets')
+            .update({ amount: rawAmount })
+            .eq('id', budget.id);
+          if (updateError) throw updateError;
+        } else {
+          const { error: upsertError } = await supabase
+            .from('budgets')
+            .upsert({
+              user_id: user.id,
+              category_id: budget.category_id,
+              amount: rawAmount,
+              month: viewMonth
+            }, { onConflict: 'user_id, category_id, month' });
+          if (upsertError) throw upsertError;
+        }
+      }
       
       onSuccess();
       onClose();
     } catch (err) {
-      setError(err.message || 'Lỗi cập nhật ngân sách');
+      setError(err.message || 'Lỗi cập nhật');
     } finally {
       setLoading(false);
     }
@@ -125,6 +146,22 @@ export function EditBudgetSheet({ isOpen, onClose, budget, onSuccess }) {
               <span className="text-xl font-bold text-gray-400">{suffix}</span>
             </div>
           </div>
+          
+          {!budget.month && (
+            <div className="mt-4 flex items-center space-x-3 p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/50">
+              <input
+                id="applyToAll"
+                type="checkbox"
+                checked={applyToAll}
+                onChange={(e) => setApplyToAll(e.target.checked)}
+                className="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <label htmlFor="applyToAll" className="text-xs font-bold text-indigo-700 leading-tight">
+                Áp dụng cho tất cả các tháng (Cập nhật Mặc định)
+                <p className="font-normal text-indigo-500/80 mt-0.5">Nếu tắt, hệ thống sẽ tạo kế hoạch riêng cho {viewMonth.split('-').reverse().join('/')}</p>
+              </label>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3 pt-2">

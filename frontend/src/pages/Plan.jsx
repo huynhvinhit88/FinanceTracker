@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Plus, Target, PiggyBank, HandCoins, TrendingUp, TrendingDown, Activity, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Target, PiggyBank, HandCoins, TrendingUp, TrendingDown, Activity, RefreshCw, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Calendar, Settings2 } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 import { AddBudgetSheet } from '../components/budgets/AddBudgetSheet';
 import { EditBudgetSheet } from '../components/budgets/EditBudgetSheet';
@@ -20,8 +20,12 @@ export default function Plan() {
   
   const [expenseBudgets, setExpenseBudgets] = useState([]);
   const [incomeBudgets, setIncomeBudgets] = useState([]);
+  const [rawBudgets, setRawBudgets] = useState([]);
   const [actualExpenses, setActualExpenses] = useState({});
   const [actualIncome, setActualIncome] = useState({});
+  
+  const [planViewMode, setPlanViewMode] = useState('monthly'); // 'monthly' or 'default'
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   
   const [loading, setLoading] = useState(true);
   const [savingsPlan, setSavingsPlan] = useState({});
@@ -39,7 +43,7 @@ export default function Plan() {
 
   useEffect(() => {
     fetchAllData();
-  }, [user]);
+  }, [user, planViewMode, selectedMonth]);
 
   // Load monthly savings plan from localStorage
   useEffect(() => {
@@ -55,102 +59,106 @@ export default function Plan() {
     if (!user) return;
     setLoading(true);
     try {
-      const currentMonthStr = new Date().toISOString().slice(0, 7);
-
+      // Logic resolution:
+      // If planViewMode is 'default', we only care about budgets with month = null
+      // If planViewMode is 'monthly', we prefer budgets with month = selectedMonth, then fallback to month = null
+      
       const [budgetRes, txRes, accRes, savRes, invRes] = await Promise.all([
         supabase.from('budgets').select('id, amount, category_id, month, category:categories(name, icon, color_hex, type)'),
-        supabase.from('transactions').select('category_id, amount, type').gte('date', `${currentMonthStr}-01T00:00:00.000Z`),
+        supabase.from('transactions').select('category_id, amount, type').gte('date', `${selectedMonth}-01T00:00:00.000Z`).lte('date', `${selectedMonth}-31T23:59:59.999Z`),
         supabase.from('accounts').select('balance, sub_type'),
         supabase.from('savings').select('principal_amount, interest_rate').eq('status', 'active'),
-        supabase.from('investments').select('current_price, quantity, purchase_price, purchase_date, loan_amount, type')
+        supabase.from('investments').select('current_price, quantity, buy_price, purchase_date, loan_amount, type')
       ]);
 
-      // 1. Budgets & Actuals
+      setRawBudgets(budgetRes.data || []);
+
+      // 1. Process Budgets based on planViewMode
       const allBudgets = budgetRes.data || [];
-      const currentMonth = new Date().toISOString().slice(0, 7);
 
       const processBudgets = (type) => {
-        const filtered = allBudgets.filter(b => b.category?.type === type);
-        const grouped = {};
-        filtered.forEach(b => {
-          if (!grouped[b.category_id]) grouped[b.category_id] = { meta: b.category, entries: [] };
-          grouped[b.category_id].entries.push(b);
+        // Filter by type
+        const filteredByCat = {};
+        allBudgets.forEach(b => {
+          if (b.category?.type === type) {
+            if (!filteredByCat[b.category_id]) filteredByCat[b.category_id] = { meta: b.category, entries: [] };
+            filteredByCat[b.category_id].entries.push(b);
+          }
         });
 
-        return Object.keys(grouped).map(catId => {
-          const catGroup = grouped[catId];
-          // Logic Ưu tiên: 
-          // 1. Lấy đúng tháng hiện tại
-          // 2. Lấy mặc định (month is null)
-          // 3. Tính trung bình các tháng khác
-          const monthSpecific = catGroup.entries.find(e => e.month === currentMonth);
-          const defaultEntry = catGroup.entries.find(e => !e.month);
-          
-          let activeAmount = 0;
-          if (monthSpecific) {
-            activeAmount = monthSpecific.amount;
-          } else if (defaultEntry) {
-            activeAmount = defaultEntry.amount;
-          } else if (catGroup.entries.length > 0) {
-            activeAmount = catGroup.entries.reduce((s, e) => s + e.amount, 0) / catGroup.entries.length;
+        return Object.keys(filteredByCat).map(catId => {
+          const catGroup = filteredByCat[catId];
+          let targetEntry = null;
+
+          if (planViewMode === 'default') {
+            targetEntry = catGroup.entries.find(e => !e.month);
+            // If viewing Default and no default entry exists, we could show a placeholder
+            if (!targetEntry) return null; 
+          } else {
+            // Monthly Mode
+            const monthSpecific = catGroup.entries.find(e => e.month === selectedMonth);
+            const defaultEntry = catGroup.entries.find(e => !e.month);
+            targetEntry = monthSpecific || defaultEntry;
+
+            if (!targetEntry) return null;
+
+            return {
+              ...targetEntry,
+              is_default: !monthSpecific && !!defaultEntry,
+              displayAmount: parseFloat(targetEntry.amount) || 0
+            };
           }
 
           return {
-            id: monthSpecific?.id || defaultEntry?.id || catGroup.entries[0].id,
-            amount: activeAmount,
-            category_id: catId,
-            category: catGroup.meta,
-            is_average: !monthSpecific && !defaultEntry,
-            is_default: !monthSpecific && defaultEntry
+            ...targetEntry,
+            is_default: !targetEntry.month,
+            displayAmount: parseFloat(targetEntry.amount) || 0
           };
-        });
+        }).filter(Boolean);
       };
 
-      const expenses = processBudgets('expense');
-      const incomes = processBudgets('income');
-      setExpenseBudgets(expenses);
-      setIncomeBudgets(incomes);
+      setExpenseBudgets(processBudgets('expense'));
+      setIncomeBudgets(processBudgets('income'));
 
+      // 2. Process Transactions (only if viewing monthly)
       const spentByCat = {};
       const earnedByCat = {};
       (txRes.data || []).forEach(tx => {
-        if (tx.type === 'expense') spentByCat[tx.category_id] = (spentByCat[tx.category_id] || 0) + tx.amount;
-        else if (tx.type === 'income') earnedByCat[tx.category_id] = (earnedByCat[tx.category_id] || 0) + tx.amount;
+        const amt = parseFloat(tx.amount) || 0;
+        if (tx.type === 'expense') spentByCat[tx.category_id] = (spentByCat[tx.category_id] || 0) + amt;
+        else if (tx.type === 'income') earnedByCat[tx.category_id] = (earnedByCat[tx.category_id] || 0) + amt;
       });
       setActualExpenses(spentByCat);
       setActualIncome(earnedByCat);
 
-      // 2. Net Worth Calculation (Excluding Goals)
-      const accNW = (accRes.data || []).reduce((s, a) => a.sub_type === 'debt' ? s - a.balance : s + a.balance, 0);
-      const savTotal = (savRes.data || []).reduce((s, x) => s + x.principal_amount, 0);
-      const invTotal = (invRes.data || []).reduce((s, i) => {
-        if (i.type === 'real_estate') return s + (i.current_price - (i.loan_amount || 0));
-        return s + (i.current_price * i.quantity);
+      // 3. Asset Processing
+      const accNW = (accRes.data || []).reduce((s, a) => {
+        const bal = parseFloat(a.balance) || 0;
+        return a.sub_type === 'debt' ? s - bal : s + bal;
       }, 0);
-      const activeNW = accNW + savTotal + invTotal;
-      setCurrentNW(activeNW);
+      const savTotal = (savRes.data || []).reduce((s, x) => s + (parseFloat(x.principal_amount) || 0), 0);
+      const invTotal = (invRes.data || []).reduce((s, i) => {
+        const cur = parseFloat(i.current_price) || 0;
+        const qty = parseFloat(i.quantity) || 1;
+        const loan = parseFloat(i.loan_amount) || 0;
+        if (i.type === 'real_estate') return s + (cur - loan);
+        return s + (cur * qty);
+      }, 0);
+      setCurrentNW(accNW + savTotal + invTotal);
 
-      // 3. Expected Annual Return Amount
-      // Sav: prin * rate
-      const savAnnualInterest = (savRes.data || []).reduce((s, x) => s + (x.principal_amount * (parseFloat(x.interest_rate) || 0) / 100), 0);
-      
-      // Inv: Cap gains (estimated based on historical performance if possible)
+      const savAnnualInterest = (savRes.data || []).reduce((s, x) => s + ((parseFloat(x.principal_amount) || 0) * (parseFloat(x.interest_rate) || 0) / 100), 0);
       let invAnnualGain = 0;
       for (const inv of (invRes.data || [])) {
         const isRE = inv.type === 'real_estate';
-        const cost = (inv.purchase_price || inv.current_price) * (isRE ? 1 : inv.quantity);
-        const cur = inv.current_price * (isRE ? 1 : inv.quantity);
-        const yrs = inv.purchase_date
-          ? Math.max(0.083, (Date.now() - new Date(inv.purchase_date)) / (365.25 * 24 * 3600 * 1000))
-          : 1;
-        
-        if (cost > 0) invAnnualGain += cost * (Math.pow(Math.max(0.001, cur / cost), 1 / yrs) - 1);
+        const cost = (parseFloat(inv.buy_price) || parseFloat(inv.current_price) || 0) * (isRE ? 1 : (parseFloat(inv.quantity) || 0));
+        const cur = (parseFloat(inv.current_price) || 0) * (isRE ? 1 : (parseFloat(inv.quantity) || 0));
+        const yrs = inv.purchase_date ? Math.max(0.083, (Date.now() - new Date(inv.purchase_date)) / (365.25 * 24 * 3600 * 1000)) : 1;
+        if (cost > 0 && !isNaN(yrs)) invAnnualGain += cost * (Math.pow(Math.max(0.001, cur / cost), 1 / yrs) - 1);
       }
-      
       setExpectedAnnualReturn(savAnnualInterest + invAnnualGain);
 
     } catch (err) {
-      console.error(err);
+      console.error("Plan Error:", err);
     } finally {
       setLoading(false);
     }
@@ -161,37 +169,60 @@ export default function Plan() {
     setIsEditPlanOpen(true);
   };
 
-  // Monthly Savings calculation: Income - Expense
-  const totalIncomePlan = incomeBudgets.reduce((s, b) => s + b.amount, 0);
-  const totalExpensePlan = expenseBudgets.reduce((s, b) => s + b.amount, 0);
-  const calculatedBaselineSaving = Math.max(0, totalIncomePlan - totalExpensePlan);
+  // Robust Calculations with useMemo
+  const { totalIncomePlan, totalExpensePlan, activeMonthlySaving, projectedNW, growthX, totalGain, calculateMonthlyStats } = React.useMemo(() => {
+    const getStatsForMonth = (mKey) => {
+      const grouped = {};
+      (rawBudgets || []).forEach(b => {
+        if (!grouped[b.category_id]) grouped[b.category_id] = { type: b.category?.type, entries: [] };
+        grouped[b.category_id].entries.push(b);
+      });
 
-  // Use manual saving if edited, else use baseline
-  const activeMonthlySaving = manualSaving !== '' ? manualSaving : calculatedBaselineSaving;
+      let inc = 0;
+      let exp = 0;
 
-  // Projection Logic
-  const weightedAnnualRate = currentNW > 0 ? (expectedAnnualReturn / currentNW) : 0.08; // Default 8% if NW=0
-  const monthlyRate = weightedAnnualRate / 12;
-  
-  let projectedNW = currentNW;
-  const baseDate = new Date(); baseDate.setDate(1);
-  for (let i = 1; i <= projectionMonths; i++) {
-    const d = new Date(baseDate); d.setMonth(d.getMonth() + i);
-    const key = d.toISOString().slice(0, 7);
-    const savingOverride = savingsPlan[key];
-    
-    // Nếu không có override, tự động tính bằng Dự thu - Dự chi của tháng đó
-    let monthlyIncome = totalIncomePlan;
-    let monthlyExpense = totalExpensePlan;
-    
-    // Tìm cụ thể trong db cho tháng đó (giả định fallback về default nếu không thấy)
-    // Để tối ưu hiệu năng, ta dùng giá trị của tháng hiện tại làm baseline
-    
-    const saving = savingOverride !== undefined ? savingOverride : (monthlyIncome - monthlyExpense);
-    projectedNW = projectedNW * (1 + monthlyRate) + Math.max(0, saving);
-  }
-  const growthX = currentNW > 0 ? projectedNW / currentNW : 0;
-  const totalGain = projectedNW - currentNW;
+      Object.keys(grouped).forEach(catId => {
+        const catGroup = grouped[catId];
+        const monthSpecific = catGroup.entries.find(e => e.month === mKey);
+        const defaultEntry = catGroup.entries.find(e => !e.month);
+        
+        const amt = monthSpecific ? parseFloat(monthSpecific.amount) : (defaultEntry ? parseFloat(defaultEntry.amount) : 0);
+
+        if (catGroup.type === 'income') inc += amt;
+        else if (catGroup.type === 'expense') exp += amt;
+      });
+
+      return { income: inc, expense: exp, surplus: Math.max(0, inc - exp) };
+    };
+
+    const currentStatus = getStatsForMonth(selectedMonth);
+    const activeSaving = currentStatus.surplus;
+    const weightedAnnualRate = currentNW > 0 ? (expectedAnnualReturn / currentNW) : 0.08;
+    const monthlyRate = weightedAnnualRate / 12;
+
+    let pNW = currentNW;
+    const baseDate = new Date(); baseDate.setDate(1);
+    for (let i = 1; i <= (projectionMonths || 12); i++) {
+      const d = new Date(baseDate); d.setMonth(d.getMonth() + i);
+      const key = d.toISOString().slice(0, 7);
+      const override = savingsPlan[key];
+      
+      const monthData = getStatsForMonth(key);
+      const sVal = override !== undefined ? override : monthData.surplus;
+      
+      pNW = pNW * (1 + (monthlyRate || 0)) + Math.max(0, sVal || 0);
+    }
+
+    return {
+      totalIncomePlan: currentStatus.income,
+      totalExpensePlan: currentStatus.expense,
+      activeMonthlySaving: activeSaving,
+      projectedNW: pNW,
+      growthX: currentNW > 0 ? pNW / currentNW : 0,
+      totalGain: pNW - currentNW,
+      calculateMonthlyStats: (m) => getStatsForMonth(m)
+    };
+  }, [rawBudgets, currentNW, expectedAnnualReturn, projectionMonths, savingsPlan, selectedMonth]);
 
   const updatePlanMonth = (month, rawInput) => {
     const planKey = `savings_plan_${user.id}`;
@@ -206,11 +237,18 @@ export default function Plan() {
     localStorage.setItem(planKey, JSON.stringify(newPlan));
   };
 
+  // Month Navigator Helpers
+  const changeMonth = (offset) => {
+    const d = new Date(selectedMonth + '-02');
+    d.setMonth(d.getMonth() + offset);
+    setSelectedMonth(d.toISOString().slice(0, 7));
+  };
+
   const renderPlanList = (plans, actuals, type) => {
     if (plans.length === 0) {
       return (
-        <div className="text-center py-6 bg-white rounded-3xl border border-dashed border-gray-200 mt-2">
-          <p className="text-gray-400 text-xs italic">Chưa lập kế hoạch {type === 'expense' ? 'chi tiêu' : 'thu nhập'}</p>
+        <div className="text-center py-8 bg-white rounded-3xl border border-dashed border-gray-200 mt-2">
+          <p className="text-gray-400 text-xs italic">Chưa lập kế hoạch {type === 'expense' ? 'chi tiêu' : 'thu nhập'} {planViewMode === 'default' ? 'mặc định' : ''}</p>
         </div>
       );
     }
@@ -220,7 +258,7 @@ export default function Plan() {
         {plans.map((p) => {
           const actualVal = actuals[p.category_id] || 0;
           const targetVal = p.amount;
-          const percentage = Math.min((actualVal / targetVal) * 100, 100);
+          const percentage = targetVal > 0 ? Math.min((actualVal / targetVal) * 100, 100) : 0;
           
           let progressColor = type === 'expense' ? 'bg-blue-500' : 'bg-emerald-500';
           if (type === 'expense' && percentage >= 100) progressColor = 'bg-red-500';
@@ -234,30 +272,41 @@ export default function Plan() {
             >
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-50 text-xl" style={{ backgroundColor: p.category?.color_hex }}>
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-50 text-xl" style={{ backgroundColor: p.category?.color_hex + '20', color: p.category?.color_hex }}>
                     {p.category?.icon}
                   </div>
                   <div>
                     <div className="flex items-center space-x-1.5">
                       <h4 className="font-bold text-gray-900 text-sm leading-tight">{p.category?.name}</h4>
-                      {p.is_average && <span className="bg-orange-100 text-orange-600 text-[8px] font-black px-1 rounded">TRUNG BÌNH</span>}
+                      {p.is_default && planViewMode === 'monthly' && (
+                        <span className="bg-gray-100 text-gray-500 text-[8px] font-black px-1 rounded uppercase">MẶC ĐỊNH</span>
+                      )}
                     </div>
-                    <p className="text-[10px] font-medium text-gray-500 mt-0.5">{type === 'expense' ? 'Đã chi' : 'Tiến độ'} {Math.round(percentage)}%</p>
+                    {planViewMode === 'monthly' && (
+                      <p className="text-[10px] font-medium text-gray-500 mt-0.5">{type === 'expense' ? 'Đã chi' : 'Tiến độ'} {Math.round(percentage)}%</p>
+                    )}
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className={`font-bold text-sm leading-tight ${type === 'expense' && percentage >= 100 ? 'text-red-500' : 'text-gray-900'}`}>
-                    {formatCurrency(actualVal)}
+                  <p className={`font-bold text-sm leading-tight ${type === 'expense' && percentage >= 100 && planViewMode === 'monthly' ? 'text-red-500' : 'text-gray-900'}`}>
+                    {planViewMode === 'monthly' ? formatCurrency(actualVal) : formatCurrency(targetVal)} {planViewMode === 'monthly' && '₫'}
                   </p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">/ {formatCurrency(targetVal)} đ</p>
+                  {planViewMode === 'monthly' && (
+                    <p className="text-[10px] text-gray-400 mt-0.5">/ {formatCurrency(targetVal)} đ</p>
+                  )}
+                  {planViewMode === 'default' && (
+                    <p className="text-[10px] text-gray-400 mt-0.5">/ mỗi tháng</p>
+                  )}
                 </div>
               </div>
-              <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden relative">
-                <div 
-                  className={`absolute top-0 left-0 h-full ${progressColor} rounded-full transition-all duration-1000 ease-out`} 
-                  style={{ width: `${percentage}%` }} 
-                />
-              </div>
+              {planViewMode === 'monthly' && (
+                <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden relative mt-1">
+                  <div 
+                    className={`absolute top-0 left-0 h-full ${progressColor} rounded-full transition-all duration-1000 ease-out`} 
+                    style={{ width: `${percentage}%` }} 
+                  />
+                </div>
+              )}
             </div>
           );
         })}
@@ -265,18 +314,83 @@ export default function Plan() {
     );
   };
 
+  const [year, month] = selectedMonth.split('-');
+  const monthLabel = `Tháng ${month}/${year}`;
+
   return (
     <>
-      <div className="p-4 safe-top pb-24 min-h-screen bg-gray-50">
-        <div className="flex justify-between items-center mb-6 mt-4 px-1">
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Kế hoạch tài chính</h1>
-          <button 
-            onClick={() => setIsAddPlanOpen(true)}
-            className="p-2 bg-gray-900 text-white rounded-xl shadow-lg active:scale-95 transition-transform"
-          >
-            <Plus size={20} />
-          </button>
+      <div className="p-4 safe-top pb-32 min-h-screen bg-gray-50">
+        
+        {/* --- HEADER & NAVIGATION --- */}
+        <div className="mt-4 mb-6">
+          <div className="flex justify-between items-center px-1 mb-4">
+            <h1 className="text-2xl font-black text-gray-900 tracking-tight">Kế hoạch</h1>
+            <button 
+              onClick={() => setIsAddPlanOpen(true)}
+              className="w-10 h-10 flex items-center justify-center bg-gray-900 text-white rounded-2xl shadow-lg active:scale-95 transition-transform"
+            >
+              <Plus size={20} />
+            </button>
+          </div>
+
+          <div className="bg-white p-1 rounded-2xl shadow-sm border border-gray-100 flex items-center">
+            <button 
+              onClick={() => setPlanViewMode('monthly')}
+              className={`flex-1 flex items-center justify-center space-x-2 py-2.5 rounded-xl text-sm font-bold transition-all ${planViewMode === 'monthly' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-500'}`}
+            >
+              <Calendar size={16} />
+              <span>Xem theo tháng</span>
+            </button>
+            <button 
+              onClick={() => setPlanViewMode('default')}
+              className={`flex-1 flex items-center justify-center space-x-2 py-2.5 rounded-xl text-sm font-bold transition-all ${planViewMode === 'default' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-500'}`}
+            >
+              <Settings2 size={16} />
+              <span>Cấu hình mặc định</span>
+            </button>
+          </div>
+
+          {planViewMode === 'monthly' && (
+            <div className="flex items-center justify-between mt-4 px-1">
+              <button 
+                onClick={() => changeMonth(-1)}
+                className="p-2 bg-white rounded-xl shadow-sm border border-gray-100 text-gray-400 active:scale-90 transition-all"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <div className="text-center">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{year}</p>
+                <h3 className="text-lg font-black text-indigo-600">{monthLabel}</h3>
+              </div>
+              <button 
+                onClick={() => changeMonth(1)}
+                className="p-2 bg-white rounded-xl shadow-sm border border-gray-100 text-gray-400 active:scale-90 transition-all"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          )}
         </div>
+
+        {/* --- SUMMARY CARD (Only in Monthly Mode) --- */}
+        {planViewMode === 'monthly' && (
+          <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 mb-8">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Dự thu</p>
+                <p className="text-lg font-black text-emerald-600">{formatCurrency(totalIncomePlan)} ₫</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Dự chi</p>
+                <p className="text-lg font-black text-blue-600">{formatCurrency(totalExpensePlan)} ₫</p>
+              </div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between items-center">
+              <span className="text-xs font-bold text-gray-500">Kế hoạch dư ra (Savings)</span>
+              <span className="text-xl font-black text-indigo-600">{formatCurrency(activeMonthlySaving)} ₫</span>
+            </div>
+          </div>
+        )}
 
         {/* --- SECTION: INCOME PLAN --- */}
         <section className="mb-8">
@@ -284,11 +398,11 @@ export default function Plan() {
             <div className="p-1.5 bg-emerald-100 text-emerald-600 rounded-lg">
               <TrendingUp size={18} />
             </div>
-            <h2 className="text-lg font-bold text-gray-900">Dự thu hàng tháng</h2>
+            <h2 className="text-lg font-bold text-gray-900">{planViewMode === 'default' ? 'Dự thu mặc định' : 'Dự thu trong tháng'}</h2>
           </div>
           {loading ? (
-            <div className="flex justify-center p-4">
-              <div className="w-6 h-6 border-3 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
+            <div className="flex justify-center p-8">
+              <div className="w-8 h-8 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
             </div>
           ) : renderPlanList(incomeBudgets, actualIncome, 'income')}
         </section>
@@ -299,57 +413,30 @@ export default function Plan() {
             <div className="p-1.5 bg-blue-100 text-blue-600 rounded-lg">
               <TrendingDown size={18} />
             </div>
-            <h2 className="text-lg font-bold text-gray-900">Dự chi hàng tháng</h2>
+            <h2 className="text-lg font-bold text-gray-900">{planViewMode === 'default' ? 'Dự chi mặc định' : 'Dự chi trong tháng'}</h2>
           </div>
           {loading ? (
-            <div className="flex justify-center p-4">
-              <div className="w-6 h-6 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+            <div className="flex justify-center p-8">
+              <div className="w-8 h-8 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
             </div>
           ) : renderPlanList(expenseBudgets, actualExpenses, 'expense')}
         </section>
 
-        {/* --- SECTION: FINANCIAL PROJECTION (CỖ MÁY THỜI GIAN) --- */}
+        {/* --- SECTION: FINANCIAL PROJECTION --- */}
         <section className="mb-10 pt-6 border-t border-gray-100">
           <div className="flex items-center space-x-2 mb-4 px-1">
             <div className="p-1.5 bg-indigo-100 text-indigo-600 rounded-lg">
               <Activity size={18} />
             </div>
-            <h2 className="text-lg font-bold text-gray-900">Dự báo tài chính tương lai</h2>
+            <h2 className="text-lg font-bold text-gray-900">Tương lai & Tích luỹ</h2>
           </div>
 
-          <div className="space-y-5">
-            {/* Input Controls */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden">
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tích luỹ hàng tháng</label>
-                <div className="flex items-baseline space-x-1">
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={manualSaving === '' ? formatCurrency(calculatedBaselineSaving) : displayManualSaving}
-                    onChange={handleManualSavingChange}
-                    readOnly
-                    className={`bg-transparent font-black text-lg outline-none w-full text-indigo-600 opacity-80`}
-                    placeholder="0"
-                  />
-                  <span className="text-xs font-bold text-gray-300">₫</span>
-                </div>
-                <p className="text-[9px] text-emerald-500 font-bold mt-1 italic">Tự động = Dự thu - Dự chi</p>
-                <p className="text-[8px] text-gray-400 mt-0.5">Sửa ở bảng chi tiết bên dưới 👇</p>
-              </div>
-
-              <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm">
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Lãi dự thu từ TS hiện có</label>
-                <p className="font-black text-lg text-emerald-600">+{fmtLarge(expectedAnnualReturn)}</p>
-                <p className="text-[9px] text-gray-400 font-bold mt-1">Dựa trên Sổ tiết kiệm & Đầu tư</p>
-              </div>
-            </div>
-
-            {/* Year Slider */}
-            <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="space-y-4">
+             {/* Year Slider */}
+             <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
               <div className="flex justify-between items-center mb-3">
-                <label className="text-sm font-bold text-gray-700">Dự báo kế hoạch sau</label>
-                <span className="bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md shadow-indigo-100">
+                <label className="text-sm font-bold text-gray-700">Thời gian dự báo</label>
+                <span className="bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-bold">
                   {Math.floor(projectionMonths / 12)} năm {projectionMonths % 12 > 0 ? `${projectionMonths % 12} th` : ''}
                 </span>
               </div>
@@ -359,17 +446,16 @@ export default function Plan() {
                 onChange={e => setProjectionMonths(parseInt(e.target.value))}
                 className="w-full h-2 bg-indigo-50 rounded-lg appearance-none cursor-pointer accent-indigo-600"
               />
-              <div className="flex justify-between text-[10px] text-gray-300 mt-2 font-bold px-1">
-                <span>1 NĂM</span><span>10 NĂM</span><span>20 NĂM</span>
+              <div className="flex justify-between text-[10px] text-gray-300 mt-2 font-black px-1">
+                <span>1 NĂM</span><span>20 NĂM</span>
               </div>
             </div>
 
-            {/* Projection Result Card */}
+            {/* Result Card */}
             <div className="bg-gradient-to-br from-indigo-700 via-indigo-600 to-violet-700 rounded-3xl p-6 text-white shadow-xl shadow-indigo-100 relative overflow-hidden">
                <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-               <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-indigo-400/20 rounded-full blur-2xl" />
                
-               <p className="text-indigo-100 text-[10px] font-bold uppercase tracking-[0.2em] mb-4 text-center opacity-80">Ước tính tài sản ròng dự kiến</p>
+               <p className="text-indigo-100 text-[10px] font-bold uppercase tracking-[0.2em] mb-4 text-center opacity-80">Tổng tài sản ròng sau {Math.floor(projectionMonths / 12)} năm</p>
                
                <div className="text-center mb-6">
                  <h3 className="text-4xl font-black tracking-tight leading-none mb-2">{fmtLarge(projectedNW)}</h3>
@@ -380,59 +466,80 @@ export default function Plan() {
                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
                    <p className="text-indigo-100/70 text-[9px] font-bold uppercase mb-1">Tỷ suất tăng</p>
                    <p className="font-black text-xl">×{growthX.toFixed(1)}</p>
-                   {growthX > 1 && <p className="text-[8px] text-indigo-200 mt-0.5">Tăng {( (growthX - 1) * 100).toFixed(0)}% tải sản</p>}
                  </div>
                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10 text-right">
-                   <p className="text-indigo-100/70 text-[9px] font-bold uppercase mb-1">Giá trị tích thêm</p>
+                   <p className="text-indigo-100/70 text-[9px] font-bold uppercase mb-1">Tích thêm</p>
                    <p className="font-black text-lg text-emerald-300">+{fmtLarge(totalGain)}</p>
-                   <p className="text-[8px] text-indigo-200 mt-0.5">Từ lãi & tích luỹ mới</p>
                  </div>
                </div>
             </div>
 
-            {/* Month-by-month override table (Optional/Sheet) */}
+            {/* Table Toggle */}
             <button
               onClick={() => setShowPlanTable(!showPlanTable)}
-              className="w-full py-4 bg-gray-100 text-gray-500 rounded-2xl text-xs font-bold flex items-center justify-center space-x-2 active:scale-[0.98] transition-transform"
+              className="w-full py-4 bg-white border border-gray-100 text-indigo-600 rounded-2xl text-xs font-bold flex items-center justify-center space-x-2 active:scale-[0.98] transition-all shadow-sm"
             >
-              <span>📅 Kế hoạch tiết kiệm từng tháng cụ thể</span>
+              <Calendar size={14} />
+              <span>{showPlanTable ? 'Thu gọn bảng kế hoạch' : 'Chi tiết kế hoạch từng tháng'}</span>
               {showPlanTable ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
 
             {showPlanTable && (
-              <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-top-2">
-                <div className="max-h-60 overflow-y-auto divide-y divide-gray-50 px-4">
-                  {Array.from({ length: 24 }).map((_, i) => {
-                    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + i);
-                    const m = d.toISOString().slice(0, 7);
-                    const val = savingsPlan[m];
-                    const [year, month] = m.split('-');
-                    
-                    return (
-                      <div key={m} className="flex items-center justify-between py-3">
-                        <span className={`text-xs font-bold ${val ? 'text-indigo-600' : 'text-gray-400'}`}>T{parseInt(month)}/{year}</span>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="number"
-                            placeholder={formatCurrency(activeMonthlySaving)}
-                            value={val || ''}
-                            onChange={(e) => updatePlanMonth(m, e.target.value)}
-                            className="text-right text-sm font-black text-gray-800 outline-none w-32"
-                          />
-                          <span className="text-[10px] text-gray-300 font-bold uppercase">₫</span>
-                        </div>
-                      </div>
-                    );
-                  })}
+              <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-center divide-y divide-gray-50">
+                        <thead className="bg-gray-50/50">
+                            <tr>
+                                <th className="py-3 px-4 text-[9px] font-black text-gray-400 uppercase">Tháng</th>
+                                <th className="py-3 px-2 text-[9px] font-black text-emerald-500 uppercase">Dự Thu</th>
+                                <th className="py-3 px-2 text-[9px] font-black text-blue-500 uppercase">Dự Chi</th>
+                                <th className="py-3 px-4 text-[9px] font-black text-indigo-600 uppercase">Tiết kiệm</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                            {Array.from({ length: Math.min(60, projectionMonths) }).map((_, i) => {
+                                const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + i);
+                                const m = d.toISOString().slice(0, 7);
+                                const overrideVal = savingsPlan[m];
+                                const stats = calculateMonthlyStats(m);
+                                const finalSavings = overrideVal !== undefined ? overrideVal : stats.surplus;
+                                
+                                return (
+                                <tr key={m} className="group hover:bg-indigo-50/30 transition-colors">
+                                    <td className="py-3 px-4">
+                                        <div className="flex flex-col items-center">
+                                            <span className="text-[10px] font-black text-gray-900">T{d.getMonth() + 1}/{d.getFullYear()}</span>
+                                        </div>
+                                    </td>
+                                    <td className="py-3 px-2 text-[10px] font-bold text-emerald-600">+{formatCurrency(stats.income)}</td>
+                                    <td className="py-3 px-2 text-[10px] font-bold text-blue-600">-{formatCurrency(stats.expense)}</td>
+                                    <td className="py-3 px-4">
+                                        <div className="flex items-center justify-center space-x-1">
+                                            <input
+                                                type="number"
+                                                placeholder={formatCurrency(stats.surplus)}
+                                                value={overrideVal || ''}
+                                                onChange={(e) => updatePlanMonth(m, e.target.value)}
+                                                className={`text-center text-xs font-black outline-none w-20 py-1 rounded-lg border border-transparent focus:border-indigo-200 ${overrideVal ? 'text-indigo-600' : 'text-gray-400 opacity-50'}`}
+                                            />
+                                            <span className="text-[8px] text-gray-300 font-bold">₫</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
                 </div>
-                <div className="p-3 bg-gray-50 border-t border-gray-100 flex justify-between">
-                  <p className="text-[9px] text-gray-400">Thiết lập này sẽ ưu tiên hơn mặc định</p>
+                {projectionMonths > 60 && <div className="p-3 bg-gray-50 text-center text-[9px] text-gray-400 italic">Bảng chỉ hiển thị chi tiết 5 năm đầu tiên</div>}
+                <div className="p-3 bg-gray-50 border-t border-gray-100 flex justify-between px-6">
+                  <p className="text-[9px] text-gray-400">Ghi chú: Thay đổi cột Tiết kiệm để ghi đè kế hoạch tháng đó</p>
                   {Object.keys(savingsPlan).length > 0 && (
                     <button 
-                      onClick={() => { if(window.confirm('Xoá tất cả kế hoạch tháng?')) { setSavingsPlan({}); localStorage.removeItem(`savings_plan_${user.id}`); } }} 
-                      className="text-[9px] text-red-400 font-bold"
+                      onClick={() => { if(window.confirm('Xoá tất cả ghi đè tiết kiệm?')) { setSavingsPlan({}); localStorage.removeItem(`savings_plan_${user.id}`); } }} 
+                      className="text-[9px] text-red-500 font-black uppercase tracking-tighter"
                     >
-                      Xoá tất cả
+                      Xoá tất cả ghi đè
                     </button>
                   )}
                 </div>
@@ -442,12 +549,18 @@ export default function Plan() {
         </section>
       </div>
 
-      <AddBudgetSheet isOpen={isAddPlanOpen} onClose={() => setIsAddPlanOpen(false)} onSuccess={fetchAllData} />
+      <AddBudgetSheet 
+        isOpen={isAddPlanOpen} 
+        onClose={() => setIsAddPlanOpen(false)} 
+        onSuccess={fetchAllData}
+        initialMonth={planViewMode === 'monthly' ? selectedMonth : null}
+      />
       <EditBudgetSheet 
         isOpen={isEditPlanOpen} 
         onClose={() => setIsEditPlanOpen(false)} 
         budget={selectedPlan} 
         onSuccess={fetchAllData} 
+        viewMonth={selectedMonth}
       />
     </>
   );

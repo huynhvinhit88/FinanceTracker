@@ -131,33 +131,21 @@ export function calculateLoanSchedule(profile) {
     let prepayEvent = 0;
     let penaltyPaid = 0;
 
-    if (remaining > 0) {
+    if (threshold > 0 && remaining > 0) {
       const pRate = getPenaltyRate(m);
-      const penaltyFactor = 1 + (pRate / 100);
+      const targetPrepay = Math.min(threshold, remaining);
+      const penaltyForTarget = targetPrepay * (pRate / 100);
       
-      // 1. Trường hợp có thể TRẢ HẾT nợ ngay lập tức
-      // Nếu tiền tích luỹ đủ để trả (gốc còn lại + phí phạt trên gốc đó)
-      if (accumulatedExtra >= (remaining * penaltyFactor)) {
-        prepayEvent = remaining;
-        penaltyPaid = remaining * (pRate / 100);
-        totalPenalty += penaltyPaid;
-        remaining = 0;
-        accumulatedExtra -= (prepayEvent + penaltyPaid);
-      }
-      // 2. Trường hợp chưa đủ trả hết, nhưng đã vượt NGƯỠNG TẤT TOÁN
-      // Ví dụ: Ngưỡng 100tr, đang có 120tr tích luỹ -> Trả tối đa có thể từ 120tr đó
-      else if (threshold > 0 && accumulatedExtra >= threshold) {
-        // prepayAmount = số tiền gốc có thể trả sau khi đã trừ phí phạt từ đống accumulatedExtra
-        const maxPrepay = accumulatedExtra / penaltyFactor;
-        const actualPrepay = Math.min(maxPrepay, remaining);
+      // Chỉ tất toán nếu tiền tích luỹ đủ để trả (Số tiền ngưỡng + Phí phạt của nó)
+      if (accumulatedExtra >= (targetPrepay + penaltyForTarget)) {
+        prepayEvent = targetPrepay;
+        penaltyPaid = penaltyForTarget;
         
-        prepayEvent = actualPrepay;
-        penaltyPaid = actualPrepay * (pRate / 100);
         totalPenalty += penaltyPaid;
         remaining -= prepayEvent;
         accumulatedExtra -= (prepayEvent + penaltyPaid);
         
-        // Cập nhật số tháng không cần trả gốc (giảm áp lực dòng tiền nếu muốn)
+        // Cập nhật số tháng không cần trả gốc (giảm áp lực dòng tiền)
         freePrincipalMonths += prepayEvent / basePrincipal;
       }
     }

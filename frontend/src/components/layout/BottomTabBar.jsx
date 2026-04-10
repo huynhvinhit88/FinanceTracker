@@ -28,7 +28,7 @@ export function BottomTabBar() {
               to={tab.path}
               className={({ isActive }) =>
                 cn(
-                  'flex flex-col items-center justify-center flex-1 h-full transition-all active:opacity-60 tap-highlight-transparent',
+                  'flex flex-col items-center justify-center flex-1 h-full transition-all active:scale-95 cursor-pointer',
                   isActive ? 'text-blue-600' : 'text-gray-400'
                 )
               }

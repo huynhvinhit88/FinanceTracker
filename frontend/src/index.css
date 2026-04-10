@@ -7,7 +7,39 @@
 
 * {
   -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
   touch-action: manipulation;
+  /* Giúp WebKit nhận diện các thẻ div/span là clickable ngay lập tức */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Cho phép chọn văn bản trong các ô input */
+input, textarea {
+  -webkit-user-select: auto;
+  user-select: auto;
+}
+
+/* Ép kiểu cursor pointer để iOS Chrome/Safari nhận diện vùng tương tác tốt hơn */
+button, 
+[role="button"],
+a,
+select,
+input[type="submit"] {
+  cursor: pointer;
+}
+
+/* Chỉ cho phép hover trên các thiết bị có chuột, tránh "double-tap" trên iPhone */
+@media (hover: hover) {
+  .hover-trigger:hover {
+    @apply opacity-80;
+  }
+}
+
+/* Thay thế hover bằng active cho di động để phản hồi tức thì */
+.active-press:active {
+  opacity: 0.6;
+  transform: scale(0.96);
 }
 
 .safe-top {

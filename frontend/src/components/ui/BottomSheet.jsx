@@ -24,7 +24,8 @@ export function BottomSheet({ isOpen, onClose, title, children }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/40 z-[60] max-w-md mx-auto"
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/40 z-[60] max-w-md mx-auto cursor-pointer"
             onClick={onClose}
           />
           
@@ -33,7 +34,7 @@ export function BottomSheet({ isOpen, onClose, title, children }) {
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            transition={{ type: 'spring', damping: 30, stiffness: 300, mass: 0.8 }}
             className="fixed bottom-0 left-0 right-0 z-[70] bg-white rounded-t-3xl max-h-[85vh] flex flex-col max-w-md mx-auto shadow-2xl"
           >
             {/* Handle/Grabber */}

@@ -272,33 +272,33 @@ export default function Settings() {
           <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
             <button
               onClick={() => setShowLoanSheet(true)}
-              className="w-full flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors group"
+              className="w-full flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors group text-left"
             >
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-4 flex-1">
                 <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl shrink-0 shadow-sm border border-blue-100/50">
                   💳
                 </div>
-                <div className="text-left">
+                <div>
                   <p className="font-black text-gray-900 group-active:text-blue-600 transition-colors">Tính Lãi Khoản Vay</p>
-                  <p className="text-[11px] text-gray-500 font-medium mt-0.5 leading-relaxed italic opacity-70">Mô phỏng trả nợ & tiết kiệm lãi</p>
+                  <p className="text-[11px] text-gray-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Mô phỏng trả nợ & tiết kiệm lãi</p>
                 </div>
               </div>
-              <ChevronRight className="text-gray-300 group-hover:text-gray-400 shrink-0" size={18} />
+              <ChevronRight className="text-gray-300 group-hover:text-gray-400 shrink-0 ml-4" size={18} />
             </button>
             <button
               onClick={() => setShowCompoundSheet(true)}
-              className="w-full flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors group"
+              className="w-full flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors group text-left"
             >
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-4 flex-1">
                 <div className="w-12 h-12 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center text-xl shrink-0 shadow-sm border border-orange-100/50">
                   📈
                 </div>
-                <div className="text-left">
+                <div>
                   <p className="font-black text-gray-900 group-active:text-orange-600 transition-colors">Sức mạnh Lãi Kép</p>
-                  <p className="text-[11px] text-gray-500 font-medium mt-0.5 leading-relaxed italic opacity-70">Xem dòng tiền bùng nở theo thời gian</p>
+                  <p className="text-[11px] text-gray-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Xem dòng tiền bùng nở theo thời gian</p>
                 </div>
               </div>
-              <ChevronRight className="text-gray-300 group-hover:text-gray-400 shrink-0" size={18} />
+              <ChevronRight className="text-gray-300 group-hover:text-gray-400 shrink-0 ml-4" size={18} />
             </button>
           </div>
         </div>
@@ -308,18 +308,18 @@ export default function Settings() {
           <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
             <button
               onClick={() => setShowCategorySheet(true)}
-              className="w-full flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors group"
+              className="w-full flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors group text-left"
             >
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-4 flex-1">
                 <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 shadow-sm border border-emerald-100/50">
                   <FolderTree size={20} />
                 </div>
-                <div className="text-left">
+                <div>
                   <p className="font-black text-gray-900 group-active:text-emerald-600 transition-colors">Quản lý Danh mục</p>
-                  <p className="text-[11px] text-gray-500 font-medium mt-0.5 leading-relaxed italic opacity-70">Thêm / Sửa / Xóa danh mục Thu - Chi</p>
+                  <p className="text-[11px] text-gray-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Thêm / Sửa / Xóa danh mục Thu - Chi</p>
                 </div>
               </div>
-              <ChevronRight className="text-gray-300 group-hover:text-gray-400 shrink-0" size={18} />
+              <ChevronRight className="text-gray-300 group-hover:text-gray-400 shrink-0 ml-4" size={18} />
             </button>
           </div>
         </div>
@@ -331,18 +331,18 @@ export default function Settings() {
             <div>
               <button
                 onClick={() => setShowExportPanel(v => !v)}
-                className="w-full flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors group"
+                className="w-full flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors group text-left"
               >
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-4 flex-1">
                   <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0 shadow-sm border border-sky-100/50">
                     <Download size={20} />
                   </div>
-                  <div className="text-left">
+                  <div>
                     <p className="font-black text-gray-900 group-active:text-sky-600 transition-colors">Xuất báo cáo (CSV)</p>
-                    <p className="text-[11px] text-gray-500 font-medium mt-0.5 leading-relaxed italic opacity-70">Chọn từng loại báo cáo cần tải</p>
+                    <p className="text-[11px] text-gray-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Chọn từng loại báo cáo cần tải</p>
                   </div>
                 </div>
-                <ChevronRight className={`text-gray-300 group-hover:text-gray-400 shrink-0 transition-transform ${showExportPanel ? 'rotate-90' : ''}`} size={18} />
+                <ChevronRight className={`text-gray-300 group-hover:text-gray-400 shrink-0 transition-transform ml-4 ${showExportPanel ? 'rotate-90' : ''}`} size={18} />
               </button>
 
               {showExportPanel && (

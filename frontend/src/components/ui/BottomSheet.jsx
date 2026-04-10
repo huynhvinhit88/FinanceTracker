@@ -18,14 +18,14 @@ export function BottomSheet({ isOpen, onClose, title, children }) {
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
+        <div className="fixed inset-0 z-[200] flex items-end justify-center pointer-events-none">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/40 z-[60] max-w-md mx-auto cursor-pointer"
+            className="absolute inset-0 bg-black/40 cursor-pointer pointer-events-auto"
             onClick={onClose}
           />
           
@@ -35,7 +35,7 @@ export function BottomSheet({ isOpen, onClose, title, children }) {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300, mass: 0.8 }}
-            className="fixed bottom-0 left-0 right-0 z-[70] bg-white rounded-t-3xl max-h-[85vh] flex flex-col max-w-md mx-auto shadow-2xl"
+            className="relative w-full max-w-md bg-white rounded-t-3xl max-h-[90vh] flex flex-col shadow-2xl pointer-events-auto pb-safe px-1"
           >
             {/* Handle/Grabber */}
             <div className="flex justify-center pt-3 pb-2 w-full" onClick={onClose}>
@@ -54,11 +54,11 @@ export function BottomSheet({ isOpen, onClose, title, children }) {
             </div>
 
             {/* Content Body - Scrollable */}
-            <div className="p-6 overflow-y-auto pb-safe flex-1">
+            <div className="p-6 overflow-y-auto pb-10 flex-1">
               {children}
             </div>
           </motion.div>
-        </>
+        </div>
       )}
     </AnimatePresence>
   );

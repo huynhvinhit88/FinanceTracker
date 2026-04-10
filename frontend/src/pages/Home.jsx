@@ -291,7 +291,7 @@ export default function Home() {
       {/* FAB - Floating Action Button for Transactions */}
       <button
         onClick={() => setIsAddSheetOpen(true)}
-        className="fixed bottom-24 right-6 w-14 h-14 bg-gray-900 text-white rounded-full flex items-center justify-center shadow-lg shadow-gray-400 active:scale-95 transition-transform z-40"
+        className="fixed bottom-32 right-6 w-14 h-14 bg-gray-900 text-white rounded-full flex items-center justify-center shadow-lg shadow-gray-400 active:scale-95 transition-transform z-40"
       >
         <Plus size={28} />
       </button>

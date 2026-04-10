@@ -35,7 +35,7 @@ export function BottomSheet({ isOpen, onClose, title, children }) {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300, mass: 0.8 }}
-            className="relative w-full max-w-md bg-white rounded-t-3xl max-h-[90vh] flex flex-col shadow-2xl pointer-events-auto pb-safe px-1"
+            className="relative w-full max-w-md bg-white rounded-t-3xl max-h-[82vh] flex flex-col shadow-2xl pointer-events-auto pb-safe px-1"
           >
             {/* Handle/Grabber */}
             <div className="flex justify-center pt-3 pb-2 w-full" onClick={onClose}>
@@ -54,7 +54,7 @@ export function BottomSheet({ isOpen, onClose, title, children }) {
             </div>
 
             {/* Content Body - Scrollable */}
-            <div className="p-6 overflow-y-auto pb-10 flex-1">
+            <div className="p-6 overflow-y-auto pb-6 flex-1">
               {children}
             </div>
           </motion.div>

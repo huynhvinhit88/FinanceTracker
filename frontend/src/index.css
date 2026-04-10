@@ -27,6 +27,19 @@ a,
 select,
 input[type="submit"] {
   cursor: pointer;
+  min-height: 44px; /* Tiêu chuẩn Apple: Vùng chạm tối thiểu 44px */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Các icon button nhỏ cũng phải có vùng chạm lớn */
+.icon-btn {
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Chỉ cho phép hover trên các thiết bị có chuột, tránh "double-tap" trên iPhone */

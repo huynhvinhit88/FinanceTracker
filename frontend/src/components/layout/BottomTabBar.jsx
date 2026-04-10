@@ -18,8 +18,8 @@ const TABS = [
 
 export function BottomTabBar() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[100] bg-white border-t border-gray-100 pb-safe shadow-[0_-4px_16px_rgba(0,0,0,0.06)] select-none">
-      <div className="flex items-center justify-around h-16 max-w-md mx-auto px-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-[100] bg-white border-t border-gray-100 pb-safe shadow-[0_-8px_20px_rgba(0,0,0,0.06)] select-none">
+      <div className="flex items-stretch justify-around h-16 max-w-md mx-auto">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           return (
@@ -28,26 +28,26 @@ export function BottomTabBar() {
               to={tab.path}
               className={({ isActive }) =>
                 cn(
-                  'flex flex-col items-center justify-center flex-1 h-full transition-all active:scale-95 cursor-pointer',
+                  'flex flex-col items-center justify-center flex-1 transition-all active:scale-90 cursor-pointer',
                   isActive ? 'text-blue-600' : 'text-gray-400'
                 )
               }
             >
               {({ isActive }) => (
-                <>
+                <div className="flex flex-col items-center justify-center w-full h-full space-y-0.5">
                   <div className={cn(
                     "p-2 rounded-2xl transition-all",
                     isActive ? "bg-blue-50" : ""
                   )}>
-                    <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+                    <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
                   </div>
                   <span className={cn(
-                    "text-[9px] font-bold tracking-tight uppercase mt-0.5",
+                    "text-[10px] font-bold tracking-tight uppercase",
                     isActive ? "opacity-100" : "opacity-60"
                   )}>
                     {tab.name}
                   </span>
-                </>
+                </div>
               )}
             </NavLink>
           );

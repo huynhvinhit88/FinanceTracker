@@ -136,7 +136,9 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
 
           const match = schedule.find(row => {
             const d = new Date(row.dateObj);
-            return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+            // Cộng thêm 12 giờ để tránh lệch ngày do múi giờ khi so sánh tháng/năm
+            const checkDate = new Date(d.getTime() + 12 * 60 * 60 * 1000);
+            return checkDate.getMonth() === currentMonth && checkDate.getFullYear() === currentYear;
           });
 
           if (match) {
@@ -224,7 +226,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
     setIsLoanMode(false);
   };
 
-  const activeCategories = categories.filter(c => c.type === type);
+  const activeCategories = categories.filter(c => type === 'repayment' ? c.type === 'expense' : c.type === type);
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title="Thêm giao dịch mới">

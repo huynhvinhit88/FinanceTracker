@@ -412,7 +412,6 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
                       <th className="px-2 py-3">Gốc</th>
                       <th className="px-2 py-3">Lãi</th>
                       <th className="px-2 py-3 text-blue-600">Tổng</th>
-                      <th className="px-2 py-3 text-red-600 bg-red-50">Tất toán</th>
                       <th className="px-2 py-3 pr-4">Dư nợ</th>
                     </tr>
                   </thead>
@@ -424,7 +423,6 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
                         <td className="px-2 py-3">{formatCurrency(row.principal)}</td>
                         <td className="px-2 py-3 text-red-400/80">{formatCurrency(row.interest)}</td>
                         <td className="px-2 py-3 font-bold text-gray-900">{formatCurrency(row.total)}</td>
-                        <td className="px-2 py-3 text-red-600 font-black bg-red-50/30">{row.prepay > 0 ? formatCurrency(row.prepay) : '-'}</td>
                         <td className="px-2 py-3 pr-4 font-black text-gray-900">{formatCurrency(row.remaining)}</td>
                       </tr>
                     ))}

@@ -5,6 +5,7 @@ import { formatCurrency } from '../../utils/format';
 import { Calculator, ChevronRight, Settings2, Save, FilePlus2, Trash2, PlusCircle, XCircle, Landmark } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { AddLoanSheet } from '../loans/AddLoanSheet';
+import { calculateLoanSchedule } from '../../utils/loanCalculator';
 
 export function LoanCalculatorSheet({ isOpen, onClose }) {
   const { user } = useAuth();
@@ -140,134 +141,35 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
     e.preventDefault();
     if (!principal || !termMonths) return;
 
-    const p = principal;
-    const n = parseInt(termMonths);
-    const promoR = parseFloat(promoRate) || 0;
-    const promoM = parseInt(promoMonths) || 0;
-    const fBase = parseFloat(baseRate) || (promoR > 0 ? promoR : 0);
-    const fMargin = parseFloat(marginRate) || 0;
-    const extraP = extraPayment || 0;
-    const threshold = offsetThreshold || 0;
-
-    let baseRemaining = p;
-    let baseBasePrincipal = p / n; 
-    let baseTotalInterest = 0;
-    let initialMonthlyPayment = 0;
-
-    const firstPayDate = new Date(firstPaymentDate);
-    const disbDate = new Date(startDate);
-    const firstPeriodDays = Math.round((firstPayDate - disbDate) / (1000 * 60 * 60 * 24));
-
-    for (let m = 1; m <= n; m++) {
-      let r = (m <= promoM) ? promoR : (fBase + fMargin);
-      let days;
-      if (m === 1) {
-        days = firstPeriodDays;
-      } else {
-        const prevDate = new Date(firstPaymentDate);
-        prevDate.setMonth(prevDate.getMonth() + (m - 2));
-        const nextDate = new Date(firstPaymentDate);
-        nextDate.setMonth(nextDate.getMonth() + (m - 1));
-        days = Math.round((nextDate - prevDate) / (1000 * 60 * 60 * 24));
-      }
-      let interestThisMonth = baseRemaining * (r / 100) * (days / 365);
-      baseTotalInterest += interestThisMonth;
-      if (m === 1) initialMonthlyPayment = baseBasePrincipal + interestThisMonth;
-      baseRemaining -= baseBasePrincipal;
-    }
-
-    let remaining = p;
-    const basePrincipal = p / n;
-    let totalInterest = 0;
-    let totalPenalty = 0;
-    let accumulatedExtra = 0;
-    let freePrincipalMonths = 0;
-    let actualMonths = 0;
-    let generatedSchedule = [];
-
-    const getPenaltyRate = (month) => {
-      const year = Math.ceil(month / 12);
-      const rates = penaltyConfig.split(',').map(s => parseFloat(s.trim()));
-      let pRate = 0;
-      if (rates.length > 0) {
-        if (year <= rates.length) pRate = rates[year - 1];
-        else pRate = rates[rates.length - 1];
-      }
-      return isNaN(pRate) ? 0 : pRate;
-    };
-
-    const getPeriodParams = (month) => {
-      if (periods && periods.length > 0) {
-        const period = periods.find(pd => month >= pd.fromMonth && month <= pd.toMonth);
-        if (period) return { rate: parseFloat(period.rate) || 0, budget: (parseFloat(period.budget) || 0) * 1000, };
-        const last = periods[periods.length - 1];
-        return { rate: parseFloat(last?.rate) || (fBase + fMargin), budget: (parseFloat(last?.budget) || 0) * 1000 };
-      }
-      const r = (month <= promoM) ? promoR : (fBase + fMargin);
-      return { rate: r, budget: extraP };
-    };
-
-    for (let m = 1; m <= n; m++) {
-      if (remaining <= 100) break;
-      actualMonths = m;
-      const { rate: r, budget: currentMonthBudget } = getPeriodParams(m);
-      let currentPayDate = new Date(firstPaymentDate);
-      currentPayDate.setMonth(currentPayDate.getMonth() + (m - 1));
-      let daysPeriod;
-      if (m === 1) daysPeriod = firstPeriodDays;
-      else {
-        const prevPayDate = new Date(firstPaymentDate);
-        prevPayDate.setMonth(prevPayDate.getMonth() + (m - 2));
-        daysPeriod = Math.round((currentPayDate - prevPayDate) / (1000 * 60 * 60 * 24));
-      }
-      let interestThisMonth = remaining * (r / 100) * (daysPeriod / 365);
-      let principalThisMonth = 0;
-      if (freePrincipalMonths > 0) { freePrincipalMonths -= 1; principalThisMonth = 0; }
-      else principalThisMonth = Math.min(basePrincipal, remaining);
-      totalInterest += interestThisMonth;
-      remaining -= principalThisMonth;
-      const currentBankPayment = principalThisMonth + interestThisMonth;
-      if (currentMonthBudget > 0) accumulatedExtra += Math.max(0, currentMonthBudget - currentBankPayment);
-      let prepayEvent = 0;
-      let penaltyPaid = 0;
-      if (threshold > 0 && remaining > 0) {
-        const prepayAmount = Math.min(threshold, remaining);
-        const pRate = getPenaltyRate(m);
-        const estimatedPenalty = prepayAmount * (pRate / 100);
-        if (accumulatedExtra >= prepayAmount + estimatedPenalty) {
-          penaltyPaid = estimatedPenalty;
-          totalPenalty += penaltyPaid;
-          remaining -= prepayAmount;
-          accumulatedExtra -= prepayAmount + penaltyPaid;
-          prepayEvent = prepayAmount;
-          freePrincipalMonths += prepayAmount / basePrincipal;
-        }
-      }
-      generatedSchedule.push({
-        month: m, dateStr: currentPayDate.toLocaleDateString('vi-VN'),
-        interest: Math.round(interestThisMonth), principal: Math.round(principalThisMonth),
-        prepay: Math.round(prepayEvent), penalty: Math.round(penaltyPaid),
-        total: Math.round(currentBankPayment + prepayEvent + penaltyPaid),
-        accumulated: Math.round(accumulatedExtra), remaining: Math.max(0, Math.round(remaining))
-      });
-    }
-
-    const payoffDate = new Date(firstPaymentDate);
-    payoffDate.setMonth(payoffDate.getMonth() + actualMonths - 1);
-    const diffTotalMonths = Math.max(0, Math.round((payoffDate - new Date()) / (1000 * 60 * 60 * 24 * 30.44)));
-    
-    setResult({
-      initialMonthlyPayment: Math.round(initialMonthlyPayment),
-      baseTotalInterest: Math.round(baseTotalInterest),
-      actualTotalInterest: Math.round(totalInterest),
-      totalPenalty: Math.round(totalPenalty),
-      actualMonths, monthsSaved: n - actualMonths,
-      interestSaved: Math.round(baseTotalInterest - (totalInterest + totalPenalty)),
-      payoffDateStr: payoffDate.toLocaleDateString('vi-VN', { month: '2-digit', year: 'numeric' }),
-      totalYears: Math.floor(actualMonths / 12), totalRemMonths: actualMonths % 12,
-      yearsFromNow: Math.floor(diffTotalMonths / 12), monthsFromNow: diffTotalMonths % 12,
+    const { result: summary, schedule: list } = calculateLoanSchedule({
+      principal: principal,
+      termMonths: termMonths,
+      promoRate,
+      promoMonths,
+      baseRate,
+      marginRate,
+      extraPayment,
+      offsetThreshold,
+      penaltyConfig,
+      startDate,
+      firstPaymentDate,
+      periods
     });
-    setSchedule(generatedSchedule);
+
+    if (summary) {
+      const payoffDate = summary.payoffDate ? new Date(summary.payoffDate) : new Date(firstPaymentDate);
+      if (!summary.payoffDate) {
+        payoffDate.setMonth(payoffDate.getMonth() + summary.actualMonths - 1);
+      }
+      const diffTotalMonths = Math.max(0, Math.round((payoffDate - new Date()) / (1000 * 60 * 60 * 24 * 30.44)));
+      
+      setResult({
+        ...summary,
+        yearsFromNow: Math.floor(diffTotalMonths / 12),
+        monthsFromNow: diffTotalMonths % 12,
+      });
+      setSchedule(list.map(row => ({ ...row, dateStr: row.date })));
+    }
     setShowSchedule(false);
   };
 

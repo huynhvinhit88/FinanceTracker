@@ -36,8 +36,7 @@ export const AuthProvider = ({ children }) => {
       return await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          // You may want to define a specific redirect depending on environment
-          // redirectTo: window.location.origin
+          redirectTo: window.location.origin
         }
       });
     },
@@ -49,6 +48,7 @@ export const AuthProvider = ({ children }) => {
         email, 
         password,
         options: {
+          emailRedirectTo: window.location.origin,
           data: {
             display_name: displayName,
           }

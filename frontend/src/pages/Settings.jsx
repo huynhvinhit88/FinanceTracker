@@ -249,10 +249,10 @@ export default function Settings() {
 
   return (
     <div className="pb-24 animate-in fade-in">
-      {/* Header - Left Aligned */}
+      {/* Header - Aligned to 44px Axis */}
       <div className="bg-gradient-to-br from-blue-600 to-indigo-700 px-6 pt-16 pb-10 rounded-b-[2.5rem] shadow-lg">
-        <h1 className="text-3xl font-black text-white text-left mb-6 tracking-tight">Cài đặt</h1>
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-3xl flex items-center space-x-4">
+        <h1 className="text-3xl font-black text-white text-left mb-6 tracking-tight pl-5">Cài đặt</h1>
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-3xl flex items-center space-x-4 ml-5">
           <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shrink-0 text-white text-2xl font-black shadow-inner">
             {initials}
           </div>
@@ -263,10 +263,10 @@ export default function Settings() {
         </div>
       </div>
 
-      <div className="px-6 mt-8 space-y-7">
+      <div className="px-6 mt-10 space-y-8">
 
         <div>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1 ml-1">Công cụ & Phân tích</p>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 pl-5">Công cụ & Phân tích</p>
           <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
             <button
               onClick={() => setShowLoanSheet(true)}
@@ -302,7 +302,7 @@ export default function Settings() {
         </div>
 
         <div>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1 ml-1">Tuỳ chỉnh Ứng dụng</p>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 pl-5">Tuỳ chỉnh Ứng dụng</p>
           <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
             <button
               onClick={() => setShowCategorySheet(true)}
@@ -324,7 +324,7 @@ export default function Settings() {
 
         {/* Section: Dữ liệu */}
         <div>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1 ml-1">Quản lý Dữ liệu</p>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 pl-5">Quản lý Dữ liệu</p>
           <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
             <div>
               <button
@@ -345,7 +345,7 @@ export default function Settings() {
 
               {showExportPanel && (
                 <div className="px-5 pb-5 bg-sky-50/30 border-t border-sky-100/50 space-y-3">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest pt-4 mb-1">Cấu hình báo cáo:</p>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest pt-5 mb-2 pl-5">Cấu hình báo cáo:</p>
                   {[
                     { key: 'transactions', label: 'Lịch sử Giao dịch', desc: 'Tất cả thu/chi/chuyển khoản', icon: '📋' },
                     { key: 'accounts',     label: 'Tài khoản & Số dư',  desc: 'Danh sách ví và số dư hiện tại', icon: '🏦' },

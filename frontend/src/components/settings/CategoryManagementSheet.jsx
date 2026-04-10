@@ -216,12 +216,18 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Biểu tượng (Emoji)</label>
                 <div className="relative">
                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-2xl" style={{ pointerEvents: 'none' }}>{icon}</div>
-                   <input type="text" value={icon} onChange={e => {
-                      // Only keep first character if multiple typed, or regex for emoji
-                      const val = e.target.value.trim();
-                      if (val) setIcon(Array.from(val)[val.length-1]);
-                      else setIcon('');
-                   }} className="w-full bg-gray-50 border border-transparent rounded-xl py-3 pl-12 pr-4 outline-none font-medium text-lg text-transparent caret-blue-500" placeholder="Thêm Icon..."/>
+                   <input 
+                     type="text" 
+                     value={icon} 
+                     onChange={e => {
+                       const val = e.target.value.trim();
+                       const chars = Array.from(val);
+                       if (chars.length > 0) setIcon(chars[chars.length - 1]);
+                       else setIcon('');
+                     }} 
+                     className="w-full bg-gray-50 border border-transparent rounded-xl py-3 pl-12 pr-4 outline-none font-medium text-lg caret-blue-500" 
+                     placeholder="Thêm Icon..."
+                   />
                 </div>
              </div>
           </div>

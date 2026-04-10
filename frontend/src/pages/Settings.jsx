@@ -271,33 +271,33 @@ export default function Settings() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
             <button
               onClick={() => setShowLoanSheet(true)}
-              className="w-full flex items-center justify-between p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+              className="w-full flex items-start justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors group"
             >
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl">
+              <div className="flex items-start space-x-4">
+                <div className="w-11 h-11 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl shrink-0 shadow-sm border border-blue-200/50">
                   💳
                 </div>
-                <div className="text-left">
-                  <p className="font-bold text-gray-900">Tính Lãi Khoản Vay</p>
-                  <p className="text-xs text-gray-500 font-medium mt-0.5">Mô phỏng trả nợ trước hạn &amp; Tiết kiệm lãi</p>
+                <div className="text-left pt-1">
+                  <p className="font-bold text-gray-900 group-active:text-blue-600 transition-colors">Tính Lãi Khoản Vay</p>
+                  <p className="text-xs text-gray-500 font-medium mt-1 leading-relaxed">Mô phỏng trả nợ trước hạn &amp; Tiết kiệm lãi</p>
                 </div>
               </div>
-              <ChevronRight className="text-gray-400 shrink-0" size={20} />
+              <ChevronRight className="text-gray-300 group-hover:text-gray-400 shrink-0 mt-3" size={18} />
             </button>
             <button
               onClick={() => setShowCompoundSheet(true)}
-              className="w-full flex items-center justify-between p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+              className="w-full flex items-start justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors group"
             >
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xl">
+              <div className="flex items-start space-x-4">
+                <div className="w-11 h-11 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xl shrink-0 shadow-sm border border-orange-200/50">
                   📈
                 </div>
-                <div className="text-left">
-                  <p className="font-bold text-gray-900">Sức mạnh Lãi Kép</p>
-                  <p className="text-xs text-gray-500 font-medium mt-0.5">Xem dòng tiền bùng nở theo thời gian</p>
+                <div className="text-left pt-1">
+                  <p className="font-bold text-gray-900 group-active:text-orange-600 transition-colors">Sức mạnh Lãi Kép</p>
+                  <p className="text-xs text-gray-500 font-medium mt-1 leading-relaxed">Xem dòng tiền bùng nở theo thời gian</p>
                 </div>
               </div>
-              <ChevronRight className="text-gray-400 shrink-0" size={20} />
+              <ChevronRight className="text-gray-300 group-hover:text-gray-400 shrink-0 mt-3" size={18} />
             </button>
           </div>
         </div>
@@ -308,18 +308,18 @@ export default function Settings() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
             <button
               onClick={() => setShowCategorySheet(true)}
-              className="w-full flex items-center justify-between p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+              className="w-full flex items-start justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors group"
             >
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                  <FolderTree size={20} />
+              <div className="flex items-start space-x-4">
+                <div className="w-11 h-11 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 shadow-sm border border-emerald-200/50">
+                  <FolderTree size={22} />
                 </div>
-                <div className="text-left">
-                  <p className="font-bold text-gray-900">Quản lý Danh mục</p>
-                  <p className="text-xs text-gray-500 font-medium mt-0.5">Thêm / Sửa / Xóa danh mục Thu - Chi</p>
+                <div className="text-left pt-1">
+                  <p className="font-bold text-gray-900 group-active:text-emerald-600 transition-colors">Quản lý Danh mục</p>
+                  <p className="text-xs text-gray-500 font-medium mt-1 leading-relaxed">Thêm / Sửa / Xóa danh mục Thu - Chi</p>
                 </div>
               </div>
-              <ChevronRight className="text-gray-400 shrink-0" size={20} />
+              <ChevronRight className="text-gray-300 group-hover:text-gray-400 shrink-0 mt-3" size={18} />
             </button>
           </div>
         </div>
@@ -333,18 +333,18 @@ export default function Settings() {
             <div>
               <button
                 onClick={() => setShowExportPanel(v => !v)}
-                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                className="w-full flex items-start justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors group"
               >
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center">
-                    <Download size={20} />
+                <div className="flex items-start space-x-4">
+                  <div className="w-11 h-11 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center shrink-0 shadow-sm border border-sky-200/50">
+                    <Download size={22} />
                   </div>
-                  <div className="text-left">
-                    <p className="font-bold text-gray-900">Xuất báo cáo (CSV)</p>
-                    <p className="text-xs text-gray-500 font-medium mt-0.5">Chọn từng loại báo cáo cần tải</p>
+                  <div className="text-left pt-1">
+                    <p className="font-bold text-gray-900 group-active:text-sky-600 transition-colors">Xuất báo cáo (CSV)</p>
+                    <p className="text-xs text-gray-500 font-medium mt-1 leading-relaxed">Chọn từng loại báo cáo cần tải</p>
                   </div>
                 </div>
-                <ChevronRight className={`text-gray-400 shrink-0 transition-transform ${showExportPanel ? 'rotate-90' : ''}`} size={20} />
+                <ChevronRight className={`text-gray-300 group-hover:text-gray-400 shrink-0 mt-3 transition-transform ${showExportPanel ? 'rotate-90' : ''}`} size={18} />
               </button>
 
               {showExportPanel && (
@@ -357,17 +357,19 @@ export default function Settings() {
                     { key: 'loanProfiles', label: 'Hồ sơ Khoản Vay', desc: 'Các kịch bản đã lưu', icon: '💳' },
                     { key: 'projection',   label: 'Dự báo Tài chính', desc: 'Snapshot 120 tháng (8%/năm)', icon: '🔮' },
                   ].map(({ key, label, desc, icon }) => (
-                    <label key={key} className="flex items-center space-x-3 cursor-pointer p-2 rounded-xl hover:bg-white transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={exportSelections[key]}
-                        onChange={e => setExportSelections(prev => ({ ...prev, [key]: e.target.checked }))}
-                        className="w-5 h-5 rounded accent-sky-500 shrink-0"
-                      />
-                      <span className="text-xl shrink-0">{icon}</span>
-                      <div>
-                        <p className="text-sm font-bold text-gray-800">{label}</p>
-                        <p className="text-xs text-gray-400">{desc}</p>
+                    <label key={key} className="flex items-start space-x-4 cursor-pointer p-3 rounded-2xl hover:bg-white transition-colors group">
+                      <div className="pt-0.5">
+                        <input
+                          type="checkbox"
+                          checked={exportSelections[key]}
+                          onChange={e => setExportSelections(prev => ({ ...prev, [key]: e.target.checked }))}
+                          className="w-5 h-5 rounded border-gray-300 text-sky-500 focus:ring-sky-500 accent-sky-500 shrink-0"
+                        />
+                      </div>
+                      <span className="text-xl shrink-0 pt-0.5">{icon}</span>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-gray-800 group-hover:text-sky-600 transition-colors uppercase tracking-tight">{label}</p>
+                        <p className="text-[11px] text-gray-400 font-medium mt-0.5 leading-relaxed">{desc}</p>
                       </div>
                     </label>
                   ))}
@@ -389,16 +391,16 @@ export default function Settings() {
             <button
               onClick={handleWipeData}
               disabled={wipeLoading}
-              className="w-full flex items-center space-x-3 p-4 hover:bg-red-50 active:bg-red-100 transition-colors disabled:opacity-60"
+              className="w-full flex items-start space-x-4 p-5 hover:bg-red-50 active:bg-red-100 transition-colors disabled:opacity-60 group"
             >
-              <div className="w-10 h-10 rounded-full bg-red-100 text-red-500 flex items-center justify-center shrink-0">
+              <div className="w-11 h-11 rounded-full bg-red-100 text-red-500 flex items-center justify-center shrink-0 shadow-sm border border-red-200/50">
                 {wipeLoading
                   ? <div className="w-5 h-5 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
-                  : <Trash2 size={20} />}
+                  : <Trash2 size={22} />}
               </div>
-              <div className="text-left">
-                <p className="font-bold text-red-600">Xóa toàn bộ dữ liệu</p>
-                <p className="text-xs text-red-400 font-medium mt-0.5">Đặt lại tài khoản từ đầu (Không thể hoàn tác)</p>
+              <div className="text-left pt-1">
+                <p className="font-bold text-red-600 group-active:text-red-700">Xóa toàn bộ dữ liệu</p>
+                <p className="text-xs text-red-400 font-medium mt-1 leading-relaxed">Đặt lại tài khoản từ đầu (Không thể hoàn tác)</p>
               </div>
             </button>
           </div>

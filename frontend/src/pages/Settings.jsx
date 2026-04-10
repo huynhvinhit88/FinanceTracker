@@ -300,8 +300,6 @@ export default function Settings() {
             </button>
           </div>
         </div>
-          </div>
-        </div>
 
         <div>
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1 ml-1">Tuỳ chỉnh Ứng dụng</p>
@@ -344,7 +342,45 @@ export default function Settings() {
                 </div>
                 <ChevronRight className={`text-gray-300 group-hover:text-gray-400 shrink-0 transition-transform ${showExportPanel ? 'rotate-90' : ''}`} size={18} />
               </button>
-              {/* Export selections stay the same... simplified for space */}
+
+              {showExportPanel && (
+                <div className="px-5 pb-5 bg-sky-50/30 border-t border-sky-100/50 space-y-3">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest pt-4 mb-1">Cấu hình báo cáo:</p>
+                  {[
+                    { key: 'transactions', label: 'Lịch sử Giao dịch', desc: 'Tất cả thu/chi/chuyển khoản', icon: '📋' },
+                    { key: 'accounts',     label: 'Tài khoản & Số dư',  desc: 'Danh sách ví và số dư hiện tại', icon: '🏦' },
+                    { key: 'goals',        label: 'Mục tiêu Tiết kiệm', desc: 'Tiến độ các mục tiêu', icon: '🎯' },
+                    { key: 'loanProfiles', label: 'Hồ sơ Khoản Vay', desc: 'Các kịch bản đã lưu', icon: '💳' },
+                    { key: 'projection',   label: 'Dự báo Tài chính', desc: 'Snapshot 120 tháng (8%/năm)', icon: '🔮' },
+                  ].map(({ key, label, desc, icon }) => (
+                    <label key={key} className="flex items-start space-x-4 cursor-pointer p-3 rounded-2xl hover:bg-white transition-all group">
+                      <div className="pt-1">
+                        <input
+                          type="checkbox"
+                          checked={exportSelections[key]}
+                          onChange={e => setExportSelections(prev => ({ ...prev, [key]: e.target.checked }))}
+                          className="w-5 h-5 rounded border-gray-300 text-sky-500 focus:ring-sky-500 accent-sky-500 shrink-0"
+                        />
+                      </div>
+                      <span className="text-xl shrink-0 pt-0.5">{icon}</span>
+                      <div className="flex-1">
+                        <p className="text-sm font-black text-gray-800 group-hover:text-sky-600 transition-colors tracking-tight">{label}</p>
+                        <p className="text-[10px] text-gray-400 font-medium mt-0.5 leading-relaxed">{desc}</p>
+                      </div>
+                    </label>
+                  ))}
+                  <button
+                    onClick={handleExportData}
+                    disabled={exportLoading}
+                    className="w-full mt-2 bg-sky-600 hover:bg-sky-700 text-white font-black py-4 rounded-2xl flex items-center justify-center space-x-2 disabled:opacity-60 active:scale-95 transition-all shadow-lg shadow-sky-100"
+                  >
+                    {exportLoading
+                      ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      : <Download size={18} />}
+                    <span>{exportLoading ? 'ĐANG TẠO FILE...' : 'TẢI XUỐNG BÁO CÁO'}</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             <button

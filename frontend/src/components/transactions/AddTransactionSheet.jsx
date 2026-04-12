@@ -158,6 +158,16 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
     e.preventDefault();
     if (rawAmount <= 0) { setError('Số tiền phải lớn hơn 0'); return; }
     if (!accountId) { setError('Vui lòng chọn tài khoản nguồn'); return; }
+
+    // Kiểm tra số dư tài khoản (ngoại trừ thẻ tín dụng/khoản nợ)
+    const selectedAccount = accounts.find(acc => acc.id === accountId);
+    const isOutgoing = ['expense', 'transfer', 'repayment'].includes(type);
+    if (isOutgoing && selectedAccount && selectedAccount.sub_type !== 'debt') {
+      if (rawAmount > selectedAccount.balance) {
+        setError(`Số dư tài khoản không đủ (${formatCurrency(selectedAccount.balance)}₫)`);
+        return;
+      }
+    }
     
     setLoading(true);
     setError('');
@@ -175,7 +185,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
         // Loan fields
         loan_id: isLoanMode ? loanId : null,
         loan_payment_type: isLoanMode ? repaymentType : null,
-        loan_principal_amount: isLoanMode ? (repaymentType === 'payoff' ? rawAmount : principalRaw) : 0
+        loan_principal_amount: isLoanMode ? principalRaw : 0
       };
 
       const { error: insertError } = await supabase.from('transactions').insert([payload]);
@@ -183,8 +193,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
       
       // Nếu là trả nợ vay, cập nhật số dư nợ
       if (isLoanMode && loanId) {
-        const principalToDeduct = repaymentType === 'payoff' ? rawAmount : principalRaw;
-        await updateLoanBalance(loanId, principalToDeduct);
+        await updateLoanBalance(loanId, principalRaw);
       }
 
       resetForm();
@@ -313,13 +322,15 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
                ))}
             </div>
 
-            {repaymentType === 'periodic' ? (
+            <div className="space-y-4">
               <div className="space-y-1">
                 <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1 flex justify-between">
                   <span>Số tiền gốc trả</span>
-                  <span className="text-blue-500 font-black italic">
-                    Lãi dự kiến: {formatCurrency(suggestInterest(loans.find(l => l.id === loanId)))}₫
-                  </span>
+                  {repaymentType === 'periodic' && (
+                    <span className="text-blue-500 font-black italic">
+                      Lãi dự kiến: {formatCurrency(suggestInterest(loans.find(l => l.id === loanId)))}₫
+                    </span>
+                  )}
                 </label>
                 <div className="relative">
                   <input
@@ -329,17 +340,23 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-300">{principalSuffix}</span>
                 </div>
-                <p className="text-[9px] text-gray-400 ml-1">Tổng tiền = Gốc ({formatCurrency(principalRaw)}₫) + Lãi ({formatCurrency(rawAmount - principalRaw)}₫)</p>
+                {repaymentType === 'payoff' && (
+                  <p className="text-[9px] text-gray-400 ml-1">Kế hoạch: Trả toàn bộ dư nợ gốc {formatCurrency(loans.find(l => l.id === loanId)?.remaining_principal)}₫</p>
+                )}
               </div>
-            ) : (
-              <div className="p-3 bg-blue-600 rounded-2xl text-white">
-                <div className="flex items-center space-x-2 mb-1">
-                   <Calculator size={14} />
-                   <span className="text-[10px] font-bold uppercase tracking-widest">Tất toán toàn bộ</span>
+
+              {rawAmount - principalRaw !== 0 && (
+                <div className={`p-3 rounded-2xl flex items-center justify-between ${rawAmount - principalRaw > 0 ? 'bg-blue-600 text-white' : 'bg-amber-500 text-white'}`}>
+                  <div className="flex items-center space-x-2">
+                    <Calculator size={14} />
+                    <span className="text-[10px] font-bold uppercase tracking-widest">
+                      {rawAmount - principalRaw > 0 ? 'Phí & lãi phát sinh' : 'Giảm trừ/Chiết khấu'}
+                    </span>
+                  </div>
+                  <p className="text-xs font-black">{formatCurrency(Math.abs(rawAmount - principalRaw))}₫</p>
                 </div>
-                <p className="text-xs font-medium opacity-90">Hệ thống đã tính toán toàn bộ dư nợ gốc + lãi dự kiến vào ô "Tổng số tiền" ở trên.</p>
-              </div>
-            )}
+              )}
+            </div>
             
             <div className="flex items-start space-x-2 text-[9px] text-blue-400 font-bold italic leading-relaxed">
                <Info size={12} className="mt-0.5 flex-shrink-0" />

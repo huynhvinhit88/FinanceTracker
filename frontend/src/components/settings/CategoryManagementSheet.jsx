@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BottomSheet } from '../ui/BottomSheet';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { db } from '../../lib/db';
 import { Plus, Edit2, Trash2, ArrowLeft, Check } from 'lucide-react';
 
 const COLORS = ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#6B7280'];
@@ -30,13 +30,8 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
     if (!user) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('created_at', { ascending: true });
-        
-      if (error) throw error;
-      setCategories(data || []);
+      const data = await db.categories.toArray();
+      setCategories(data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -66,25 +61,17 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
     setLoading(true);
     try {
       // 1. Xóa các ngân sách liên quan đến danh mục này
-      const { error: budgetError } = await supabase
-        .from('budgets')
-        .delete()
-        .eq('category_id', catId);
-      if (budgetError) throw budgetError;
+      const relatedBudgets = await db.budgets.filter(b => b.category_id === catId).toArray();
+      await db.budgets.bulkDelete(relatedBudgets.map(b => b.id));
 
       // 2. Gỡ danh mục khỏi các giao dịch liên quan (set null)
-      const { error: txError } = await supabase
-        .from('transactions')
-        .update({ category_id: null })
-        .eq('category_id', catId);
-      if (txError) throw txError;
+      const relatedTxs = await db.transactions.filter(t => t.category_id === catId).toArray();
+      for(const t of relatedTxs) {
+         await db.transactions.update(t.id, { category_id: null });
+      }
 
       // 3. Cuối cùng mới xóa danh mục
-      const { error: catError } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', catId);
-      if (catError) throw catError;
+      await db.categories.delete(catId);
 
       fetchCategories();
     } catch (err) {
@@ -104,22 +91,20 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
     try {
       if (editingCat.isNew) {
         const payload = {
-          user_id: user.id,
+          id: crypto.randomUUID(),
           name: name.trim(),
           type: activeTab,
           icon,
           color_hex: colorHex
         };
-        const { error } = await supabase.from('categories').insert([payload]);
-        if (error) throw error;
+        await db.categories.add(payload);
       } else {
         const payload = {
           name: name.trim(),
           icon,
           color_hex: colorHex
         };
-        const { error } = await supabase.from('categories').update(payload).eq('id', editingCat.id);
-        if (error) throw error;
+        await db.categories.update(editingCat.id, payload);
       }
       
       setEditingCat(null);

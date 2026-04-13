@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BottomSheet } from '../ui/BottomSheet';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { db } from '../../lib/db';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { Trash2 } from 'lucide-react';
 import { formatCurrency } from '../../utils/format';
@@ -45,19 +45,14 @@ export function EditInvestmentSheet({ isOpen, onClose, investment, onSuccess }) 
     setError('');
 
     try {
-      const { error: updateError } = await supabase
-        .from('investments')
-        .update({
-          type,
-          symbol: symbol.trim().toUpperCase(),
-          quantity: isRE ? 1 : parseFloat(quantity),
-          buy_price: buyPrice,
-          current_price: currentPrice,
-          loan_amount: isRE ? loanAmount : 0
-        })
-        .eq('id', investment.id);
-
-      if (updateError) throw updateError;
+      await db.investments.update(investment.id, {
+        type,
+        symbol: symbol.trim().toUpperCase(),
+        quantity: isRE ? 1 : parseFloat(quantity),
+        buy_price: buyPrice,
+        current_price: currentPrice,
+        loan_amount: isRE ? loanAmount : 0
+      });
       
       onSuccess();
       onClose();
@@ -73,12 +68,7 @@ export function EditInvestmentSheet({ isOpen, onClose, investment, onSuccess }) 
     
     setDeleteLoading(true);
     try {
-      const { error: deleteError } = await supabase
-        .from('investments')
-        .delete()
-        .eq('id', investment.id);
-
-      if (deleteError) throw deleteError;
+      await db.investments.delete(investment.id);
       onSuccess();
       onClose();
     } catch (err) {

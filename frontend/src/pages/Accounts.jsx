@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
+import { db } from '../lib/db';
 import { Plus, Wallet, PiggyBank, TrendingUp, HandCoins, Building, CreditCard } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 import { AddAccountSheet } from '../components/accounts/AddAccountSheet';
@@ -47,22 +47,15 @@ export default function Accounts() {
   }, [user]);
 
   const fetchWealthData = async () => {
-    if (!user) return;
     setLoading(true);
     try {
-      const [accRes, savRes, invRes] = await Promise.all([
-        supabase.from('accounts').select('*').order('name'),
-        supabase.from('savings').select('*').order('created_at', { ascending: false }),
-        supabase.from('investments').select('*').order('created_at', { ascending: false })
-      ]);
+      const accData = await db.accounts.orderBy('name').toArray();
+      const savData = await db.savings.orderBy('start_date').reverse().toArray();
+      const invData = await db.investments.orderBy('purchase_date').reverse().toArray();
       
-      if (accRes.error) throw accRes.error;
-      if (savRes.error) throw savRes.error;
-      if (invRes.error) throw invRes.error;
-
-      setAccounts(accRes.data || []);
-      setSavings(savRes.data || []);
-      setInvestments(invRes.data || []);
+      setAccounts(accData || []);
+      setSavings(savData || []);
+      setInvestments(invData || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -94,16 +87,16 @@ export default function Accounts() {
   
   const totalCashAndDebt = accounts.reduce((acc, curr) => {
     if (curr.sub_type === 'debt') return acc;
-    return acc + curr.balance;
+    return acc + (curr.balance || 0);
   }, 0);
 
   // Savings Math
   const computeSavingsMath = (sav) => {
     const daysPassed = Math.max(0, Math.floor((new Date() - new Date(sav.start_date)) / (1000 * 60 * 60 * 24)));
-    const dailyRate = (sav.interest_rate / 100) / 365;
-    const accruedInterest = sav.principal_amount * dailyRate * daysPassed;
+    const dailyRate = ((sav.interest_rate || 0) / 100) / 365;
+    const accruedInterest = (sav.principal_amount || 0) * dailyRate * daysPassed;
     // Lãi dự kiến cho cả kỳ
-    const expectedTotalInterest = sav.principal_amount * (sav.interest_rate / 100) * (sav.term_months / 12);
+    const expectedTotalInterest = (sav.principal_amount || 0) * ((sav.interest_rate || 0) / 100) * ((sav.term_months || 0) / 12);
     return { accruedInterest: Math.floor(accruedInterest), expectedTotalInterest: Math.floor(expectedTotalInterest), daysPassed };
   };
 
@@ -116,9 +109,9 @@ export default function Accounts() {
   // Investment Math
   const totalInvestmentCurrent = investments.reduce((acc, curr) => {
     if (curr.type === 'real_estate') {
-      return acc + (curr.current_price - (curr.loan_amount || 0));
+      return acc + ((curr.current_price || 0) - (curr.loan_amount || 0));
     }
-    return acc + (curr.current_price * curr.quantity);
+    return acc + ((curr.current_price || 0) * (curr.quantity || 0));
   }, 0);
 
   const totalInvestmentMarketValue = investments.reduce((acc, curr) => {
@@ -130,7 +123,7 @@ export default function Accounts() {
     return acc + (curr.buy_price * curr.quantity);
   }, 0);
 
-  const totalLoanRemaining = loans.reduce((acc, l) => acc + (l.status === 'active' ? l.remaining_principal : 0), 0);
+  const totalLoanRemaining = loans.reduce((acc, l) => acc + (l.status === 'active' ? (l.remaining_principal ?? l.total_amount ?? 0) : 0), 0);
   const activeLoans = loans.filter(l => l.status === 'active');
   const paidOffLoans = loans.filter(l => l.status === 'paid_off');
 
@@ -341,7 +334,9 @@ export default function Accounts() {
   );
 
   const renderLoanCard = (loan) => {
-    const progress = Math.round(((loan.principal_amount - loan.remaining_principal) / loan.principal_amount) * 100);
+    const total = loan.total_amount || loan.principal_amount || 1; // Fallback to principal_amount if old data
+    const remaining = loan.remaining_principal ?? total;
+    const progress = Math.round(((total - remaining) / total) * 100);
     return (
       <div 
         key={loan.id} 

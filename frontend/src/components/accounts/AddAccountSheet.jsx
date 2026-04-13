@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { BottomSheet } from '../ui/BottomSheet';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { db } from '../../lib/db';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
-import { Wallet, BriefcaseBusiness, PiggyBank, CreditCard, DivideSquare as HandCoins } from 'lucide-react';
+import { Wallet, BriefcaseBusiness, PiggyBank, CreditCard, HandCoins } from 'lucide-react';
 
 const ACCOUNT_TYPES = [
   { id: 'Ví/Tiền mặt', label: 'Tiền mặt', icon: Wallet, sub_type: 'payment', color: '#10B981' },
@@ -46,19 +46,15 @@ export function AddAccountSheet({ isOpen, onClose, onSuccess }) {
     if (dbType === 'Tiết kiệm') dbType = 'Ngân hàng';
 
     try {
-      const { error: insertError } = await supabase.from('accounts').insert([
-        {
-          user_id: user.id,
-          name: name.trim(),
-          type: dbType,
-          sub_type: selectedType.sub_type,
-          balance: rawBalance, 
-          icon: 'Wallet', // Could be dynamic based on user selection in future
-          color_hex: selectedType.color
-        }
-      ]);
-
-      if (insertError) throw insertError;
+      await db.accounts.add({
+        id: crypto.randomUUID(),
+        name: name.trim(),
+        type: dbType,
+        sub_type: selectedType.sub_type,
+        balance: rawBalance, 
+        icon: 'Wallet', // Could be dynamic based on user selection in future
+        color_hex: selectedType.color
+      });
       
       resetForm();
       onSuccess();

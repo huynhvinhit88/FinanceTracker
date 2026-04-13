@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { db } from '../lib/db';
 import { Plus, ArrowDownRight, ArrowRightLeft, TrendingUp, TrendingDown } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 import { AddTransactionSheet } from '../components/transactions/AddTransactionSheet';
@@ -28,36 +28,35 @@ export default function Home() {
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch Accounts for Net Worth
-      const { data: accData, error: accError } = await supabase
-        .from('accounts')
-        .select('*');
-      if (accError) throw accError;
-      setAccounts(accData || []);
+      const accData = await db.accounts.toArray();
+      setAccounts(accData);
 
-      const { data: savData } = await supabase.from('savings').select('*');
-      setSavings(savData || []);
+      const savData = await db.savings.toArray();
+      setSavings(savData);
 
-      const { data: invData } = await supabase.from('investments').select('*');
-      setInvestments(invData || []);
+      const invData = await db.investments.toArray();
+      setInvestments(invData);
 
-      const { data: goalData } = await supabase.from('goals').select('*');
-      setGoals(goalData || []);
+      const goalData = await db.goals.toArray();
+      setGoals(goalData);
+
+      const catData = await db.categories.toArray();
 
       // Fetch Transactions
-      const { data: txData, error: txError } = await supabase
-        .from('transactions')
-        .select(`
-          *,
-          account:accounts!account_id(name),
-          to_account:accounts!to_account_id(name),
-          category:categories(name, icon, color_hex)
-        `)
-        .order('date', { ascending: false })
-        .limit(20);
+      const txRaw = await db.transactions
+        .orderBy('date')
+        .reverse()
+        .limit(20)
+        .toArray();
 
-      if (txError) throw txError;
-      setTransactions(txData || []);
+      const txData = txRaw.map(tx => ({
+        ...tx,
+        account: accData.find(a => a.id === tx.account_id),
+        to_account: accData.find(a => a.id === tx.to_account_id),
+        category: catData.find(c => c.id === tx.category_id)
+      }));
+
+      setTransactions(txData);
     } catch (error) {
       console.error('Error fetching dashboard data:', error.message);
     } finally {
@@ -72,13 +71,13 @@ export default function Home() {
 
   // Computations
   const totalCashAndDebt = accounts.reduce((sum, acc) => {
-    if (acc.sub_type !== 'debt') return sum + acc.balance;
-    return sum - acc.balance; // Subtract debts from net worth
+    if (acc.sub_type !== 'debt') return sum + (acc.balance || 0);
+    return sum - (acc.balance || 0); // Subtract debts from net worth
   }, 0);
 
   const totalSavings = savings.reduce((sum, sav) => {
     if (sav.status !== 'active') return sum;
-    return sum + sav.principal_amount; // Tiền gốc (Không cộng lãi tạm tính theo yêu cầu)
+    return sum + (sav.principal_amount || 0); // Tiền gốc 
   }, 0);
 
   const totalInvestments = investments.reduce((sum, inv) => {
@@ -156,13 +155,8 @@ export default function Home() {
         {/* Header */}
         <div className="flex justify-between items-center mb-6 mt-4">
           <div>
-            <p className="text-sm text-gray-500">Xin chào, {(user?.user_metadata?.display_name || 'Người dùng').split(' ')[0]}</p>
-            <h1 className="text-2xl font-bold text-gray-900">Tổng quan</h1>
-          </div>
-          <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
-            <span className="text-blue-700 font-bold text-lg">
-              {(user?.user_metadata?.display_name || 'U').charAt(0).toUpperCase()}
-            </span>
+            <p className="text-sm text-gray-400 font-bold uppercase tracking-widest">Hôm nay, {new Date().toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+            <h1 className="text-3xl font-black text-gray-900 tracking-tight mt-1">Tổng quan</h1>
           </div>
         </div>
 

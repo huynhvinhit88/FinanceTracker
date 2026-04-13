@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { BottomSheet } from '../ui/BottomSheet';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { db } from '../../lib/db';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
-import { Wallet, BriefcaseBusiness, PiggyBank, CreditCard, DivideSquare as HandCoins, Trash2 } from 'lucide-react';
+import { Wallet, BriefcaseBusiness, PiggyBank, CreditCard, HandCoins, Trash2 } from 'lucide-react';
 
 const ACCOUNT_TYPES = [
   { id: 'Ví/Tiền mặt', label: 'Tiền mặt', icon: Wallet, sub_type: 'payment', color: '#10B981' },
@@ -58,19 +58,13 @@ export function EditAccountSheet({ isOpen, onClose, onSuccess, account }) {
     if (dbType === 'Tiết kiệm') dbType = 'Ngân hàng';
 
     try {
-      const { error: updateError } = await supabase
-        .from('accounts')
-        .update({
-          name: name.trim(),
-          type: dbType,
-          sub_type: selectedType.sub_type,
-          balance: rawBalance, 
-          color_hex: selectedType.color
-        })
-        .eq('id', account.id)
-        .eq('user_id', user.id); // extra security
-
-      if (updateError) throw updateError;
+      await db.accounts.update(account.id, {
+        name: name.trim(),
+        type: dbType,
+        sub_type: selectedType.sub_type,
+        balance: rawBalance, 
+        color_hex: selectedType.color
+      });
       
       onSuccess();
       onClose();
@@ -91,13 +85,7 @@ export function EditAccountSheet({ isOpen, onClose, onSuccess, account }) {
     setError('');
 
     try {
-      const { error: deleteError } = await supabase
-        .from('accounts')
-        .delete()
-        .eq('id', account.id)
-        .eq('user_id', user.id);
-
-      if (deleteError) throw deleteError;
+      await db.accounts.delete(account.id);
 
       onSuccess();
       onClose();

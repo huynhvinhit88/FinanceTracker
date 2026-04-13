@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
+import { db } from '../lib/db';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, 
   PieChart, Pie, Cell, AreaChart, Area 
@@ -31,27 +31,24 @@ export default function Statistics() {
     if (!user) return;
     setLoading(true);
     try {
-      const startOfYear = `${selectedYear}-01-01T00:00:00Z`;
-      const endOfYear = `${selectedYear}-12-31T23:59:59Z`;
+      const startOfYear = `${selectedYear}-01-01T00:00:00.000Z`;
+      const endOfYear = `${selectedYear}-12-31T23:59:59.999Z`;
 
-      const [txRes, accRes, savRes, catRes] = await Promise.all([
-        supabase.from('transactions')
-          .select('amount, type, date, category_id')
-          .gte('date', startOfYear)
-          .lte('date', endOfYear)
-          .order('date', { ascending: true }),
-        supabase.from('accounts')
-          .select('balance, sub_type'),
-        supabase.from('savings')
-          .select('principal_amount, status, created_at'),
-        supabase.from('categories')
-          .select('id, name, icon, color_hex')
-      ]);
+      const allTxRaw = await db.transactions
+        .filter(tx => tx.date >= startOfYear && tx.date <= endOfYear)
+        .toArray();
 
-      setTransactions(txRes.data || []);
-      setAccounts(accRes.data || []);
-      setSavingsBooks(savRes.data || []);
-      setCategories(catRes.data || []);
+      const accData = await db.accounts.toArray();
+      const savData = await db.savings.toArray();
+      const catData = await db.categories.toArray();
+
+      // Sort transactions by date ascending
+      allTxRaw.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      setTransactions(allTxRaw);
+      setAccounts(accData);
+      setSavingsBooks(savData);
+      setCategories(catData);
     } catch (err) {
       console.error('Error fetching statistics data:', err);
     } finally {
@@ -105,8 +102,8 @@ export default function Statistics() {
     const expense = transactions.filter(tx => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0);
     
     // Total current savings (current balance, not flow)
-    const accSavings = accounts.filter(a => a.sub_type === 'savings').reduce((s, a) => s + a.balance, 0);
-    const bookSavings = savingsBooks.filter(b => b.status === 'active').reduce((s, b) => s + b.principal_amount, 0);
+    const accSavings = accounts.filter(a => a.sub_type === 'savings').reduce((s, a) => s + (a.balance || 0), 0);
+    const bookSavings = savingsBooks.filter(b => b.status === 'active').reduce((s, b) => s + (b.principal_amount || 0), 0);
 
     return {
       income,

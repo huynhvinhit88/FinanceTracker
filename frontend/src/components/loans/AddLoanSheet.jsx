@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BottomSheet } from '../ui/BottomSheet';
-import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { db } from '../../lib/db';
 import { useLoans } from '../../hooks/useLoans';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { Building, Clock, Percent, Save, Calculator, ChevronDown, CheckCircle, PlusCircle, XCircle } from 'lucide-react';
@@ -138,11 +138,12 @@ export function AddLoanSheet({ isOpen, onClose, onSuccess, initialProfile = null
   };
 
   const fetchInvestments = async () => {
-    const { data } = await supabase
-      .from('investments')
-      .select('id, symbol')
-      .eq('type', 'real_estate');
-    setInvestments(data || []);
+    try {
+      const data = await db.investments.filter(i => i.type === 'real_estate').toArray();
+      setInvestments(data);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleChange = (e) => {
@@ -164,6 +165,7 @@ export function AddLoanSheet({ isOpen, onClose, onSuccess, initialProfile = null
         ...formData,
         linked_investment_id: formData.linked_investment_id || null,
         principal_amount: principal,
+        total_amount: principal, // Map to standardized schema field
         remaining_principal: principal,
         interest_rate,
         promo_rate: promoRate,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
+import { db } from '../lib/db';
 import { Plus, Target, PiggyBank, HandCoins, TrendingUp, TrendingDown, Activity, RefreshCw, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Calendar, Settings2 } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 import { AddBudgetSheet } from '../components/budgets/AddBudgetSheet';
@@ -77,18 +77,26 @@ export default function Plan() {
       // If planViewMode is 'default', we only care about budgets with month = null
       // If planViewMode is 'monthly', we prefer budgets with month = selectedMonth, then fallback to month = null
       
-      const [budgetRes, txRes, accRes, savRes, invRes] = await Promise.all([
-        supabase.from('budgets').select('id, amount, category_id, month, category:categories(name, icon, color_hex, type)'),
-        supabase.from('transactions').select('category_id, amount, type').gte('date', `${selectedMonth}-01T00:00:00.000Z`).lte('date', `${selectedMonth}-31T23:59:59.999Z`),
-        supabase.from('accounts').select('balance, sub_type'),
-        supabase.from('savings').select('principal_amount, interest_rate').eq('status', 'active'),
-        supabase.from('investments').select('current_price, quantity, buy_price, purchase_date, loan_amount, type')
-      ]);
+      const startOfMonth = `${selectedMonth}-01T00:00:00.000Z`;
+      const endOfMonth = `${selectedMonth}-31T23:59:59.999Z`;
 
-      setRawBudgets(budgetRes.data || []);
+      const allCategories = await db.categories.toArray();
+      const allBudgetsRaw = await db.budgets.toArray();
+      
+      const allBudgets = allBudgetsRaw.map(b => ({
+        ...b,
+        category: allCategories.find(c => c.id === b.category_id)
+      }));
 
-      // 1. Process Budgets based on planViewMode
-      const allBudgets = budgetRes.data || [];
+      const allTxRaw = await db.transactions
+        .filter(tx => tx.date >= startOfMonth && tx.date <= endOfMonth)
+        .toArray();
+
+      const allAccounts = await db.accounts.toArray();
+      const activeSavings = await db.savings.filter(s => s.status === 'active').toArray();
+      const allInvestments = await db.investments.toArray();
+
+      setRawBudgets(allBudgets);
 
       const processBudgets = (type) => {
         // Filter by type
@@ -137,7 +145,7 @@ export default function Plan() {
       // 2. Process Transactions (only if viewing monthly)
       const spentByCat = {};
       const earnedByCat = {};
-      (txRes.data || []).forEach(tx => {
+      allTxRaw.forEach(tx => {
         const amt = parseFloat(tx.amount) || 0;
         if (tx.type === 'expense') spentByCat[tx.category_id] = (spentByCat[tx.category_id] || 0) + amt;
         else if (tx.type === 'income') earnedByCat[tx.category_id] = (earnedByCat[tx.category_id] || 0) + amt;
@@ -146,12 +154,12 @@ export default function Plan() {
       setActualIncome(earnedByCat);
 
       // 3. Asset Processing
-      const accNW = (accRes.data || []).reduce((s, a) => {
+      const accNW = allAccounts.reduce((s, a) => {
         const bal = parseFloat(a.balance) || 0;
         return a.sub_type === 'debt' ? s - bal : s + bal;
       }, 0);
-      const savTotal = (savRes.data || []).reduce((s, x) => s + (parseFloat(x.principal_amount) || 0), 0);
-      const invTotal = (invRes.data || []).reduce((s, i) => {
+      const savTotal = activeSavings.reduce((s, x) => s + (parseFloat(x.principal_amount) || 0), 0);
+      const invTotal = allInvestments.reduce((s, i) => {
         const cur = parseFloat(i.current_price) || 0;
         const qty = parseFloat(i.quantity) || 1;
         const loan = parseFloat(i.loan_amount) || 0;
@@ -160,9 +168,9 @@ export default function Plan() {
       }, 0);
       setCurrentNW(accNW + savTotal + invTotal);
 
-      const savAnnualInterest = (savRes.data || []).reduce((s, x) => s + ((parseFloat(x.principal_amount) || 0) * (parseFloat(x.interest_rate) || 0) / 100), 0);
+      const savAnnualInterest = activeSavings.reduce((s, x) => s + ((parseFloat(x.principal_amount) || 0) * (parseFloat(x.interest_rate) || 0) / 100), 0);
       let invAnnualGain = 0;
-      for (const inv of (invRes.data || [])) {
+      for (const inv of allInvestments) {
         const isRE = inv.type === 'real_estate';
         const cost = (parseFloat(inv.buy_price) || parseFloat(inv.current_price) || 0) * (isRE ? 1 : (parseFloat(inv.quantity) || 0));
         const cur = (parseFloat(inv.current_price) || 0) * (isRE ? 1 : (parseFloat(inv.quantity) || 0));

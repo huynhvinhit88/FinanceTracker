@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BottomSheet } from '../ui/BottomSheet';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { db } from '../../lib/db';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { Trash2 } from 'lucide-react';
 
@@ -37,28 +37,25 @@ export function EditBudgetSheet({ isOpen, onClose, budget, onSuccess, viewMonth 
 
     try {
       if (budget.month) {
-        const { error: updateError } = await supabase
-          .from('budgets')
-          .update({ amount: rawAmount })
-          .eq('id', budget.id);
-        if (updateError) throw updateError;
+        await db.budgets.update(budget.id, { amount: rawAmount });
       } else {
         if (applyToAll) {
-          const { error: updateError } = await supabase
-            .from('budgets')
-            .update({ amount: rawAmount })
-            .eq('id', budget.id);
-          if (updateError) throw updateError;
+          await db.budgets.update(budget.id, { amount: rawAmount });
         } else {
-          const { error: upsertError } = await supabase
-            .from('budgets')
-            .upsert({
-              user_id: user.id,
+          const existing = await db.budgets
+            .filter(b => b.category_id === budget.category_id && b.month === viewMonth)
+            .first();
+            
+          if (existing) {
+            await db.budgets.update(existing.id, { amount: rawAmount });
+          } else {
+            await db.budgets.add({
+              id: crypto.randomUUID(),
               category_id: budget.category_id,
               amount: rawAmount,
               month: viewMonth
-            }, { onConflict: 'user_id, category_id, month' });
-          if (upsertError) throw upsertError;
+            });
+          }
         }
       }
       
@@ -78,12 +75,7 @@ export function EditBudgetSheet({ isOpen, onClose, budget, onSuccess, viewMonth 
     setError('');
 
     try {
-      const { error: deleteError } = await supabase
-        .from('budgets')
-        .delete()
-        .eq('id', budget.id);
-
-      if (deleteError) throw deleteError;
+      await db.budgets.delete(budget.id);
       
       onSuccess();
       onClose();

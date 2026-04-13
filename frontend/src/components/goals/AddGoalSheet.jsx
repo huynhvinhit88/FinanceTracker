@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BottomSheet } from '../ui/BottomSheet';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { db } from '../../lib/db';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 
 export function AddGoalSheet({ isOpen, onClose, onSuccess }) {
@@ -30,18 +30,14 @@ export function AddGoalSheet({ isOpen, onClose, onSuccess }) {
     setError('');
 
     try {
-      const payload = {
-        user_id: user.id,
+      await db.goals.add({
+        id: crypto.randomUUID(),
         name: name.trim(),
         target_amount: rawTarget,
+        current_amount: 0,
         deadline: deadline ? new Date(deadline).toISOString() : null,
-      };
-
-      const { error: insertError } = await supabase
-        .from('goals')
-        .insert([payload]);
-
-      if (insertError) throw insertError;
+        status: 'active'
+      });
       
       resetForm();
       onSuccess();

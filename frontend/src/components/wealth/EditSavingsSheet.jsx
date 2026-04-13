@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BottomSheet } from '../ui/BottomSheet';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { db } from '../../lib/db';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { Trash2, CheckCircle2 } from 'lucide-react';
 
@@ -42,18 +42,13 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
     setError('');
 
     try {
-      const { error: updateError } = await supabase
-        .from('savings')
-        .update({
-          name: name.trim(),
-          principal_amount: principalAmount,
-          interest_rate: parseFloat(interestRate),
-          term_months: parseInt(termMonths),
-          status: status
-        })
-        .eq('id', savings.id);
-
-      if (updateError) throw updateError;
+      await db.savings.update(savings.id, {
+        name: name.trim(),
+        principal_amount: principalAmount,
+        interest_rate: parseFloat(interestRate),
+        term_months: parseInt(termMonths),
+        status: status
+      });
       
       onSuccess();
       onClose();
@@ -69,12 +64,7 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
     
     setSettleLoading(true);
     try {
-      const { error: settleError } = await supabase
-        .from('savings')
-        .update({ status: 'settled' })
-        .eq('id', savings.id);
-
-      if (settleError) throw settleError;
+      await db.savings.update(savings.id, { status: 'settled' });
       onSuccess();
       onClose();
     } catch (err) {
@@ -89,12 +79,7 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
     
     setDeleteLoading(true);
     try {
-      const { error: deleteError } = await supabase
-        .from('savings')
-        .delete()
-        .eq('id', savings.id);
-
-      if (deleteError) throw deleteError;
+      await db.savings.delete(savings.id);
       onSuccess();
       onClose();
     } catch (err) {

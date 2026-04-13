@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BottomSheet } from '../ui/BottomSheet';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { db } from '../../lib/db';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 
 export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
@@ -27,18 +27,14 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
     setError('');
 
     try {
-      const { error: insertError } = await supabase.from('savings').insert([
-        {
-          user_id: user.id,
-          name: name.trim(),
-          principal_amount: principalAmount,
-          interest_rate: parseFloat(interestRate),
-          term_months: parseInt(termMonths),
-          status: 'active'
-        }
-      ]);
-
-      if (insertError) throw insertError;
+      await db.savings.add({
+        id: crypto.randomUUID(),
+        name: name.trim(),
+        principal_amount: principalAmount,
+        interest_rate: parseFloat(interestRate),
+        term_months: parseInt(termMonths),
+        status: 'active'
+      });
       
       resetPrincipal();
       setName('');

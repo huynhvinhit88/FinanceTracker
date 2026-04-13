@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BottomSheet } from '../ui/BottomSheet';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { db } from '../../lib/db';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 
 export function FundGoalSheet({ isOpen, onClose, onSuccess, goal }) {
@@ -23,9 +23,8 @@ export function FundGoalSheet({ isOpen, onClose, onSuccess, goal }) {
 
   const fetchAccounts = async () => {
     try {
-      const { data, error } = await supabase.from('accounts').select('*').order('name');
-      if (error) throw error;
-      setAccounts(data || []);
+      const data = await db.accounts.orderBy('name').toArray();
+      setAccounts(data);
       if (data && data.length > 0) setAccountId(data[0].id);
     } catch (err) {
       console.error(err);
@@ -50,25 +49,18 @@ export function FundGoalSheet({ isOpen, onClose, onSuccess, goal }) {
 
     try {
       // 1. Create Expense Transaction
-      const txPayload = {
-        user_id: user.id,
+      await db.transactions.add({
+        id: crypto.randomUUID(),
         account_id: accountId,
         amount: rawAmount,
         type: 'expense',
+        date: new Date().toISOString(),
         note: `Góp quỹ: ${goal.name}`
-      };
-
-      const { error: txError } = await supabase.from('transactions').insert([txPayload]);
-      if (txError) throw txError;
+      });
 
       // 2. Update Goal Current Amount
       const newAmount = goal.current_amount + rawAmount;
-      const { error: goalError } = await supabase
-        .from('goals')
-        .update({ current_amount: newAmount })
-        .eq('id', goal.id);
-
-      if (goalError) throw goalError;
+      await db.goals.update(goal.id, { current_amount: newAmount });
       
       resetAmount();
       onSuccess();

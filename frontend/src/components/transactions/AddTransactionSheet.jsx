@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BottomSheet } from '../ui/BottomSheet';
-import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { db } from '../../lib/db';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { useLoans } from '../../hooks/useLoans';
 import { Landmark, Info, Calculator } from 'lucide-react';
@@ -20,7 +19,6 @@ const DEFAULT_CATEGORIES = [
 ];
 
 export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
-  const { user } = useAuth();
   const { loans, fetchLoans, updateLoanBalance, suggestInterest } = useLoans();
   
   const [type, setType] = useState('expense'); // expense, income, transfer, repayment
@@ -49,22 +47,25 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
       fetchDependencies();
       fetchLoans();
     }
-  }, [isOpen, user]);
+  }, [isOpen]);
 
   const fetchDependencies = async () => {
-    if (!user) return;
     try {
-      const { data: accData } = await supabase.from('accounts').select('*').order('name');
-      setAccounts(accData || []);
-      if (accData?.length > 0) setAccountId(accData[0].id);
+      const accData = await db.accounts.orderBy('name').toArray();
+      setAccounts(accData);
+      if (accData.length > 0) setAccountId(accData[0].id);
 
-      const { data: catData } = await supabase.from('categories').select('*');
-      let localCats = catData || [];
+      const catData = await db.categories.toArray();
+      let localCats = catData;
       
       if (localCats.length === 0) {
-        const seedCats = DEFAULT_CATEGORIES.map(c => ({ ...c, user_id: user.id, is_default: true }));
-        const { data: newCats } = await supabase.from('categories').insert(seedCats).select();
-        if (newCats) localCats = newCats;
+        const seedCats = DEFAULT_CATEGORIES.map(c => ({ 
+            ...c, 
+            id: crypto.randomUUID(),
+            is_default: true 
+        }));
+        await db.categories.bulkAdd(seedCats);
+        localCats = await db.categories.toArray();
       }
       
       setCategories(localCats);
@@ -174,7 +175,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
 
     try {
       const payload = {
-        user_id: user.id,
+        id: crypto.randomUUID(),
         account_id: accountId,
         category_id: type !== 'transfer' ? categoryId : null,
         to_account_id: type === 'transfer' ? toAccountId : null,
@@ -182,14 +183,12 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
         type: type === 'repayment' ? 'expense' : type,
         date: new Date(date).toISOString(),
         note: note.trim() || (type === 'repayment' ? `Trả nợ ${loans.find(l=>l.id===loanId)?.name}` : ''),
-        // Loan fields
         loan_id: isLoanMode ? loanId : null,
         loan_payment_type: isLoanMode ? repaymentType : null,
         loan_principal_amount: isLoanMode ? principalRaw : 0
       };
 
-      const { error: insertError } = await supabase.from('transactions').insert([payload]);
-      if (insertError) throw insertError;
+      await db.transactions.add(payload);
       
       // Nếu là trả nợ vay, cập nhật số dư nợ
       if (isLoanMode && loanId) {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BottomSheet } from '../ui/BottomSheet';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { db } from '../../lib/db';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { formatCurrency } from '../../utils/format';
 
@@ -33,19 +33,15 @@ export function AddInvestmentSheet({ isOpen, onClose, onSuccess }) {
     setError('');
 
     try {
-      const { error: insertError } = await supabase.from('investments').insert([
-        {
-          user_id: user.id,
-          type,
-          symbol: symbol.trim().toUpperCase(),
-          quantity: isRE ? 1 : parseFloat(quantity),
-          buy_price: buyPrice,
-          current_price: finalCurrentPrice,
-          loan_amount: isRE ? loanAmount : 0
-        }
-      ]);
-
-      if (insertError) throw insertError;
+      await db.investments.add({
+        id: crypto.randomUUID(),
+        type,
+        symbol: symbol.trim().toUpperCase(),
+        quantity: isRE ? 1 : parseFloat(quantity),
+        buy_price: buyPrice,
+        current_price: finalCurrentPrice,
+        loan_amount: isRE ? loanAmount : 0
+      });
       
       resetBuyPrice();
       resetCurrentPrice();

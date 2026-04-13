@@ -10,17 +10,15 @@ import Statistics from './pages/Statistics';
 import Settings from './pages/Settings';
 import TransactionsList from './pages/TransactionsList';
 import Login from './pages/auth/Login';
-import Register from './pages/auth/Register';
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public Auth Routes */}
           <Route path="login" element={<Login />} />
-          <Route path="register" element={<Register />} />
           
+
           {/* Protected Routes Guard */}
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<MobileLayout />}>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+import { db } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowDownRight, ArrowRightLeft } from 'lucide-react';
@@ -56,23 +56,23 @@ export default function TransactionsList() {
     setLoading(true);
     
     try {
-      let query = supabase
-        .from('transactions')
-        .select(`
-          *,
-          account:accounts!account_id(name),
-          to_account:accounts!to_account_id(name),
-          category:categories(name, icon, color_hex)
-        `)
-        .order('date', { ascending: false })
-        .range(pageIndex * PAGE_SIZE, (pageIndex + 1) * PAGE_SIZE - 1);
-        
+      let collection = db.transactions.orderBy('date').reverse();
+      
       if (currentFilter !== 'all') {
-        query = query.eq('type', currentFilter);
+        collection = collection.filter(tx => tx.type === currentFilter);
       }
 
-      const { data, error } = await query;
-      if (error) throw error;
+      const txs = await collection.offset(pageIndex * PAGE_SIZE).limit(PAGE_SIZE).toArray();
+      
+      const allAccounts = await db.accounts.toArray();
+      const allCategories = await db.categories.toArray();
+
+      const data = txs.map(tx => ({
+        ...tx,
+        account: allAccounts.find(a => a.id === tx.account_id),
+        to_account: allAccounts.find(a => a.id === tx.to_account_id),
+        category: allCategories.find(c => c.id === tx.category_id)
+      }));
       
       const newTxs = data || [];
       if (newTxs.length < PAGE_SIZE) setHasMore(false);

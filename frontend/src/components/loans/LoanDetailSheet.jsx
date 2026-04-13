@@ -1,11 +1,11 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import { BottomSheet } from '../ui/BottomSheet';
 import { formatCurrency } from '../../utils/format';
 import { calculateLoanSchedule } from '../../utils/loanCalculator';
 import { useLoans } from '../../hooks/useLoans';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
-import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
+import { db } from '../../lib/db';
 import { 
   History, Calendar, AlertCircle, TrendingUp,
   Info, Pencil, Trash2, Save, X, ChevronDown,
@@ -90,8 +90,12 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
   }, [loan, mode]);
 
   const fetchInvestments = async () => {
-    const { data } = await supabase.from('investments').select('id, symbol').eq('type', 'real_estate');
-    setInvestments(data || []);
+    try {
+      const data = await db.investments.filter(i => i.type === 'real_estate').toArray();
+      setInvestments(data);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const scheduleData = useMemo(() => {
@@ -113,7 +117,9 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
   }, [loan]);
 
   const { result, schedule } = scheduleData;
-  const progress = loan ? Math.round(((loan.principal_amount - loan.remaining_principal) / loan.principal_amount) * 100) : 0;
+  const principalTotal = loan?.total_amount || loan?.principal_amount || 1;
+  const principalRemaining = loan?.remaining_principal ?? principalTotal;
+  const progress = Math.round(((principalTotal - principalRemaining) / principalTotal) * 100);
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -124,6 +130,7 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
         ...editForm,
         linked_investment_id: editForm.linked_investment_id || null,
         principal_amount: principalEdit,
+        total_amount: principalEdit, // Ensure compatibility
         remaining_principal: Math.min(loan.remaining_principal, principalEdit),
         interest_rate,
         promo_rate: promoRate,
@@ -200,7 +207,7 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                 <div className="flex justify-between items-end">
                   <div>
                     <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Dư nợ hiện tại</p>
-                    <p className="text-3xl font-black text-white">{formatCurrency(loan.remaining_principal)}<span className="text-xs ml-1 text-gray-400">₫</span></p>
+                    <p className="text-3xl font-black text-white">{formatCurrency(principalRemaining)}<span className="text-xs ml-1 text-gray-400">₫</span></p>
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-black text-emerald-400">{progress}%</p>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BottomSheet } from '../ui/BottomSheet';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { db } from '../../lib/db';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 
 export function AddBudgetSheet({ isOpen, onClose, onSuccess, initialMonth }) {
@@ -30,16 +30,14 @@ export function AddBudgetSheet({ isOpen, onClose, onSuccess, initialMonth }) {
   }, [isOpen, user, planType, initialMonth]);
 
   const fetchCategories = async () => {
-    if (!user) return;
     try {
-      const { data, error: catError } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('type', planType)
-        .order('name');
+      const data = await db.categories
+        .filter(c => c.type === planType)
+        .toArray();
+      // Xếp theo A-Z
+      data.sort((a,b) => a.name.localeCompare(b.name));
         
-      if (catError) throw catError;
-      setCategories(data || []);
+      setCategories(data);
       if (data && data.length > 0) {
         setCategoryId(data[0].id);
       } else {
@@ -66,19 +64,23 @@ export function AddBudgetSheet({ isOpen, onClose, onSuccess, initialMonth }) {
     setError('');
 
     try {
+      const monthToSave = applyType === 'monthly' ? selectedMonth : null;
+      
       const payload = {
-        user_id: user.id,
         category_id: categoryId,
         amount: rawAmount,
-        month: applyType === 'monthly' ? selectedMonth : null
+        month: monthToSave
       };
 
-      // Upsert: Using the new unique logic (cat_id, month)
-      const { error: upsertError } = await supabase
-        .from('budgets')
-        .upsert(payload, { onConflict: 'user_id, category_id, month' });
+      const existing = await db.budgets
+        .filter(b => b.category_id === categoryId && b.month === monthToSave)
+        .first();
 
-      if (upsertError) throw upsertError;
+      if (existing) {
+        await db.budgets.update(existing.id, payload);
+      } else {
+        await db.budgets.add({ id: crypto.randomUUID(), ...payload });
+      }
       
       resetForm();
       onSuccess();

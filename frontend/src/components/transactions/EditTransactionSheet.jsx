@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BottomSheet } from '../ui/BottomSheet';
-import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { db } from '../../lib/db';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { useLoans } from '../../hooks/useLoans';
 import { Trash2, Landmark, Info, Calculator } from 'lucide-react';
@@ -9,7 +8,6 @@ import { formatCurrency } from '../../utils/format';
 import { calculateLoanSchedule } from '../../utils/loanCalculator';
 
 export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }) {
-  const { user } = useAuth();
   
   const { loans, fetchLoans, updateLoanBalance, suggestInterest } = useLoans();
   
@@ -149,13 +147,12 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
   }, [loanId, repaymentType, loans]);
 
   const fetchDependencies = async () => {
-    if (!user) return;
     try {
-      const { data: accData } = await supabase.from('accounts').select('*').order('name');
-      setAccounts(accData || []);
+      const accData = await db.accounts.orderBy('name').toArray();
+      setAccounts(accData);
       
-      const { data: catData } = await supabase.from('categories').select('*');
-      setCategories(catData || []);
+      const catData = await db.categories.toArray();
+      setCategories(catData);
     } catch (err) {
       console.error(err);
     }
@@ -204,13 +201,7 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
         loan_principal_amount: isLoanMode ? principalRaw : 0
       };
 
-      const { error: updateError } = await supabase
-        .from('transactions')
-        .update(payload)
-        .eq('id', transaction.id)
-        .eq('user_id', user.id);
-
-      if (updateError) throw updateError;
+      await db.transactions.update(transaction.id, payload);
 
       // Xử lý cập nhật số dư nợ (Rollback & Apply)
       if (oldLoanInfo) {
@@ -239,13 +230,7 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
     setError('');
 
     try {
-      const { error: deleteError } = await supabase
-        .from('transactions')
-        .delete()
-        .eq('id', transaction.id)
-        .eq('user_id', user.id);
-
-      if (deleteError) throw deleteError;
+      await db.transactions.delete(transaction.id);
 
       // Rollback dư nợ nếu là giao dịch trả nợ
       if (oldLoanInfo) {

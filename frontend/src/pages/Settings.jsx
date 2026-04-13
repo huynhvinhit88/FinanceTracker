@@ -1,22 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut, User, FolderTree, FileDown, Trash2, ChevronRight, Activity, Download } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { db } from '../lib/db';
+import { 
+  exportDatabaseToJSON, 
+  importDatabaseFromJSON,
+  initGoogleDriveSync,
+  uploadToDrive,
+  downloadFromDrive,
+  checkRemoteBackup,
+  getGoogleUserInfo,
+  disconnectGoogleDrive
+} from '../lib/syncService';
+import { Cloud, RefreshCw, CloudDownload, CloudUpload, FolderTree, LogOut, Trash2, ChevronRight, Download, ShieldCheck } from 'lucide-react';
 import { CategoryManagementSheet } from '../components/settings/CategoryManagementSheet';
+import { ChangePinSheet } from '../components/settings/ChangePinSheet';
 import { LoanCalculatorSheet } from '../components/tools/LoanCalculatorSheet';
 import { CompoundInterestSheet } from '../components/tools/CompoundInterestSheet';
 import { calculateLoanSchedule } from '../utils/loanCalculator';
 
 export default function Settings() {
   const { user, signOut } = useAuth();
-  const [profile, setProfile] = useState(null);
 
   const [showCategorySheet, setShowCategorySheet] = useState(false);
+  const [showChangePinSheet, setShowChangePinSheet] = useState(false);
   const [showLoanSheet, setShowLoanSheet] = useState(false);
   const [showCompoundSheet, setShowCompoundSheet] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [wipeLoading, setWipeLoading] = useState(false);
   const [showExportPanel, setShowExportPanel] = useState(false);
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [lastSync, setLastSync] = useState(null);
+  const [googleUser, setGoogleUser] = useState(null);
   const [exportSelections, setExportSelections] = useState({
     transactions: true,
     accounts: true,
@@ -26,12 +40,20 @@ export default function Settings() {
   });
 
   useEffect(() => {
-    if (user) fetchProfile();
+    if (user) {
+      fetchLastSync();
+      initGoogleDriveSync();
+    }
   }, [user]);
 
-  const fetchProfile = async () => {
-    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-    if (data) setProfile(data);
+  const fetchLastSync = async () => {
+    const record = await db.settings.get('lastDriveSync');
+    if (record) setLastSync(record.value);
+  };
+
+  const fetchGoogleUser = async () => {
+    const info = await getGoogleUserInfo();
+    if (info) setGoogleUser(info);
   };
 
   const handleSignOut = async () => {
@@ -68,148 +90,32 @@ export default function Settings() {
   };
 
   const handleExportData = async () => {
-    if (!Object.values(exportSelections).some(Boolean)) {
-      alert('Vui lòng chọn ít nhất 1 loại báo cáo cần xuất.');
-      return;
-    }
     setExportLoading(true);
-    const dateStr = new Date().toISOString().slice(0, 10);
     try {
-      // --- 1. Giao dịch ---
       if (exportSelections.transactions) {
-        const { data } = await supabase.from('transactions').select(`
-          id, type, amount, date, note,
-          account:accounts!account_id(name),
-          to_account:accounts!to_account_id(name),
-          category:categories(name)
-        `).order('date', { ascending: false });
-        const csv = toCSV(
-          ['id', 'date', 'type', 'amount', 'account', 'to_account', 'category', 'note'],
-          (data || []).map(tx => ({
-            id: tx.id,
-            date: new Date(tx.date).toLocaleDateString('vi-VN'),
-            type: tx.type === 'income' ? 'Thu nhập' : tx.type === 'expense' ? 'Chi tiêu' : 'Chuyển khoản',
-            amount: tx.amount,
-            account: tx.account?.name || '',
-            to_account: tx.to_account?.name || '',
-            category: tx.category?.name || '',
-            note: tx.note || ''
-          }))
-        );
-        downloadCSV(csv, `FT_GiaoDich_${dateStr}.csv`);
+        // Fallback or handle CSV logic here using Dexie if needed.
+        // Or simply export entire JSON backup:
+        await exportDatabaseToJSON();
+        alert('Đã xuất file dự phòng định dạng JSON.');
       }
-
-      // --- 2. Tài khoản ---
-      if (exportSelections.accounts) {
-        const { data } = await supabase.from('accounts').select('name, type, sub_type, balance, currency');
-        const csv = toCSV(['name', 'type', 'sub_type', 'balance', 'currency'], data || []);
-        downloadCSV(csv, `FT_TaiKhoan_${dateStr}.csv`);
-      }
-
-      // --- 3. Mục tiêu ---
-      if (exportSelections.goals) {
-        const { data } = await supabase.from('goals').select('name, target_amount, current_amount, deadline, status');
-        const csv = toCSV(
-          ['name', 'target_amount', 'current_amount', 'deadline', 'status'],
-          (data || []).map(g => ({
-            ...g,
-            deadline: g.deadline ? new Date(g.deadline).toLocaleDateString('vi-VN') : '',
-            status: g.status === 'completed' ? 'Đã hoàn thành' : 'Đang thực hiện'
-          }))
-        );
-        downloadCSV(csv, `FT_MucTieu_${dateStr}.csv`);
-      }
-
-      // --- 4. Hồ sơ Khoản Vay (localStorage) + Bảng dòng tiền ---
-      if (exportSelections.loanProfiles) {
-        const stored = localStorage.getItem(`loan_profiles_${user?.id || 'guest'}`);
-        const profiles = stored ? JSON.parse(stored) : [];
-        if (profiles.length === 0) {
-          alert('Chưa có hồ sơ khoản vay nào được lưu.');
-        } else {
-          let csvSections = [
-            `# FINANCETRACKER - HỐ SƠ KHOẢN VAY`,
-            `# Xuất lúc: ${new Date().toLocaleString('vi-VN')}`,
-            `# Tài khoản: ${user?.email}`,
-            '',
-          ];
-
-          for (const p of profiles) {
-            const { result, schedule } = calculateLoanSchedule(p);
-
-            // --- Thông số hồ sơ ---
-            csvSections.push(`## HỔ SƠ: ${p.name}`);
-            csvSections.push(toCSV(
-              ['Thông số', 'Giá trị'],
-              [
-                { 'Thông số': 'Ngày giải ngân',             'Giá trị': p.startDate || '' },
-                { 'Thông số': 'Ngày trả nợ đầu tiên',        'Giá trị': p.firstPaymentDate || '' },
-                { 'Thông số': 'Số tiền vay (VND)',            'Giá trị': p.principal || 0 },
-                { 'Thông số': 'Kỳ hạn (tháng)',               'Giá trị': p.termMonths || '' },
-                { 'Thông số': 'Lãi ưu đãi (%/năm)',            'Giá trị': p.promoRate || '' },
-                { 'Thông số': 'Thời gian ưu đãi (tháng)',       'Giá trị': p.promoMonths || '' },
-                { 'Thông số': 'Lãi cơ sở (%)',                 'Giá trị': p.baseRate || '' },
-                { 'Thông số': 'Biên độ (+%)',                   'Giá trị': p.marginRate || '' },
-                { 'Thông số': 'Ngân sách/tháng (VND)',          'Giá trị': p.extraPayment || 0 },
-                { 'Thông số': 'Ngưỡng tất toán (VND)',          'Giá trị': p.offsetThreshold || 0 },
-                { 'Thông số': 'Kết quả - Khoản trả tháng đầu', 'Giá trị': result?.initialMonthlyPayment || '' },
-                { 'Thông số': 'Kết quả - Tổng lãi (không trả sớm)', 'Giá trị': result?.baseTotalInterest || '' },
-                { 'Thông số': 'Kết quả - Tổng lãi thực tế',   'Giá trị': result?.actualTotalInterest || '' },
-                { 'Thông số': 'Kết quả - Phí phạt',            'Giá trị': result?.totalPenalty || 0 },
-                { 'Thông số': 'Kết quả - Tiết kiệm lãi',       'Giá trị': result?.interestSaved || 0 },
-                { 'Thông số': 'Kết quả - Tất toán tại tháng',  'Giá trị': result?.actualMonths || '' },
-                { 'Thông số': 'Kết quả - Rút ngắn được',       'Giá trị': result?.monthsSaved ? `${result.monthsSaved} tháng` : '' },
-                { 'Thông số': 'Kết quả - Dự kiến tất toán',   'Giá trị': result?.payoffDateStr || '' },
-              ]
-            ));
-
-            // --- Bảng dòng tiền ---
-            csvSections.push('');
-            csvSections.push(`### Bảng chi tiết dòng tiền: ${p.name}`);
-            if (schedule.length > 0) {
-              csvSections.push(toCSV(
-                ['Kỳ', 'Ngày trả', 'Lãi', 'Gốc', 'Tổng phải trả', 'Tất toán', 'Phạt', 'Ví tích luỹ', 'Dư nợ còn lại'],
-                schedule.map(row => ({
-                  'Kỳ': row.month,
-                  'Ngày trả': row.date,
-                  'Lãi': row.interest,
-                  'Gốc': row.principal,
-                  'Tổng phải trả': row.total,
-                  'Tất toán': row.prepay || '',
-                  'Phạt': row.penalty || '',
-                  'Ví tích luỹ': row.accumulated,
-                  'Dư nợ còn lại': row.remaining,
-                }))
-              ));
-            }
-            csvSections.push(''); // separator between profiles
-          }
-
-          downloadCSV(csvSections.join('\n'), `FT_HoSoVay_${dateStr}.csv`);
-        }
-      }
-
-      // --- 5. Dự báo Tài chính ---
-      if (exportSelections.projection) {
-        // Lấy NW hiện tại
-        const { data: accData } = await supabase.from('accounts').select('balance, sub_type');
-        const nw = (accData || []).reduce((s, a) => a.sub_type === 'debt' ? s - a.balance : s + a.balance, 0);
-        const rate = 0.08 / 12; // 8%/năm
-        const monthly = 5000000; // Mặc định 5 triệu/tháng nếu không có dữ liệu
-        const rows = [];
-        let val = nw;
-        for (let m = 0; m <= 120; m++) {
-          if (m > 0) val = val * (1 + rate) + monthly;
-          rows.push({ month: m, assets: Math.round(val) });
-        }
-        const csv = toCSV(['month', 'assets'], rows);
-        downloadCSV(csv, `FT_DuBao120T_${dateStr}.csv`);
-      }
-
     } catch (err) {
       alert('Lỗi khi xuất dữ liệu: ' + err.message);
     } finally {
       setExportLoading(false);
+    }
+  };
+
+  const handleImportJson = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (window.confirm('Cảnh báo: Nhập file sao lưu sẽ ĐÈ lên toàn bộ dữ liệu hiện tại. Tiếp tục?')) {
+      try {
+         await importDatabaseFromJSON(file);
+         alert('Khôi phục dữ liệu thành công! Ứng dụng sẽ tải lại.');
+         window.location.reload();
+      } catch (err) {
+         alert('Lỗi khôi phục: ' + err.message);
+      }
     }
   };
 
@@ -226,14 +132,14 @@ export default function Settings() {
 
     setWipeLoading(true);
     try {
-      // Delete in correct order due to FK constraints
-      await supabase.from('transactions').delete().eq('user_id', user.id);
-      await supabase.from('budgets').delete().eq('user_id', user.id);
-      await supabase.from('goals').delete().eq('user_id', user.id);
-      await supabase.from('savings').delete().eq('user_id', user.id);
-      await supabase.from('investments').delete().eq('user_id', user.id);
-      await supabase.from('accounts').delete().eq('user_id', user.id);
-      await supabase.from('categories').delete().eq('user_id', user.id);
+      // Delete all Dexie Tables
+      await db.transactions.clear();
+      await db.budgets.clear();
+      await db.goals.clear();
+      await db.savings.clear();
+      await db.investments.clear();
+      await db.accounts.clear();
+      await db.categories.clear();
 
       alert('✅ Đã xóa toàn bộ dữ liệu thành công. Ứng dụng sẽ tải lại.');
       window.location.href = '/';
@@ -244,25 +150,49 @@ export default function Settings() {
     }
   };
 
-  const displayName = profile?.display_name || user?.user_metadata?.display_name || 'Người dùng';
-  const initials = displayName.charAt(0).toUpperCase();
+  const handleCloudBackup = async () => {
+    setSyncLoading(true);
+    try {
+      await uploadToDrive();
+      await fetchLastSync();
+      await fetchGoogleUser();
+      alert('✅ Đã sao lưu dữ liệu lên Google Drive thành công!');
+    } catch (err) {
+      alert('❌ Lỗi sao lưu: ' + err.message);
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
+  const handleCloudRestore = async () => {
+    if (!window.confirm('⚠️ CẢNH BÁO: Khôi phục từ Cloud sẽ XÓA TOÀN BỘ dữ liệu hiện tại trên máy này và thay thế bằng bản trên Drive. Bạn có chắc chắn?')) return;
+    
+    setSyncLoading(true);
+    try {
+      await downloadFromDrive();
+      await fetchGoogleUser();
+      alert('✅ Khôi phục thành công! Ứng dụng sẽ tải lại.');
+      window.location.reload();
+    } catch (err) {
+      alert('❌ Lỗi khôi phục: ' + err.message);
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
+  const handleSwitchGoogleAccount = () => {
+    if (window.confirm('Bạn muốn đổi tài khoản Google Drive khác?')) {
+      disconnectGoogleDrive();
+      setGoogleUser(null);
+      alert('Đã ngắt kết nối tài khoản cũ. Vui lòng chọn tài khoản mới trong lần sao lưu tới.');
+    }
+  };
 
   return (
     <div className="pb-24 animate-in fade-in">
       {/* Header - Left Aligned to Icon Axis */}
-      <div className="bg-gradient-to-br from-blue-600 to-indigo-700 pt-16 pb-12 rounded-b-[3rem] shadow-lg">
-        <h1 className="text-3xl font-extrabold text-white text-left mb-8 tracking-tighter pl-11">Cài đặt</h1>
-        <div className="px-6">
-          <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-5 rounded-[2rem] flex items-center space-x-4">
-            <div className="w-16 h-16 bg-white/30 rounded-2xl flex items-center justify-center shrink-0 text-white text-2xl font-black shadow-inner border border-white/20">
-              {initials}
-            </div>
-            <div className="text-white overflow-hidden flex-1 min-w-0">
-              <p className="font-black text-xl truncate tracking-tight">{displayName}</p>
-              <p className="text-sm text-blue-100/70 truncate font-medium">{user?.email}</p>
-            </div>
-          </div>
-        </div>
+      <div className="bg-gradient-to-br from-blue-600 to-indigo-700 pt-16 pb-8 rounded-b-[2.5rem] shadow-lg">
+        <h1 className="text-3xl font-extrabold text-white text-left tracking-tighter pl-11">Cài đặt</h1>
       </div>
 
       <div className="px-6 mt-10 space-y-9">
@@ -296,27 +226,6 @@ export default function Settings() {
                 <div>
                   <p className="font-black text-gray-900 group-active:text-orange-600 transition-colors">Sức mạnh Lãi Kép</p>
                   <p className="text-[11px] text-gray-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Xem dòng tiền bùng nở theo thời gian</p>
-                </div>
-              </div>
-              <ChevronRight className="text-gray-300 group-hover:text-gray-400 shrink-0 ml-4" size={18} />
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 pl-11">Tuỳ chỉnh Ứng dụng</p>
-          <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
-            <button
-              onClick={() => setShowCategorySheet(true)}
-              className="w-full flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors group text-left"
-            >
-              <div className="flex items-center space-x-4 flex-1">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 shadow-sm border border-emerald-100/50">
-                  <FolderTree size={20} />
-                </div>
-                <div>
-                  <p className="font-black text-gray-900 group-active:text-emerald-600 transition-colors">Quản lý Danh mục</p>
-                  <p className="text-[11px] text-gray-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Thêm / Sửa / Xóa danh mục Thu - Chi</p>
                 </div>
               </div>
               <ChevronRight className="text-gray-300 group-hover:text-gray-400 shrink-0 ml-4" size={18} />
@@ -379,8 +288,13 @@ export default function Settings() {
                     {exportLoading
                       ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       : <Download size={18} />}
-                    <span>{exportLoading ? 'ĐANG TẠO FILE...' : 'TẢI XUỐNG BÁO CÁO'}</span>
+                    <span>{exportLoading ? 'ĐANG TẠO FILE...' : 'TẢI MÃ NGUỒN DỰ PHÒNG JSON'}</span>
                   </button>
+                  <label className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl flex items-center justify-center space-x-2 disabled:opacity-60 active:scale-95 transition-all shadow-lg shadow-emerald-100 cursor-pointer">
+                    <Download size={18} className="rotate-180" />
+                    <span>NHẬP FILE DỰ PHÒNG CHUẨN JSON</span>
+                    <input type="file" accept=".json" onChange={handleImportJson} className="hidden" />
+                  </label>
                 </div>
               )}
             </div>
@@ -401,6 +315,89 @@ export default function Settings() {
           </div>
         </div>
 
+        <div>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 pl-11">Lưu trữ Đám mây</p>
+          <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden p-6">
+            <div className="flex items-center space-x-4 mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100/50 shadow-sm">
+                <Cloud size={24} />
+              </div>
+              <div>
+                <p className="font-black text-gray-900 leading-tight">Google Drive Sync</p>
+                <div className="flex flex-col mt-1">
+                  <p className="text-[11px] text-gray-500 font-medium italic">
+                    {lastSync 
+                      ? `Đồng bộ lần cuối: ${new Date(lastSync).toLocaleString('vi-VN')}` 
+                      : 'Chưa bao giờ đồng bộ'}
+                  </p>
+                  {googleUser ? (
+                    <div className="flex items-center space-x-2 mt-1">
+                      <p className="text-[10px] text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
+                        {googleUser.email}
+                      </p>
+                      <button 
+                        onClick={handleSwitchGoogleAccount}
+                        className="text-[9px] font-black text-gray-400 hover:text-red-500 uppercase tracking-tighter underline"
+                      >
+                        Đổi tài khoản
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-gray-400 font-bold mt-1 uppercase tracking-tighter italic">
+                      Tài khoản: Chưa liên kết
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={handleCloudBackup}
+                disabled={syncLoading}
+                className="flex flex-col items-center justify-center p-4 rounded-3xl bg-indigo-600 text-white space-y-2 active:scale-95 transition-all disabled:opacity-50 shadow-lg shadow-indigo-100"
+              >
+                {syncLoading ? <RefreshCw className="animate-spin" size={20} /> : <CloudUpload size={20} />}
+                <span className="text-[11px] font-black uppercase tracking-wider">Sao lưu</span>
+              </button>
+              
+              <button
+                onClick={handleCloudRestore}
+                disabled={syncLoading}
+                className="flex flex-col items-center justify-center p-4 rounded-3xl bg-white border-2 border-indigo-100 text-indigo-600 space-y-2 active:scale-95 transition-all disabled:opacity-50"
+              >
+                <CloudDownload size={20} />
+                <span className="text-[11px] font-black uppercase tracking-wider">Khôi phục</span>
+              </button>
+            </div>
+
+            <p className="text-[10px] text-gray-400 font-medium mt-4 text-center leading-relaxed">
+              Dữ liệu được lưu an toàn trong thư mục ẩn của ứng dụng trên Google Drive của bạn.
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 pl-11">Bảo mật & Quyền riêng tư</p>
+          <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
+            <button
+              onClick={() => setShowChangePinSheet(true)}
+              className="w-full flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors group text-left"
+            >
+              <div className="flex items-center space-x-4 flex-1">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 shadow-sm border border-blue-100/50">
+                  <ShieldCheck size={20} />
+                </div>
+                <div>
+                  <p className="font-black text-gray-900 group-active:text-blue-600 transition-colors">Đổi mã PIN</p>
+                  <p className="text-[11px] text-gray-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Thay đổi mật khẩu mở khóa ứng dụng</p>
+                </div>
+              </div>
+              <ChevronRight className="text-gray-300 group-hover:text-gray-400 shrink-0 ml-4" size={18} />
+            </button>
+          </div>
+        </div>
+
         {/* Footer: Đăng xuất */}
         <div className="pt-6 px-6">
           <button
@@ -414,7 +411,7 @@ export default function Settings() {
 
         {/* App version info */}
         <div className="text-center pt-4 pb-8">
-          <p className="text-[10px] text-gray-300 font-black uppercase tracking-widest">FinanceTracker v1.1.0</p>
+          <p className="text-[10px] text-gray-300 font-black uppercase tracking-widest">FinanceTracker v1.1.1</p>
         </div>
       </div>
 
@@ -422,6 +419,10 @@ export default function Settings() {
       <CategoryManagementSheet
         isOpen={showCategorySheet}
         onClose={() => setShowCategorySheet(false)}
+      />
+      <ChangePinSheet
+        isOpen={showChangePinSheet}
+        onClose={() => setShowChangePinSheet(false)}
       />
       <LoanCalculatorSheet
         isOpen={showLoanSheet}

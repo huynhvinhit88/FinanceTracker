@@ -1,63 +1,58 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { db } from '../lib/db';
 
 const AuthContext = createContext({});
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(null); // { id: 'local' } when unlocked
   const [loading, setLoading] = useState(true);
+  const [hasPin, setHasPin] = useState(false);
 
   useEffect(() => {
-    // Lấy thông tin user hiện tại nếu đã đăng nhập từ trước
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user || null);
-      setLoading(false);
-    };
-
-    getSession();
-
-    // Lắng nghe các thay đổi về trạng thái auth (Login/Logout)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user || null);
+    const checkPin = async () => {
+      try {
+        const pinRecord = await db.settings.get('appLockPin');
+        if (pinRecord && pinRecord.value) {
+          setHasPin(true);
+        } else {
+          setHasPin(false);
+        }
+      } catch (err) {
+        console.error("Failed to check PIN in DB", err);
+      } finally {
+        setLoading(false);
       }
-    );
-
-    return () => {
-      subscription.unsubscribe();
     };
+    checkPin();
   }, []);
 
   const value = {
     user,
     loading,
-    signInWithGoogle: async () => {
-      return await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin
-        }
-      });
+    hasPin,
+    unlock: async (enteredPin) => {
+      const pinRecord = await db.settings.get('appLockPin');
+      if (pinRecord && pinRecord.value === enteredPin) {
+        setUser({ id: 'local' });
+        return { error: null };
+      }
+      return { error: 'Incorrect PIN' };
     },
-    signInWithEmail: async (email, password) => {
-      return await supabase.auth.signInWithPassword({ email, password });
+    setupPin: async (newPin) => {
+      await db.settings.put({ key: 'appLockPin', value: newPin });
+      setHasPin(true);
+      setUser({ id: 'local' });
     },
-    signUp: async (email, password, displayName) => {
-      const { data, error } = await supabase.auth.signUp({ 
-        email, 
-        password,
-        options: {
-          emailRedirectTo: window.location.origin,
-          data: {
-            display_name: displayName,
-          }
-        }
-      });
-      return { data, error };
+    updatePin: async (oldPin, newPin) => {
+      const pinRecord = await db.settings.get('appLockPin');
+      if (pinRecord && pinRecord.value === oldPin) {
+        await db.settings.put({ key: 'appLockPin', value: newPin });
+        return { error: null };
+      }
+      return { error: 'Mã PIN hiện tại không chính xác' };
     },
     signOut: async () => {
-      return await supabase.auth.signOut();
+      setUser(null);
     }
   };
 

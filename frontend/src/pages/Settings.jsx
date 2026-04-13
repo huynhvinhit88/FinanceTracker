@@ -233,6 +233,27 @@ export default function Settings() {
           </div>
         </div>
 
+        <div>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 pl-11">Tuỳ chỉnh Ứng dụng</p>
+          <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
+            <button
+              onClick={() => setShowCategorySheet(true)}
+              className="w-full flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors group text-left"
+            >
+              <div className="flex items-center space-x-4 flex-1">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 shadow-sm border border-emerald-100/50">
+                  <FolderTree size={20} />
+                </div>
+                <div>
+                  <p className="font-black text-gray-900 group-active:text-emerald-600 transition-colors">Quản lý Danh mục</p>
+                  <p className="text-[11px] text-gray-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Thêm / Sửa / Xóa danh mục Thu - Chi</p>
+                </div>
+              </div>
+              <ChevronRight className="text-gray-300 group-hover:text-gray-400 shrink-0 ml-4" size={18} />
+            </button>
+          </div>
+        </div>
+
         {/* Section: Dữ liệu */}
         <div>
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 pl-11">Quản lý Dữ liệu</p>

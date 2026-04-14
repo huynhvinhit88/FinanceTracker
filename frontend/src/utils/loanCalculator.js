@@ -72,8 +72,6 @@ export function calculateLoanSchedule(profile) {
     if (periods && periods.length > 0) {
       const period = periods.find(pd => month >= Number(pd.fromMonth) && month <= Number(pd.toMonth));
       if (period) return { rate: parseFloat(String(period.rate).replace(',', '.')) || 0, budget: parseFloat(period.budget) || 0 };
-      const last = periods[periods.length - 1];
-      return { rate: parseFloat(String(last?.rate).replace(',', '.')) || (fBase + fMargin), budget: parseFloat(last?.budget) || 0 };
     }
     return { rate: month <= promoM ? promoR : fBase + fMargin, budget: extraP };
   };

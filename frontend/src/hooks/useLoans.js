@@ -97,6 +97,17 @@ export function useLoans() {
     }
   };
 
+  const getLoanTransactions = async (loanId) => {
+    try {
+      return await db.transactions
+        .filter(t => t.loan_id === loanId && t.loan_principal_amount > 0)
+        .toArray();
+    } catch (err) {
+      console.error('Error fetching loan transactions:', err);
+      return [];
+    }
+  };
+
   return {
     loans,
     loading,
@@ -105,6 +116,7 @@ export function useLoans() {
     updateLoan,
     deleteLoan,
     updateLoanBalance,
-    suggestInterest
+    suggestInterest,
+    getLoanTransactions
   };
 }

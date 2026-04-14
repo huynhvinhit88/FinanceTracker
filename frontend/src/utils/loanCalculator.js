@@ -5,7 +5,7 @@
  * @param {Object} profile - loan profile object from localStorage
  * @returns {{ result: Object, schedule: Array }} result summary and monthly schedule
  */
-export function calculateLoanSchedule(profile) {
+export function calculateLoanSchedule(profile, historicalEvents = [], actualRemainingPrincipal = null) {
   const {
     principal,
     termMonths,
@@ -86,8 +86,12 @@ export function calculateLoanSchedule(profile) {
   let actualMonths = 0;
   const schedule = [];
 
+  const now = new Date();
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  let isFutureStarted = false;
+
   for (let m = 1; m <= n; m++) {
-    if (remaining <= 100) break;
+    if (remaining <= 10) break;
     actualMonths = m;
 
     const { rate: r, budget: currentMonthBudget } = getPeriodParams(m);
@@ -109,10 +113,33 @@ export function calculateLoanSchedule(profile) {
       daysPeriod = Math.round((currentPayDate - prevPayDate) / (1000 * 60 * 60 * 24));
     }
 
+    const isFuture = currentPayDate >= currentMonthStart;
+    let adjustment = 0;
+
+    if (isFuture && !isFutureStarted && actualRemainingPrincipal !== null) {
+      isFutureStarted = true;
+      if (Math.abs(remaining - actualRemainingPrincipal) > 0) {
+        adjustment = remaining - actualRemainingPrincipal;
+        remaining = actualRemainingPrincipal;
+      }
+    }
+
     const interestThisMonth = remaining * (r / 100) * (daysPeriod / 365);
     let principalThisMonth = 0;
 
-    if (freePrincipalMonths > 0) {
+    // Quét giao dịch lịch sử trong tháng này
+    const currentMonthNum = currentPayDate.getMonth();
+    const currentYearNum = currentPayDate.getFullYear();
+    const eventsThisMonth = historicalEvents.filter(e => {
+        const d = new Date(e.date);
+        return d.getMonth() === currentMonthNum && d.getFullYear() === currentYearNum;
+    });
+    const actualPrincipalPaid = eventsThisMonth.reduce((sum, e) => sum + (e.loan_principal_amount || 0), 0);
+
+    if (!isFuture && actualPrincipalPaid > 0) {
+      principalThisMonth = Math.min(actualPrincipalPaid, remaining);
+      if (freePrincipalMonths > 0) freePrincipalMonths -= 1;
+    } else if (freePrincipalMonths > 0) {
       freePrincipalMonths -= 1;
     } else {
       principalThisMonth = Math.min(basePrincipal, remaining);
@@ -156,6 +183,8 @@ export function calculateLoanSchedule(profile) {
       principal: Math.round(principalThisMonth),
       prepay: Math.round(prepayEvent),
       penalty: Math.round(penaltyPaid),
+      adjustment: Math.round(adjustment),
+      actualEventsCount: eventsThisMonth.length,
       total: Math.round(currentBankPayment + prepayEvent + penaltyPaid),
       accumulated: Math.round(accumulatedExtra),
       remaining: Math.max(0, Math.round(remaining)),

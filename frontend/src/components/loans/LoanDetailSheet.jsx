@@ -57,11 +57,12 @@ function RateInput({ label, value, onChange, className = '' }) {
 
 export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
   const { user } = useAuth();
-  const { updateLoan, deleteLoan } = useLoans();
+  const { updateLoan, deleteLoan, getLoanTransactions } = useLoans();
   const [mode, setMode] = useState('view'); // 'view' | 'edit'
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [investments, setInvestments] = useState([]);
+  const [historicalEvents, setHistoricalEvents] = useState([]);
 
   // Edit form state
   const { displayValue: displayPrincipal, value: principalEdit, handleInputChange: handlePrincipalChange, setExternalValue: setExternalPrincipal, suffix } = useCurrencyInput('');
@@ -79,11 +80,12 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
   });
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && loan) {
       setMode('view');
       fetchInvestments();
+      getLoanTransactions(loan.id).then(setHistoricalEvents);
     }
-  }, [isOpen]);
+  }, [isOpen, loan]);
 
   useEffect(() => {
     if (loan && mode === 'edit') {
@@ -119,7 +121,7 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
   const scheduleData = useMemo(() => {
     if (!loan) return { result: null, schedule: [] };
     return calculateLoanSchedule({
-      principal: loan.remaining_principal,
+      principal: loan.principal_amount || loan.total_amount, // Use original principal
       termMonths: loan.term_months,
       promoRate: loan.promo_rate,
       promoMonths: loan.promo_months,
@@ -131,8 +133,8 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
       extraPayment: loan.extra_payment,
       offsetThreshold: loan.offset_threshold,
       periods: loan.periods || [],
-    });
-  }, [loan]);
+    }, historicalEvents, loan.remaining_principal);
+  }, [loan, historicalEvents]);
 
   const { result, schedule } = scheduleData;
   const principalTotal = loan?.total_amount || loan?.principal_amount || 1;
@@ -282,16 +284,17 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                       <tbody className="divide-y divide-gray-50 dark:divide-white/5">
                         {schedule.map((row, idx) => (
                           <tr key={idx} className={`transition-all hover:bg-gray-50/50 dark:hover:bg-slate-700/50 ${row.prepay > 0 ? 'bg-orange-50/50 dark:bg-orange-900/10' : ''}`}>
-                            <td className="px-3 py-2.5 text-[10px] font-black text-gray-400 dark:text-slate-600 text-center">
-                              {row.month}
+                            <td className="px-3 py-2.5 whitespace-nowrap">
+                              <p className="text-[10px] font-black text-gray-900 dark:text-slate-100 flex items-center justify-center">
+                                Kỳ {row.month}
+                                {row.actualEventsCount > 0 && <History size={10} className="text-emerald-500 ml-1" />}
+                              </p>
+                              <p className="text-[9px] text-gray-500 dark:text-slate-500 text-center">{row.date}</p>
                             </td>
-                            <td className="px-3 py-2.5 text-[10px] font-bold text-gray-600 dark:text-slate-400 text-left">
-                              {row.date}
-                            </td>
-                            <td className="px-3 py-2.5 text-[10px] font-bold text-gray-900 dark:text-slate-100">
+                            <td className="px-3 py-2.5 text-[10px] font-black text-gray-900 dark:text-slate-100">
                               {formatCurrency(row.principal)}
                             </td>
-                            <td className="px-3 py-2.5 text-[10px] font-bold text-red-500 dark:text-rose-400">
+                            <td className="px-3 py-2.5 text-[10px] font-black text-red-500 dark:text-rose-400">
                               {formatCurrency(row.interest)}
                             </td>
                             <td className="px-3 py-2.5 text-[10px] font-black text-gray-900 dark:text-slate-100 bg-gray-50/30 dark:bg-slate-700/30">
@@ -302,6 +305,11 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                             </td>
                             <td className="px-3 py-2.5 pr-4 text-[10px] font-black text-gray-900 dark:text-slate-100 font-black">
                               {formatCurrency(row.remaining)}
+                              {Math.abs(row.adjustment || 0) > 0 && (
+                                <p className="text-[8px] font-medium text-amber-500 flex items-center justify-end mt-0.5">
+                                  <Info size={10} className="mr-0.5" /> Điều chỉnh
+                                </p>
+                              )}
                             </td>
                           </tr>
                         ))}

@@ -25,10 +25,10 @@ export function calculateLoanSchedule(profile) {
   const n = parseInt(termMonths);
   if (!p || !n) return { result: null, schedule: [] };
 
-  const promoR = parseFloat(promoRate) || 0;
+  const promoR = parseFloat(String(promoRate).replace(',', '.')) || 0;
   const promoM = parseInt(promoMonths) || 0;
-  const fBase = parseFloat(baseRate) || (promoR > 0 ? promoR : 0);
-  const fMargin = parseFloat(marginRate) || 0;
+  const fBase = parseFloat(String(baseRate).replace(',', '.')) || (promoR > 0 ? promoR : 0);
+  const fMargin = parseFloat(String(marginRate).replace(',', '.')) || 0;
   const extraP = Number(extraPayment) || 0;
   const threshold = Number(offsetThreshold) || 0;
 
@@ -71,9 +71,9 @@ export function calculateLoanSchedule(profile) {
   const getPeriodParams = (month) => {
     if (periods && periods.length > 0) {
       const period = periods.find(pd => month >= Number(pd.fromMonth) && month <= Number(pd.toMonth));
-      if (period) return { rate: parseFloat(period.rate) || 0, budget: (parseFloat(period.budget) || 0) * 1000 };
+      if (period) return { rate: parseFloat(String(period.rate).replace(',', '.')) || 0, budget: parseFloat(period.budget) || 0 };
       const last = periods[periods.length - 1];
-      return { rate: parseFloat(last?.rate) || (fBase + fMargin), budget: (parseFloat(last?.budget) || 0) * 1000 };
+      return { rate: parseFloat(String(last?.rate).replace(',', '.')) || (fBase + fMargin), budget: parseFloat(last?.budget) || 0 };
     }
     return { rate: month <= promoM ? promoR : fBase + fMargin, budget: extraP };
   };

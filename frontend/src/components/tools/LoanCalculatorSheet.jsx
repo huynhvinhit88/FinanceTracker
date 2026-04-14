@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BottomSheet } from '../ui/BottomSheet';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
-import { formatCurrency } from '../../utils/format';
+import { formatCurrency, parseCurrencyInput } from '../../utils/format';
 import { Calculator, ChevronRight, Settings2, Save, FilePlus2, Trash2, PlusCircle, XCircle, Landmark } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { AddLoanSheet } from '../loans/AddLoanSheet';
@@ -10,6 +10,19 @@ import { calculateLoanSchedule } from '../../utils/loanCalculator';
 export function LoanCalculatorSheet({ isOpen, onClose }) {
   const { user } = useAuth();
   const storageKey = `loan_profiles_${user?.id || 'guest'}`;
+
+  // Helper: hiển thị số thập phân dùng dấu phẩy (kiểu VN)
+  const toViDecimal = (val) => {
+    if (val === '' || val === null || val === undefined) return '';
+    return String(val).replace('.', ',');
+  };
+
+  // Helper: chỉ cho phép nhập số và dấu phẩy
+  const handleRateChange = (setter) => (e) => {
+    const raw = e.target.value;
+    if (!/^[\d,]*$/.test(raw)) return;
+    setter(raw);
+  };
 
   // Profiles State
   const [profiles, setProfiles] = useState([]);
@@ -237,7 +250,14 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Lãi ưu đãi (%/năm)</label>
-                <input type="number" step="0.01" value={promoRate} onChange={e => setPromoRate(e.target.value)} className="w-full bg-gray-50 border border-transparent focus:border-blue-500 rounded-xl px-4 py-3 outline-none font-medium text-lg" />
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={toViDecimal(promoRate)}
+                  onChange={handleRateChange(setPromoRate)}
+                  placeholder="0"
+                  className="w-full bg-gray-50 border border-transparent focus:border-blue-500 rounded-xl px-4 py-3 outline-none font-medium text-lg"
+                />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Kéo dài (Tháng)</label>
@@ -263,11 +283,23 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Lãi cơ sở (%)</label>
-                    <input type="number" step="0.01" value={baseRate} onChange={e => setBaseRate(e.target.value)} className="w-full bg-gray-50 border border-transparent focus:border-orange-500 rounded-xl px-4 py-3 outline-none font-medium text-lg" />
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={toViDecimal(baseRate)}
+                      onChange={handleRateChange(setBaseRate)}
+                      className="w-full bg-gray-50 border border-transparent focus:border-orange-500 rounded-xl px-4 py-3 outline-none font-medium text-lg"
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Biên độ (+%)</label>
-                    <input type="number" step="0.01" value={marginRate} onChange={e => setMarginRate(e.target.value)} className="w-full bg-gray-50 border border-transparent focus:border-orange-500 rounded-xl px-4 py-3 outline-none font-medium text-lg" />
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={toViDecimal(marginRate)}
+                      onChange={handleRateChange(setMarginRate)}
+                      className="w-full bg-gray-50 border border-transparent focus:border-orange-500 rounded-xl px-4 py-3 outline-none font-medium text-lg"
+                    />
                   </div>
                 </div>
               </div>
@@ -291,13 +323,26 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
                         <div className="grid grid-cols-2 gap-2">
                           <input type="number" min="1" value={pd.fromMonth} onChange={e => setPeriods(prev => prev.map((p, i) => i === idx ? { ...p, fromMonth: e.target.value } : p))} className="bg-white rounded-lg px-3 py-2 text-sm font-bold shadow-sm" placeholder="Từ kỳ"/>
                           <input type="number" min="1" value={pd.toMonth} onChange={e => setPeriods(prev => prev.map((p, i) => i === idx ? { ...p, toMonth: e.target.value } : p))} className="bg-white rounded-lg px-3 py-2 text-sm font-bold shadow-sm" placeholder="Đến kỳ"/>
-                          <input type="number" step="0.01" value={pd.rate} onChange={e => setPeriods(prev => prev.map((p, i) => i === idx ? { ...p, rate: e.target.value } : p))} className="bg-white rounded-lg px-3 py-2 text-sm font-bold shadow-sm" placeholder="Lãi suất (%)"/>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={toViDecimal(pd.rate)}
+                            onChange={e => {
+                              const v = e.target.value;
+                              if (/^[\d,]*$/.test(v)) setPeriods(prev => prev.map((p, i) => i === idx ? { ...p, rate: v } : p));
+                            }}
+                            className="bg-white rounded-lg px-3 py-2 text-sm font-bold shadow-sm outline-none"
+                            placeholder="Lãi suất (%)"
+                          />
                           <div className="relative">
                             <input
                               type="text"
                               inputMode="numeric"
-                              value={pd.budget}
-                              onChange={e => setPeriods(prev => prev.map((p, i) => i === idx ? { ...p, budget: e.target.value } : p))}
+                              value={formatCurrency(pd.budget)}
+                              onChange={e => {
+                                const numericVal = parseCurrencyInput(e.target.value);
+                                setPeriods(prev => prev.map((p, i) => i === idx ? { ...p, budget: numericVal } : p));
+                              }}
                               className="w-full bg-white rounded-lg px-3 py-2 pr-10 text-sm font-bold shadow-sm outline-none focus:ring-1 focus:ring-purple-400"
                               placeholder="Ngân sách"
                             />
@@ -306,7 +351,7 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
                         </div>
                       </div>
                     ))}
-                    <button type="button" onClick={() => { const last = periods[periods.length - 1]; const nextFrom = last ? parseInt(last.toMonth) + 1 : 1; setPeriods(prev => [...prev, { fromMonth: nextFrom, toMonth: nextFrom + 11, rate: last?.rate || promoRate || '', budget: last?.budget || (extraPayment / 1000) || '' }]); }} className="w-full py-2.5 border-2 border-dashed border-purple-300 text-purple-600 rounded-xl font-semibold text-sm">Thêm Giai đoạn</button>
+                    <button type="button" onClick={() => { const last = periods[periods.length - 1]; const nextFrom = last ? parseInt(last.toMonth) + 1 : 1; setPeriods(prev => [...prev, { fromMonth: nextFrom, toMonth: nextFrom + 11, rate: last?.rate || toViDecimal(promoRate) || '', budget: last?.budget || extraPayment || '' }]); }} className="w-full py-2.5 border-2 border-dashed border-purple-300 text-purple-600 rounded-xl font-semibold text-sm">Thêm Giai đoạn</button>
                   </div>
                 )}
               </div>

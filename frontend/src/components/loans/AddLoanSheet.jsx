@@ -448,8 +448,11 @@ export function AddLoanSheet({ isOpen, onClose, onSuccess, initialProfile = null
                         <input
                           type="text"
                           inputMode="numeric"
-                          value={pd.budget}
-                          onChange={e => setPeriods(prev => prev.map((p, i) => i === idx ? {...p, budget: e.target.value} : p))}
+                          value={formatCurrency(pd.budget)}
+                          onChange={e => {
+                            const numericVal = parseCurrencyInput(e.target.value);
+                            setPeriods(prev => prev.map((p, i) => i === idx ? { ...p, budget: numericVal } : p));
+                          }}
                           className="w-full bg-purple-50 border border-purple-100 rounded-lg px-3 py-2 pr-10 text-sm font-bold outline-none focus:ring-1 focus:ring-purple-400"
                           placeholder="Ngân sách"
                         />
@@ -464,7 +467,7 @@ export function AddLoanSheet({ isOpen, onClose, onSuccess, initialProfile = null
                 onClick={() => {
                   const last = periods[periods.length - 1];
                   const nextFrom = last ? parseInt(last.toMonth) + 1 : 1;
-                  setPeriods(prev => [...prev, { fromMonth: nextFrom, toMonth: nextFrom + 11, rate: last?.rate || '', budget: last?.budget || '' }]);
+                  setPeriods(prev => [...prev, { fromMonth: nextFrom, toMonth: nextFrom + 11, rate: last?.rate || '', budget: last?.budget || 0 }]);
                 }}
                 className="w-full flex items-center justify-center space-x-2 py-2.5 border-2 border-dashed border-purple-300 text-purple-600 rounded-xl font-semibold text-sm"
               >

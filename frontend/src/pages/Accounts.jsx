@@ -87,6 +87,7 @@ export default function Accounts() {
   
   const totalCashAndDebt = accounts.reduce((acc, curr) => {
     if (curr.sub_type === 'debt') return acc;
+    // Cả payment, savings và receivable đều là tài sản thực có
     return acc + (curr.balance || 0);
   }, 0);
 
@@ -130,12 +131,13 @@ export default function Accounts() {
   // --- Renderers ---
 
   const renderCashTab = () => {
-    const paymentAccounts = accounts.filter(a => a.sub_type === 'payment');
+    const paymentAccounts = accounts.filter(a => a.sub_type === 'payment' || a.sub_type === 'receivable');
     const savingsAccounts = accounts.filter(a => a.sub_type === 'savings');
     const debtAccounts = accounts.filter(a => a.sub_type === 'debt');
 
     const getAccountIcon = (type, sub_type) => {
       if (sub_type === 'debt') return <CreditCard className="text-red-500" />;
+      if (sub_type === 'receivable') return <HandCoins className="text-emerald-500" />;
       if (type === 'bank') return <Building className="text-blue-500" />;
       return <Wallet className="text-gray-700" />;
     };
@@ -150,22 +152,22 @@ export default function Accounts() {
               <div 
                 key={acc.id} 
                 onClick={() => handleAccountClick(acc)}
-                className={`bg-white p-4 rounded-2xl shadow-sm border ${acc.sub_type === 'debt' ? 'border-red-50' : 'border-gray-100'} flex items-center justify-between active:scale-[0.98] transition-transform cursor-pointer`}
+                className={`bg-white p-4 rounded-2xl shadow-sm border ${acc.sub_type === 'debt' ? 'border-red-50' : acc.sub_type === 'receivable' ? 'border-emerald-50' : 'border-gray-100'} flex items-center justify-between active:scale-[0.98] transition-transform cursor-pointer`}
               >
                 <div className="flex items-center space-x-4">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center border ${acc.sub_type === 'debt' ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100'}`}>
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center border ${acc.sub_type === 'debt' ? 'bg-red-50 border-red-100' : acc.sub_type === 'receivable' ? 'bg-emerald-50 border-emerald-100' : 'bg-gray-50 border-gray-100'}`}>
                     {getAccountIcon(acc.type, acc.sub_type)}
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 leading-tight">{acc.name}</h4>
-                    <p className={`text-xs font-medium uppercase tracking-wider mt-1 ${acc.sub_type === 'debt' ? 'text-red-500' : 'text-gray-500'}`}>
+                    <p className={`text-xs font-medium uppercase tracking-wider mt-1 ${acc.sub_type === 'debt' ? 'text-red-500' : acc.sub_type === 'receivable' ? 'text-emerald-500' : 'text-gray-500'}`}>
                       {acc.type}
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className={`font-bold text-lg ${acc.sub_type === 'debt' ? 'text-red-600' : 'text-gray-900'}`}>
-                    {acc.sub_type === 'debt' ? '-' : ''}{formatCurrency(acc.balance)} đ
+                  <p className={`font-bold text-lg ${acc.sub_type === 'debt' ? 'text-red-600' : acc.sub_type === 'receivable' ? 'text-emerald-600' : 'text-gray-900'}`}>
+                    {acc.sub_type === 'debt' ? '-' : acc.sub_type === 'receivable' ? '+' : ''}{formatCurrency(acc.balance)} đ
                   </p>
                 </div>
               </div>

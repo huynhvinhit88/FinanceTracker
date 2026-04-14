@@ -71,8 +71,9 @@ export default function Home() {
 
   // Computations
   const totalCashAndDebt = accounts.reduce((sum, acc) => {
-    if (acc.sub_type !== 'debt') return sum + (acc.balance || 0);
-    return sum - (acc.balance || 0); // Subtract debts from net worth
+    if (acc.sub_type === 'receivable') return sum + (acc.balance || 0); // Phải thu là tài sản (+)
+    if (acc.sub_type === 'debt') return sum - (acc.balance || 0); // Nợ là khoản trừ (-)
+    return sum + (acc.balance || 0); // Các loại khác (ví, ngân hàng) là tài sản (+)
   }, 0);
 
   const totalSavings = savings.reduce((sum, sav) => {

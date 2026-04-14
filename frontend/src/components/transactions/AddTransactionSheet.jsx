@@ -13,8 +13,11 @@ const DEFAULT_CATEGORIES = [
   { name: 'Mua sắm', type: 'expense', icon: '🛍️', color_hex: '#ec4899' },
   { name: 'Hóa đơn', type: 'expense', icon: '🧾', color_hex: '#8B5CF6' },
   { name: 'Trả nợ vay', type: 'expense', icon: '🏦', color_hex: '#EF4444' },
+  { name: 'Chi hộ', type: 'expense', icon: '🤝', color_hex: '#EF4444' },
   { name: 'Lương', type: 'income', icon: '💰', color_hex: '#10B981' },
   { name: 'Thưởng', type: 'income', icon: '🎁', color_hex: '#F59E0B' },
+  { name: 'Thu hộ', type: 'income', icon: '🤝', color_hex: '#10B981' },
+  { name: 'Thu hồi nợ', type: 'income', icon: '💰', color_hex: '#10B981' },
   { name: 'Khác', type: 'transfer', icon: '🔄', color_hex: '#6B7280' },
 ];
 
@@ -58,8 +61,13 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
       const catData = await db.categories.toArray();
       let localCats = catData;
       
-      if (localCats.length === 0) {
-        const seedCats = DEFAULT_CATEGORIES.map(c => ({ 
+      // Seed missing default categories
+      const missingDefaults = DEFAULT_CATEGORIES.filter(dc => 
+        !localCats.some(lc => lc.name === dc.name && lc.type === dc.type)
+      );
+
+      if (missingDefaults.length > 0) {
+        const seedCats = missingDefaults.map(c => ({ 
             ...c, 
             id: crypto.randomUUID(),
             is_default: true 
@@ -70,7 +78,11 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
       
       setCategories(localCats);
       const relevantCats = localCats.filter(c => c.type === type);
-      if (relevantCats.length > 0) setCategoryId(relevantCats[0].id);
+      if (relevantCats.length > 0) {
+        // Only reset categoryId if current selection is not relevant
+        const isCurrentValid = relevantCats.some(c => c.id === categoryId);
+        if (!isCurrentValid) setCategoryId(relevantCats[0].id);
+      }
 
     } catch (err) {
       console.error(err);

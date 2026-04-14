@@ -12,7 +12,7 @@ const ACCOUNT_TYPES = [
   { id: 'Tiết kiệm', label: 'Tiết kiệm', icon: PiggyBank, sub_type: 'savings', color: '#F59E0B' }, // Note: We'll map 'Tiết kiệm' to 'Ngân hàng' with sub_type savings before inserting
   { id: 'Thẻ tín dụng', label: 'Thẻ tín dụng', icon: CreditCard, sub_type: 'debt', color: '#EF4444' },
   { id: 'Khoản nợ', label: 'Khoản nợ', icon: HandCoins, sub_type: 'debt', color: '#F97316' },
-  { id: 'Phải thu', label: 'Phải thu', icon: HandCoins, sub_type: 'debt', color: '#14B8A6' },
+  { id: 'Phải thu', label: 'Phải thu', icon: HandCoins, sub_type: 'receivable', color: '#14B8A6' },
 ];
 
 export function AddAccountSheet({ isOpen, onClose, onSuccess }) {

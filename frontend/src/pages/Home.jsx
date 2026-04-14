@@ -15,6 +15,7 @@ export default function Home() {
   const [accounts, setAccounts] = useState([]);
   const [savings, setSavings] = useState([]);
   const [investments, setInvestments] = useState([]);
+  const [loans, setLoans] = useState([]);
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,6 +37,9 @@ export default function Home() {
 
       const invData = await db.investments.toArray();
       setInvestments(invData);
+
+      const loanData = await db.loans.toArray();
+      setLoans(loanData);
 
       const goalData = await db.goals.toArray();
       setGoals(goalData);
@@ -70,25 +74,34 @@ export default function Home() {
   };
 
   // Computations
-  const totalCashAndDebt = accounts.reduce((sum, acc) => {
-    if (acc.sub_type === 'receivable') return sum + (acc.balance || 0); // Phải thu là tài sản (+)
-    if (acc.sub_type === 'debt') return sum - (acc.balance || 0); // Nợ là khoản trừ (-)
-    return sum + (acc.balance || 0); // Các loại khác (ví, ngân hàng) là tài sản (+)
+  const totalCashAndReceivable = accounts.reduce((sum, acc) => {
+    if (acc.sub_type === 'debt') return sum; // Debt accounts separate
+    return sum + (acc.balance || 0);
+  }, 0);
+
+  const totalDebtAccounts = accounts.reduce((sum, acc) => {
+    if (acc.sub_type === 'debt') return sum + (acc.balance || 0);
+    return sum;
   }, 0);
 
   const totalSavings = savings.reduce((sum, sav) => {
     if (sav.status !== 'active') return sum;
-    return sum + (sav.principal_amount || 0); // Tiền gốc 
+    return sum + (sav.principal_amount || 0);
   }, 0);
 
-  const totalInvestments = investments.reduce((sum, inv) => {
-    if (inv.type === 'real_estate') {
-      return sum + (inv.current_price - (inv.loan_amount || 0));
-    }
-    return sum + (inv.current_price * inv.quantity);
+  const totalInvestmentsGross = investments.reduce((sum, inv) => {
+    return sum + (inv.current_price * (inv.type === 'real_estate' ? 1 : inv.quantity));
   }, 0);
 
-  const globalNetWorth = totalCashAndDebt + totalSavings + totalInvestments;
+  const totalActiveLoans = loans.reduce((sum, loan) => {
+    if (loan.status === 'active') return sum + (loan.remaining_principal || loan.total_amount || 0);
+    return sum;
+  }, 0);
+
+  // Total Debt = Debt Accounts (Credit cards) + Active Loans from Loans table
+  const totalLiabilities = totalDebtAccounts + totalActiveLoans;
+
+  const globalNetWorth = totalCashAndReceivable + totalSavings + totalInvestmentsGross - totalLiabilities;
 
   // Chart Data: Expense breakdown for current month
   const currentMonthDateStr = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
@@ -167,11 +180,13 @@ export default function Home() {
           <p className="text-gray-300 text-sm mb-1 font-medium">Tổng tài sản ròng</p>
           <h2 className="text-3xl font-bold tracking-tight">{formatCurrency(globalNetWorth)} ₫</h2>
           
-          {(totalSavings > 0 || totalInvestments > 0) && (
-            <div className="mt-2 font-medium text-xs text-blue-200 flex flex-col space-y-1 mb-4">
-              {totalSavings > 0 && <p>Sổ tiết kiệm gốc: +{formatCurrency(totalSavings)} đ</p>}
-              {totalInvestments > 0 && <p>Đầu tư: +{formatCurrency(totalInvestments)} đ</p>}
-            </div>
+          {(totalSavings > 0 || totalInvestmentsGross > 0) && (
+            <div className="grid grid-cols-2 gap-2 text-white/70 text-[10px] sm:text-xs font-semibold">
+            {totalCashAndReceivable > 0 && <p className="flex items-center space-x-1"><span>Tiền mặt:</span> <span className="text-white">+{formatCurrency(totalCashAndReceivable)} đ</span></p>}
+            {totalSavings > 0 && <p className="flex items-center space-x-1"><span>Tiết kiệm:</span> <span className="text-white">+{formatCurrency(totalSavings)} đ</span></p>}
+            {totalInvestmentsGross > 0 && <p className="flex items-center space-x-1"><span>Đầu tư:</span> <span className="text-white">+{formatCurrency(totalInvestmentsGross)} đ</span></p>}
+            {totalLiabilities > 0 && <p className="flex items-center space-x-1"><span>Tổng nợ:</span> <span className="text-red-300">-{formatCurrency(totalLiabilities)} đ</span></p>}
+          </div>
           )}
           
           <div className={`flex space-x-6 border-t border-gray-700 pt-4 mt-4`}>

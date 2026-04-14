@@ -85,10 +85,14 @@ export default function Accounts() {
 
   // --- Calculations ---
   
-  const totalCashAndDebt = accounts.reduce((acc, curr) => {
+  const totalCashAndReceivable = accounts.reduce((acc, curr) => {
     if (curr.sub_type === 'debt') return acc;
-    // Cả payment, savings và receivable đều là tài sản thực có
     return acc + (curr.balance || 0);
+  }, 0);
+
+  const totalDebtAccounts = accounts.reduce((acc, curr) => {
+    if (curr.sub_type === 'debt') return acc + (curr.balance || 0);
+    return acc;
   }, 0);
 
   // Savings Math
@@ -125,6 +129,8 @@ export default function Accounts() {
   }, 0);
 
   const totalLoanRemaining = loans.reduce((acc, l) => acc + (l.status === 'active' ? (l.remaining_principal ?? l.total_amount ?? 0) : 0), 0);
+  const totalLiabilities = totalDebtAccounts + totalLoanRemaining;
+  const globalNetWorth = totalCashAndReceivable + totalSavingsValue + totalInvestmentMarketValue - totalLiabilities;
   const activeLoans = loans.filter(l => l.status === 'active');
   const paidOffLoans = loans.filter(l => l.status === 'paid_off');
 
@@ -179,10 +185,15 @@ export default function Accounts() {
 
     return (
       <div className="space-y-6">
-        <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-20"><Wallet size={80} /></div>
-          <p className="text-blue-100 font-medium mb-1 relative z-10">Tổng tiền mặt & thẻ</p>
-          <h2 className="text-3xl font-bold tracking-tight relative z-10">{formatCurrency(totalCashAndDebt)} ₫</h2>
+        <div className="grid grid-cols-2 gap-3 mb-2">
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tiền mặt & Thu</p>
+            <p className="text-lg font-black text-gray-900">{formatCurrency(totalCashAndReceivable)} ₫</p>
+          </div>
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-1">Nợ thẻ (Thanh toán)</p>
+            <p className="text-lg font-black text-red-500">-{formatCurrency(totalDebtAccounts)} ₫</p>
+          </div>
         </div>
         
         <div>
@@ -202,10 +213,9 @@ export default function Accounts() {
 
   const renderSavingsTab = () => (
     <div className="space-y-6">
-      <div className="bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
-        <div className="absolute -bottom-4 -right-4 opacity-20"><PiggyBank size={100} /></div>
-        <p className="text-emerald-100 font-medium mb-1 relative z-10">Khối lượng Tiết kiệm</p>
-        <h2 className="text-3xl font-bold tracking-tight relative z-10">{formatCurrency(totalSavingsValue)} ₫</h2>
+      <div className="bg-white rounded-2xl p-4 shadow-sm border border-emerald-50">
+        <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-1">Khối lượng Tiết kiệm</p>
+        <p className="text-2xl font-black text-gray-900">{formatCurrency(totalSavingsValue)} ₫</p>
       </div>
 
       <div>
@@ -253,13 +263,14 @@ export default function Accounts() {
 
   const renderInvestTab = () => (
     <div className="space-y-6">
-      <div className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
-        <div className="absolute -top-4 -right-4 opacity-20"><TrendingUp size={100} /></div>
-        <p className="text-purple-100 font-medium mb-1 relative z-10">Tài sản ròng đầu tư (Equity)</p>
-        <h2 className="text-3xl font-bold tracking-tight relative z-10 mb-4">{formatCurrency(totalInvestmentCurrent)} ₫</h2>
-        <div className="flex items-center space-x-2 text-sm font-medium border-t border-purple-500/50 pt-3 opacity-80">
-          <span>Tổng giá trị thị trường:</span>
-          <span>{formatCurrency(totalInvestmentMarketValue)} ₫</span>
+      <div className="grid grid-cols-2 gap-3 mb-2">
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-purple-100">
+          <p className="text-[10px] font-bold text-purple-500 uppercase tracking-widest mb-1">Tài sản ròng (Equity)</p>
+          <p className="text-lg font-black text-gray-900">{formatCurrency(totalInvestmentCurrent)} ₫</p>
+        </div>
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-purple-50">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tổng thị trường</p>
+          <p className="text-lg font-black text-gray-600">{formatCurrency(totalInvestmentMarketValue)} ₫</p>
         </div>
       </div>
 
@@ -431,6 +442,24 @@ export default function Accounts() {
     <>
       <div className="p-4 safe-top pb-24 min-h-screen bg-gray-50">
         <h1 className="text-2xl font-bold text-gray-900 mb-4 mt-4">Danh mục Tài sản</h1>
+        
+        <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-fuchsia-900 rounded-3xl p-6 text-white shadow-2xl relative overflow-hidden mb-6">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+          <div className="relative z-10">
+            <p className="text-purple-100/70 text-sm font-medium mb-1">Tổng tài sản ròng toàn cầu</p>
+            <h2 className="text-3xl font-black tracking-tight mb-4">{formatCurrency(globalNetWorth)} ₫</h2>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-2 pt-4 border-t border-white/10 text-xs font-bold">
+              <div className="flex justify-between items-center bg-white/5 p-2 rounded-xl leading-tight">
+                <span className="text-purple-200/60">Tài sản (Gross)</span>
+                <span className="text-emerald-400">+{formatCurrency(totalCashAndReceivable + totalSavingsValue + totalInvestmentMarketValue)}</span>
+              </div>
+              <div className="flex justify-between items-center bg-white/5 p-2 rounded-xl leading-tight">
+                <span className="text-purple-200/60">Tổng nợ</span>
+                <span className="text-red-400">-{formatCurrency(totalLiabilities)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
         
         {/* Custom Tabs - 3 tabs only */}
         <div className="flex bg-gray-200/60 p-1 rounded-xl mb-6">

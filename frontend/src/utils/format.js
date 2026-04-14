@@ -11,3 +11,21 @@ export const parseCurrencyInput = (inputValue) => {
   const numericValue = parseInt(cleanValue, 10);
   return isNaN(numericValue) ? 0 : numericValue;
 };
+
+/**
+ * Converts a numeric value to a Vietnamese decimal string (using comma).
+ * e.g., 8.5 -> "8,5"
+ */
+export const toViDecimal = (val) => {
+  if (val === '' || val === null || val === undefined) return '';
+  return String(val).replace('.', ',');
+};
+
+/**
+ * Parses a Vietnamese decimal string to a number.
+ * e.g., "8,5" -> 8.5
+ */
+export const fromViDecimal = (str) => {
+  if (str === '' || str === null || str === undefined) return 0;
+  return parseFloat(String(str).replace(',', '.')) || 0;
+};

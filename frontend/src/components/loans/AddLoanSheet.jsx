@@ -4,19 +4,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { db } from '../../lib/db';
 import { useLoans } from '../../hooks/useLoans';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
-import { formatCurrency, parseCurrencyInput } from '../../utils/format';
+import { formatCurrency, parseCurrencyInput, toViDecimal, fromViDecimal } from '../../utils/format';
 import { Building, Clock, Percent, Save, Calculator, ChevronDown, CheckCircle, PlusCircle, XCircle } from 'lucide-react';
 
-// Helper: hiển thị số thập phân dùng dấu phẩy (kiểu VN)
-function toViDecimal(val) {
-  if (val === '' || val === null || val === undefined) return '';
-  return String(val).replace('.', ',');
-}
-
-// Helper: parse từ dấu phẩy về dấu chấm (để tính toán)
-function fromViDecimal(str) {
-  return parseFloat(String(str).replace(',', '.')) || 0;
-}
 
 // Input lãi suất với dấu phẩy
 function RateInput({ label, value, onChange, className = '' }) {

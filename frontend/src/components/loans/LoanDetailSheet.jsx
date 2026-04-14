@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { BottomSheet } from '../ui/BottomSheet';
-import { formatCurrency } from '../../utils/format';
+import { formatCurrency, toViDecimal, fromViDecimal } from '../../utils/format';
 import { calculateLoanSchedule } from '../../utils/loanCalculator';
 import { useLoans } from '../../hooks/useLoans';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
@@ -12,13 +12,6 @@ import {
   Clock, Percent, PlusCircle, XCircle
 } from 'lucide-react';
 
-function toViDecimal(val) {
-  if (val === '' || val === null || val === undefined) return '';
-  return String(val).replace('.', ',');
-}
-function fromViDecimal(str) {
-  return parseFloat(String(str).replace(',', '.')) || 0;
-}
 function RateInput({ label, value, onChange, className = '' }) {
   const [display, setDisplay] = useState(toViDecimal(value));
   

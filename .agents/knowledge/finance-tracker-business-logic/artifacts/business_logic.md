@@ -228,7 +228,7 @@ const handleChange = (e) => {
 ```
 
 ### 3. Parse/Format Helpers
-Always use `toViDecimal(num)` for display and `fromViDecimal(str)` for parsing.
+Always import and use `toViDecimal(num)` for display and `fromViDecimal(str)` for parsing from `utils/format.js`.
 - `toViDecimal(8.5)` -> `"8,5"`
 - `fromViDecimal("8,5")` -> `8.5`
 

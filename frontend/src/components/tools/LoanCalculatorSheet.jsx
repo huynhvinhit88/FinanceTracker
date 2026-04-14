@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BottomSheet } from '../ui/BottomSheet';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
-import { formatCurrency, parseCurrencyInput } from '../../utils/format';
+import { formatCurrency, parseCurrencyInput, toViDecimal, fromViDecimal } from '../../utils/format';
 import { Calculator, ChevronRight, Settings2, Save, FilePlus2, Trash2, PlusCircle, XCircle, Landmark } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { AddLoanSheet } from '../loans/AddLoanSheet';
@@ -11,18 +11,11 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
   const { user } = useAuth();
   const storageKey = `loan_profiles_${user?.id || 'guest'}`;
 
-  // Helper: hiển thị số thập phân dùng dấu phẩy (kiểu VN)
-  // Helper: chỉ cho phép nhập số và dấu phẩy
   const handleRateChange = (setter) => (e) => {
     let raw = e.target.value;
     if (!/^[\d,\.]*$/.test(raw)) return;
-    
-    // Normalize string to handle both comma and dot for internal storage
-    // but the local state handles the display
     setter(raw);
   };
-
-  const fromViRate = (str) => parseFloat(String(str).replace(',', '.')) || 0;
 
   // Profiles State
   const [profiles, setProfiles] = useState([]);

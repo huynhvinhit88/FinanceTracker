@@ -143,7 +143,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
             periods: loan.periods || [],
           });
 
-          const now = new Date();
+          const now = new Date(date);
           const currentMonth = now.getMonth();
           const currentYear = now.getFullYear();
 
@@ -165,7 +165,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
         }
       }
     }
-  }, [loanId, isLoanMode, repaymentType, loans]);
+  }, [loanId, isLoanMode, repaymentType, loans, date]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

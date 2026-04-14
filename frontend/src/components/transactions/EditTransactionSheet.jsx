@@ -125,13 +125,15 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
             periods: loan.periods || [],
           });
 
-          const now = new Date();
+          const now = new Date(date);
           const currentMonth = now.getMonth();
           const currentYear = now.getFullYear();
 
           const match = schedule.find(row => {
             const d = new Date(row.dateObj);
-            return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+            // Cộng thêm 12 giờ để tránh lệch ngày do múi giờ khi so sánh tháng/năm
+            const checkDate = new Date(d.getTime() + 12 * 60 * 60 * 1000);
+            return checkDate.getMonth() === currentMonth && checkDate.getFullYear() === currentYear;
           });
 
           if (match) {
@@ -144,7 +146,7 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
         }
       }
     }
-  }, [loanId, repaymentType, loans]);
+  }, [loanId, repaymentType, loans, date]);
 
   const fetchDependencies = async () => {
     try {

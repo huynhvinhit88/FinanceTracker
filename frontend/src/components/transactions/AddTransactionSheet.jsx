@@ -42,6 +42,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isFirstRenderFromInitialData, setIsFirstRenderFromInitialData] = useState(false);
 
   const { displayValue, value: rawAmount, handleInputChange, reset: resetAmount, suffix, setExternalValue } = useCurrencyInput(0, { useShortcut: type !== 'repayment' });
 
@@ -58,8 +59,9 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
         }
         if (initialData.note) setNote(initialData.note);
         setIsLoanMode(initialData.type === 'repayment' || !!initialData.loanId);
-        
-        setIsLoanMode(initialData.type === 'repayment' || !!initialData.loanId);
+        setIsFirstRenderFromInitialData(true);
+      } else {
+        setIsFirstRenderFromInitialData(false);
       }
       fetchDependencies();
       fetchLoans();
@@ -139,6 +141,12 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
   // Khi chọn khoản vay, gợi ý tiền lãi và gốc từ bảng kế hoạch
   useEffect(() => {
     if (isLoanMode && loanId && loans.length > 0) {
+      // Nếu vừa mở từ Quick Pay, bỏ qua lượt gợi ý đầu tiên để không ghi đè dữ liệu truyền vào
+      if (isFirstRenderFromInitialData) {
+        setIsFirstRenderFromInitialData(false);
+        return;
+      }
+
       const loan = loans.find(l => l.id === loanId);
       if (loan) {
         if (repaymentType === 'payoff') {

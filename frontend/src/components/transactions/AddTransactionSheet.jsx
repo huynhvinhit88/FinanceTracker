@@ -58,6 +58,10 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
         }
         if (initialData.note) setNote(initialData.note);
         setIsLoanMode(initialData.type === 'repayment' || !!initialData.loanId);
+        
+        // Default category for repayment
+        const loanCat = categories.find(c => c.name === 'Trả nợ vay' || c.icon === '🏦');
+        if (loanCat) setCategoryId(loanCat.id);
       }
       fetchDependencies();
       fetchLoans();

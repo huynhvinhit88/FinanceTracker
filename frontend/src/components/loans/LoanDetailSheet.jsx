@@ -290,9 +290,9 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                 <div className="bg-white dark:bg-slate-800 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden transition-all">
                   <div className="max-h-[420px] overflow-y-auto overflow-x-auto no-scrollbar">
                     <table className="w-full text-right font-mono whitespace-nowrap" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      <thead className="bg-gray-50 dark:bg-slate-900/50 text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase tracking-widest border-b border-gray-100 dark:border-white/5">
+                      <thead className="bg-gray-50 dark:bg-slate-900/50 text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase tracking-widest border-b border-gray-100 dark:border-white/5 sticky top-0 z-20">
                         <tr>
-                          <th className="px-3 py-3 text-center min-w-[80px]">Kỳ trả</th>
+                          <th className="px-3 py-3 text-center min-w-[80px] sticky left-0 z-10 bg-gray-50 dark:bg-slate-900/50 border-r border-gray-100/50 dark:border-white/5">Kỳ trả</th>
                           <th className="px-3 py-3">Gốc</th>
                           <th className="px-3 py-3">Lãi</th>
                           <th className="px-3 py-3 text-blue-600 dark:text-indigo-400">Tổng</th>
@@ -304,7 +304,7 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                       <tbody className="divide-y divide-gray-50 dark:divide-white/5">
                         {schedule.map((row, idx) => (
                           <tr key={idx} className={`transition-all hover:bg-gray-50/50 dark:hover:bg-slate-700/50 ${row.prepay > 0 ? 'bg-orange-50/50 dark:bg-orange-900/10' : ''}`}>
-                            <td className="px-3 py-2.5 whitespace-nowrap">
+                            <td className="px-3 py-2.5 whitespace-nowrap sticky left-0 z-10 bg-inherit border-r border-gray-100/50 dark:border-white/5">
                               <p className="text-[10px] font-black text-gray-900 dark:text-slate-100 flex items-center justify-center">
                                 Kỳ {row.month}
                                 {row.actualEventsCount > 0 && <History size={10} className="text-emerald-500 ml-1" />}

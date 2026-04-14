@@ -117,18 +117,18 @@ export default function TransactionsList() {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="bg-gray-50 dark:bg-slate-950 min-h-screen transition-colors duration-300">
       {/* App Bar pinned top */}
-      <div className="bg-white px-4 py-4 safe-top sticky top-0 z-40 border-b border-gray-100 shadow-sm flex items-center justify-between">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors">
-          <ArrowLeft size={24} className="text-gray-800" />
+      <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-4 py-4 safe-top sticky top-0 z-40 border-b border-gray-100 dark:border-white/5 shadow-sm flex items-center justify-between transition-colors duration-300">
+        <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 active:bg-gray-200 dark:active:bg-slate-700 transition-colors">
+          <ArrowLeft size={24} className="text-gray-800 dark:text-slate-100" />
         </button>
-        <h1 className="font-bold text-lg text-gray-900 absolute left-1/2 -translate-x-1/2">Lịch sử giao dịch</h1>
+        <h1 className="font-bold text-lg text-gray-900 dark:text-slate-100 absolute left-1/2 -translate-x-1/2">Lịch sử giao dịch</h1>
         <div className="w-8" />
       </div>
 
       {/* Filter Chips */}
-      <div className="px-4 py-3 bg-white flex space-x-2 overflow-x-auto hide-scrollbar border-b border-gray-100 sticky top-[60px] z-30">
+      <div className="px-4 py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md flex space-x-2 overflow-x-auto hide-scrollbar border-b border-gray-100 dark:border-white/5 sticky top-[60px] z-30 transition-colors duration-300">
         {[
           { id: 'all', label: 'Tất cả' },
           { id: 'expense', label: 'Khoản chi' },
@@ -138,10 +138,10 @@ export default function TransactionsList() {
           <button
             key={filter.id}
             onClick={() => setFilterType(filter.id)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+            className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
               filterType === filter.id 
-                ? 'bg-gray-900 text-white' 
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-gray-900 dark:bg-indigo-600 text-white shadow-md' 
+                : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700'
             }`}
           >
             {filter.label}
@@ -153,8 +153,8 @@ export default function TransactionsList() {
       <div className="p-4 pb-12 space-y-6">
         {Object.entries(groupedTransactions).map(([date, txs]) => (
           <div key={date}>
-            <h3 className="text-xs font-semibold text-gray-500 mb-3 px-1 uppercase tracking-wider">{date}</h3>
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-slate-500 mb-3 px-1 uppercase tracking-wider">{date}</h3>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden transition-colors duration-300">
               {txs.map((tx, index) => {
                 const isIncome = tx.type === 'income';
                 const isTransfer = tx.type === 'transfer';
@@ -163,24 +163,24 @@ export default function TransactionsList() {
                   <div 
                     key={tx.id}
                     onClick={() => handleTransactionClick(tx)}
-                    className={`flex items-center justify-between p-4 active:bg-gray-50 transition-colors cursor-pointer ${
-                      index !== txs.length - 1 ? 'border-b border-gray-50' : ''
+                    className={`flex items-center justify-between p-4 active:bg-gray-50 dark:active:bg-slate-800/40 transition-colors cursor-pointer ${
+                      index !== txs.length - 1 ? 'border-b border-gray-50 dark:border-white/5' : ''
                     }`}
                   >
                     <div className="flex items-center space-x-4 pointer-events-none truncate pr-4">
                       {renderTransactionIcon(tx)}
                       <div className="truncate">
-                        <p className="font-semibold text-gray-900 truncate">
+                        <p className="font-semibold text-gray-900 dark:text-slate-100 truncate">
                           {tx.type === 'transfer' ? 'Chuyển tiền' : (tx.category?.name || 'Chưa phân loại')}
                         </p>
-                        <p className="text-xs text-gray-500 truncate">
+                        <p className="text-xs text-gray-500 dark:text-slate-500 truncate">
                           {tx.type === 'transfer' ? `${tx.account?.name} → ${tx.to_account?.name}` : tx.account?.name}
                           {tx.note && ` • ${tx.note}`}
                         </p>
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className={`font-bold ${isIncome ? 'text-green-600' : isTransfer ? 'text-gray-900' : 'text-red-500'}`}>
+                      <p className={`font-bold ${isIncome ? 'text-green-600 dark:text-emerald-400' : isTransfer ? 'text-gray-900 dark:text-slate-100' : 'text-red-500 dark:text-rose-400'}`}>
                         {isIncome ? '+' : isTransfer ? '' : '-'}{formatCurrency(tx.amount)} đ
                       </p>
                     </div>
@@ -200,14 +200,14 @@ export default function TransactionsList() {
             <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-800 rounded-full animate-spin"></div>
           )}
           {!loading && !hasMore && transactions.length > 0 && (
-            <p className="text-xs text-gray-400 font-medium">Đã hết lịch sử giao dịch</p>
+            <p className="text-xs text-gray-400 dark:text-slate-600 font-medium">Đã hết lịch sử giao dịch</p>
           )}
           {!loading && transactions.length === 0 && (
-            <div className="text-center py-10 w-full">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <ArrowDownRight className="text-gray-300" size={32} />
+            <div className="text-center py-10 w-full transition-all">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100 dark:border-white/5">
+                <ArrowDownRight className="text-gray-300 dark:text-slate-700" size={32} />
               </div>
-              <p className="text-gray-500 text-sm mt-2">Chưa có giao dịch nào phù hợp.</p>
+              <p className="text-gray-500 dark:text-slate-500 text-sm mt-2">Chưa có giao dịch nào phù hợp.</p>
             </div>
           )}
         </div>

@@ -1,0 +1,10 @@
+{
+  "title": "FinanceTracker — Project Architecture & Tech Stack",
+  "summary": "Complete map of the FinanceTracker PWA: tech stack, directory structure, routing, contexts, data flow, and component inventory. Read this first before writing any code to avoid redundant file reads.",
+  "created_at": "2026-04-14T12:21:00Z",
+  "updated_at": "2026-04-14T12:21:00Z",
+  "corpus": "huynhvinhit88/FinanceTracker",
+  "artifacts": [
+    "architecture.md"
+  ]
+}

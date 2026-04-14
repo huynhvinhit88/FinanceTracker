@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { db } from '../lib/db';
 import { 
   exportDatabaseToJSON, 
@@ -20,6 +21,7 @@ import { calculateLoanSchedule } from '../utils/loanCalculator';
 
 export default function Settings() {
   const { user, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const [showCategorySheet, setShowCategorySheet] = useState(false);
   const [showChangePinSheet, setShowChangePinSheet] = useState(false);
@@ -198,34 +200,34 @@ export default function Settings() {
       <div className="px-6 mt-10 space-y-9">
 
         <div>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 pl-11">Công cụ & Phân tích</p>
-          <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
+          <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 pl-11">Công cụ & Phân tích</p>
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden divide-y divide-gray-50 dark:divide-white/5">
             <button
               onClick={() => setShowLoanSheet(true)}
-              className="w-full flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors group text-left"
+              className="w-full flex items-center justify-between p-5 hover:bg-gray-50 dark:hover:bg-slate-800/20 active:bg-gray-100 dark:active:bg-slate-800/40 transition-colors group text-left"
             >
               <div className="flex items-center space-x-4 flex-1">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl shrink-0 shadow-sm border border-blue-100/50">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl shrink-0 shadow-sm border border-blue-100/50 dark:border-blue-900/30">
                   💳
                 </div>
                 <div>
-                  <p className="font-black text-gray-900 group-active:text-blue-600 transition-colors">Tính Lãi Khoản Vay</p>
-                  <p className="text-[11px] text-gray-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Mô phỏng trả nợ & tiết kiệm lãi</p>
+                  <p className="font-black text-gray-900 dark:text-slate-100 group-active:text-blue-600 transition-colors">Tính Lãi Khoản Vay</p>
+                  <p className="text-[11px] text-gray-500 dark:text-slate-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Mô phỏng trả nợ & tiết kiệm lãi</p>
                 </div>
               </div>
               <ChevronRight className="text-gray-300 group-hover:text-gray-400 shrink-0 ml-4" size={18} />
             </button>
             <button
               onClick={() => setShowCompoundSheet(true)}
-              className="w-full flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors group text-left"
+              className="w-full flex items-center justify-between p-5 hover:bg-gray-50 dark:hover:bg-slate-800/20 active:bg-gray-100 dark:active:bg-slate-800/40 transition-colors group text-left"
             >
               <div className="flex items-center space-x-4 flex-1">
-                <div className="w-12 h-12 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center text-xl shrink-0 shadow-sm border border-orange-100/50">
+                <div className="w-12 h-12 rounded-2xl bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 flex items-center justify-center text-xl shrink-0 shadow-sm border border-orange-100/50 dark:border-orange-900/30">
                   📈
                 </div>
                 <div>
-                  <p className="font-black text-gray-900 group-active:text-orange-600 transition-colors">Sức mạnh Lãi Kép</p>
-                  <p className="text-[11px] text-gray-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Xem dòng tiền bùng nở theo thời gian</p>
+                  <p className="font-black text-gray-900 dark:text-slate-100 group-active:text-orange-600 transition-colors">Sức mạnh Lãi Kép</p>
+                  <p className="text-[11px] text-gray-500 dark:text-slate-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Xem dòng tiền bùng nở theo thời gian</p>
                 </div>
               </div>
               <ChevronRight className="text-gray-300 group-hover:text-gray-400 shrink-0 ml-4" size={18} />
@@ -233,20 +235,21 @@ export default function Settings() {
           </div>
         </div>
 
+
         <div>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 pl-11">Tuỳ chỉnh Ứng dụng</p>
-          <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
+          <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 pl-11">Tuỳ chỉnh Ứng dụng</p>
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden">
             <button
               onClick={() => setShowCategorySheet(true)}
-              className="w-full flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors group text-left"
+              className="w-full flex items-center justify-between p-5 hover:bg-gray-50 dark:hover:bg-slate-800/20 active:bg-gray-100 dark:active:bg-slate-800/40 transition-colors group text-left"
             >
               <div className="flex items-center space-x-4 flex-1">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 shadow-sm border border-emerald-100/50">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-sm border border-emerald-100/50 dark:border-emerald-900/50">
                   <FolderTree size={20} />
                 </div>
                 <div>
-                  <p className="font-black text-gray-900 group-active:text-emerald-600 transition-colors">Quản lý Danh mục</p>
-                  <p className="text-[11px] text-gray-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Thêm / Sửa / Xóa danh mục Thu - Chi</p>
+                  <p className="font-black text-gray-900 dark:text-slate-100 group-active:text-emerald-600 transition-colors">Quản lý Danh mục</p>
+                  <p className="text-[11px] text-gray-500 dark:text-slate-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Thêm / Sửa / Xóa danh mục Thu - Chi</p>
                 </div>
               </div>
               <ChevronRight className="text-gray-300 group-hover:text-gray-400 shrink-0 ml-4" size={18} />
@@ -256,28 +259,28 @@ export default function Settings() {
 
         {/* Section: Dữ liệu */}
         <div>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 pl-11">Quản lý Dữ liệu</p>
-          <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
+          <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 pl-11">Quản lý Dữ liệu</p>
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden divide-y divide-gray-50 dark:divide-white/5">
             <div>
               <button
                 onClick={() => setShowExportPanel(v => !v)}
-                className="w-full flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors group text-left"
+                className="w-full flex items-center justify-between p-5 hover:bg-gray-50 dark:hover:bg-slate-800/20 active:bg-gray-100 dark:active:bg-slate-800/40 transition-colors group text-left"
               >
                 <div className="flex items-center space-x-4 flex-1">
-                  <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0 shadow-sm border border-sky-100/50">
+                  <div className="w-12 h-12 rounded-2xl bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0 shadow-sm border border-sky-100/50 dark:border-sky-900/50">
                     <Download size={20} />
                   </div>
                   <div>
-                    <p className="font-black text-gray-900 group-active:text-sky-600 transition-colors">Xuất báo cáo (CSV)</p>
-                    <p className="text-[11px] text-gray-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Chọn từng loại báo cáo cần tải</p>
+                    <p className="font-black text-gray-900 dark:text-slate-100 group-active:text-sky-600 transition-colors">Xuất báo cáo (CSV)</p>
+                    <p className="text-[11px] text-gray-500 dark:text-slate-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Chọn từng loại báo cáo cần tải</p>
                   </div>
                 </div>
                 <ChevronRight className={`text-gray-300 group-hover:text-gray-400 shrink-0 transition-transform ml-4 ${showExportPanel ? 'rotate-90' : ''}`} size={18} />
               </button>
 
               {showExportPanel && (
-                <div className="px-5 pb-5 bg-sky-50/30 border-t border-sky-100/50 space-y-3">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] pt-4 mb-2 pl-5">Cấu hình báo cáo:</p>
+                <div className="px-5 pb-5 bg-sky-50/30 dark:bg-sky-900/10 border-t border-sky-100/50 dark:border-white/5 space-y-3">
+                  <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] pt-4 mb-2 pl-5">Cấu hình báo cáo:</p>
                   {[
                     { key: 'transactions', label: 'Lịch sử Giao dịch', desc: 'Tất cả thu/chi/chuyển khoản', icon: '📋' },
                     { key: 'accounts',     label: 'Tài khoản & Số dư',  desc: 'Danh sách ví và số dư hiện tại', icon: '🏦' },
@@ -285,33 +288,33 @@ export default function Settings() {
                     { key: 'loanProfiles', label: 'Hồ sơ Khoản Vay', desc: 'Các kịch bản đã lưu', icon: '💳' },
                     { key: 'projection',   label: 'Dự báo Tài chính', desc: 'Snapshot 120 tháng (8%/năm)', icon: '🔮' },
                   ].map(({ key, label, desc, icon }) => (
-                    <label key={key} className="flex items-start space-x-4 cursor-pointer p-3 rounded-2xl hover:bg-white transition-all group">
+                    <label key={key} className="flex items-start space-x-4 cursor-pointer p-3 rounded-2xl hover:bg-white dark:hover:bg-slate-800 transition-all group">
                       <div className="pt-1">
                         <input
                           type="checkbox"
                           checked={exportSelections[key]}
                           onChange={e => setExportSelections(prev => ({ ...prev, [key]: e.target.checked }))}
-                          className="w-5 h-5 rounded border-gray-300 text-sky-500 focus:ring-sky-500 accent-sky-500 shrink-0"
+                          className="w-5 h-5 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sky-500 focus:ring-sky-500 accent-sky-500 shrink-0"
                         />
                       </div>
                       <span className="text-xl shrink-0 pt-0.5">{icon}</span>
                       <div className="flex-1">
-                        <p className="text-sm font-black text-gray-800 group-hover:text-sky-600 transition-colors tracking-tight">{label}</p>
-                        <p className="text-[10px] text-gray-400 font-medium mt-0.5 leading-relaxed">{desc}</p>
+                        <p className="text-sm font-black text-gray-800 dark:text-slate-100 group-hover:text-sky-600 transition-colors tracking-tight">{label}</p>
+                        <p className="text-[10px] text-gray-400 dark:text-slate-500 font-medium mt-0.5 leading-relaxed">{desc}</p>
                       </div>
                     </label>
                   ))}
                   <button
                     onClick={handleExportData}
                     disabled={exportLoading}
-                    className="w-full mt-2 bg-sky-600 hover:bg-sky-700 text-white font-black py-4 rounded-2xl flex items-center justify-center space-x-2 disabled:opacity-60 active:scale-95 transition-all shadow-lg shadow-sky-100"
+                    className="w-full mt-2 bg-sky-600 dark:bg-sky-700 hover:bg-sky-700 dark:hover:bg-sky-600 text-white font-black py-4 rounded-2xl flex items-center justify-center space-x-2 disabled:opacity-60 active:scale-95 transition-all shadow-lg shadow-sky-100 dark:shadow-none"
                   >
                     {exportLoading
                       ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       : <Download size={18} />}
                     <span>{exportLoading ? 'ĐANG TẠO FILE...' : 'TẢI MÃ NGUỒN DỰ PHÒNG JSON'}</span>
                   </button>
-                  <label className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl flex items-center justify-center space-x-2 disabled:opacity-60 active:scale-95 transition-all shadow-lg shadow-emerald-100 cursor-pointer">
+                  <label className="w-full mt-2 bg-emerald-600 dark:bg-emerald-700 hover:bg-emerald-700 dark:hover:bg-emerald-600 text-white font-black py-4 rounded-2xl flex items-center justify-center space-x-2 disabled:opacity-60 active:scale-95 transition-all shadow-lg shadow-emerald-100 dark:shadow-none cursor-pointer">
                     <Download size={18} className="rotate-180" />
                     <span>NHẬP FILE DỰ PHÒNG CHUẨN JSON</span>
                     <input type="file" accept=".json" onChange={handleImportJson} className="hidden" />
@@ -323,48 +326,71 @@ export default function Settings() {
             <button
               onClick={handleWipeData}
               disabled={wipeLoading}
-              className="w-full flex items-center space-x-4 p-5 hover:bg-red-50 active:bg-red-100 transition-colors disabled:opacity-60 group"
+              className="w-full flex items-center space-x-4 p-5 hover:bg-red-50 dark:hover:bg-red-950/20 active:bg-red-100 dark:active:bg-red-950/40 transition-colors disabled:opacity-60 group"
             >
-              <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center shrink-0 shadow-sm border border-red-100/50">
+              <div className="w-12 h-12 rounded-2xl bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 flex items-center justify-center shrink-0 shadow-sm border border-red-100/50 dark:border-red-900/50">
                 {wipeLoading ? <div className="w-5 h-5 border-2 border-red-400 border-t-transparent rounded-full animate-spin" /> : <Trash2 size={20} />}
               </div>
               <div className="text-left">
-                <p className="font-black text-red-600">Xóa toàn bộ dữ liệu</p>
-                <p className="text-[11px] text-red-400 font-medium mt-0.5 leading-relaxed italic opacity-70">Đặt lại tài khoản từ đầu</p>
+                <p className="font-black text-red-600 dark:text-red-400">Xóa toàn bộ dữ liệu</p>
+                <p className="text-[11px] text-red-400 dark:text-red-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Đặt lại tài khoản từ đầu</p>
               </div>
             </button>
           </div>
         </div>
 
         <div>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 pl-11">Lưu trữ Đám mây</p>
-          <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden p-6">
+          <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 pl-11">Giao diện</p>
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden">
+            <div className="w-full flex items-center justify-between p-5 transition-colors group text-left">
+              <div className="flex items-center space-x-4 flex-1">
+                <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 flex items-center justify-center text-xl shrink-0 shadow-sm border border-slate-200 dark:border-slate-700">
+                  {theme === 'dark' ? '🌙' : '☀️'}
+                </div>
+                <div>
+                  <p className="font-black text-gray-900 dark:text-slate-100">Giao diện tối</p>
+                  <p className="text-[11px] text-gray-500 dark:text-slate-500 font-medium mt-0.5 leading-relaxed italic opacity-70">Tiết kiệm pin & dịu mắt</p>
+                </div>
+              </div>
+              <button 
+                onClick={toggleTheme}
+                className={`w-14 h-8 rounded-full transition-all duration-300 flex items-center px-1 relative ${theme === 'dark' ? 'bg-indigo-600 shadow-inner' : 'bg-gray-200'}`}
+              >
+                <div className={`w-6 h-6 bg-white rounded-full shadow-lg transition-transform duration-300 ${theme === 'dark' ? 'translate-x-6' : 'translate-x-0'}`} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 pl-11">Lưu trữ Đám mây</p>
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden p-6 transition-colors">
             <div className="flex items-center space-x-4 mb-6">
-              <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100/50 shadow-sm">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-100/50 dark:border-indigo-900/50 shadow-sm">
                 <Cloud size={24} />
               </div>
               <div>
-                <p className="font-black text-gray-900 leading-tight">Google Drive Sync</p>
+                <p className="font-black text-gray-900 dark:text-slate-100 leading-tight">Google Drive Sync</p>
                 <div className="flex flex-col mt-1">
-                  <p className="text-[11px] text-gray-500 font-medium italic">
+                  <p className="text-[11px] text-gray-500 dark:text-slate-500 font-medium italic">
                     {lastSync 
                       ? `Đồng bộ lần cuối: ${new Date(lastSync).toLocaleString('vi-VN')}` 
                       : 'Chưa bao giờ đồng bộ'}
                   </p>
                   {googleUser ? (
                     <div className="flex items-center space-x-2 mt-1">
-                      <p className="text-[10px] text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
+                      <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded-full border border-indigo-100 dark:border-indigo-900/50">
                         {googleUser.email}
                       </p>
                       <button 
                         onClick={handleSwitchGoogleAccount}
-                        className="text-[9px] font-black text-gray-400 hover:text-red-500 uppercase tracking-tighter underline"
+                        className="text-[9px] font-black text-gray-400 dark:text-slate-500 hover:text-red-500 uppercase tracking-tighter underline"
                       >
                         Đổi tài khoản
                       </button>
                     </div>
                   ) : (
-                    <p className="text-[10px] text-gray-400 font-bold mt-1 uppercase tracking-tighter italic">
+                    <p className="text-[10px] text-gray-400 dark:text-slate-500 font-bold mt-1 uppercase tracking-tighter italic">
                       Tài khoản: Chưa liên kết
                     </p>
                   )}
@@ -376,7 +402,7 @@ export default function Settings() {
               <button
                 onClick={handleCloudBackup}
                 disabled={syncLoading}
-                className="flex flex-col items-center justify-center p-4 rounded-3xl bg-indigo-600 text-white space-y-2 active:scale-95 transition-all disabled:opacity-50 shadow-lg shadow-indigo-100"
+                className="flex flex-col items-center justify-center p-4 rounded-3xl bg-indigo-600 dark:bg-indigo-700 text-white space-y-2 active:scale-95 transition-all disabled:opacity-50 shadow-lg shadow-indigo-100 dark:shadow-none"
               >
                 {syncLoading ? <RefreshCw className="animate-spin" size={20} /> : <CloudUpload size={20} />}
                 <span className="text-[11px] font-black uppercase tracking-wider">Sao lưu</span>
@@ -385,33 +411,33 @@ export default function Settings() {
               <button
                 onClick={handleCloudRestore}
                 disabled={syncLoading}
-                className="flex flex-col items-center justify-center p-4 rounded-3xl bg-white border-2 border-indigo-100 text-indigo-600 space-y-2 active:scale-95 transition-all disabled:opacity-50"
+                className="flex flex-col items-center justify-center p-4 rounded-3xl bg-white dark:bg-slate-800 border-2 border-indigo-100 dark:border-indigo-900/50 text-indigo-600 dark:text-indigo-400 space-y-2 active:scale-95 transition-all disabled:opacity-50"
               >
                 <CloudDownload size={20} />
                 <span className="text-[11px] font-black uppercase tracking-wider">Khôi phục</span>
               </button>
             </div>
 
-            <p className="text-[10px] text-gray-400 font-medium mt-4 text-center leading-relaxed">
+            <p className="text-[10px] text-gray-400 dark:text-slate-500 font-medium mt-4 text-center leading-relaxed">
               Dữ liệu được lưu an toàn trong thư mục ẩn của ứng dụng trên Google Drive của bạn.
             </p>
           </div>
         </div>
 
         <div>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 pl-11">Bảo mật & Quyền riêng tư</p>
-          <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
+          <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 pl-11">Bảo mật & Quyền riêng tư</p>
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden divide-y divide-gray-50 dark:divide-white/5 transition-colors">
             <button
               onClick={() => setShowChangePinSheet(true)}
-              className="w-full flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors group text-left"
+              className="w-full flex items-center justify-between p-5 hover:bg-gray-50 dark:hover:bg-slate-800/20 active:bg-gray-100 dark:active:bg-slate-800/40 transition-colors group text-left"
             >
               <div className="flex items-center space-x-4 flex-1">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 shadow-sm border border-blue-100/50">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 shadow-sm border border-blue-100/50 dark:border-blue-900/50">
                   <ShieldCheck size={20} />
                 </div>
                 <div>
-                  <p className="font-black text-gray-900 group-active:text-blue-600 transition-colors">Đổi mã PIN</p>
-                  <p className="text-[11px] text-gray-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Thay đổi mật khẩu mở khóa ứng dụng</p>
+                  <p className="font-black text-gray-900 dark:text-slate-100 group-active:text-blue-600 transition-colors">Đổi mã PIN</p>
+                  <p className="text-[11px] text-gray-500 dark:text-slate-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Thay đổi mật khẩu mở khóa ứng dụng</p>
                 </div>
               </div>
               <ChevronRight className="text-gray-300 group-hover:text-gray-400 shrink-0 ml-4" size={18} />
@@ -423,7 +449,7 @@ export default function Settings() {
         <div className="pt-6 px-6">
           <button
             onClick={handleSignOut}
-            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-5 rounded-[2rem] flex items-center justify-center space-x-2 active:scale-95 transition-transform"
+            className="w-full bg-gray-100 dark:bg-slate-900 hover:bg-gray-200 dark:hover:bg-slate-800 text-gray-700 dark:text-slate-100 font-bold py-5 rounded-[2rem] flex items-center justify-center space-x-2 active:scale-95 transition-all shadow-sm border border-transparent dark:border-white/5"
           >
             <LogOut size={18} />
             <span className="tracking-tight">Đăng xuất Tài khoản</span>

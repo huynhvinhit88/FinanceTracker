@@ -1,0 +1,10 @@
+{
+  "title": "FinanceTracker — Design System & Dark Mode Guide",
+  "summary": "Complete design system for the FinanceTracker PWA: 'Deep Space' dark mode palette, Tailwind v4 configuration, component styling patterns, BottomSheet usage, and UI/UX conventions. Read this before making any UI changes.",
+  "created_at": "2026-04-14T12:21:00Z",
+  "updated_at": "2026-04-14T12:21:00Z",
+  "corpus": "huynhvinhit88/FinanceTracker",
+  "artifacts": [
+    "design_system.md"
+  ]
+}

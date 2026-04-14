@@ -269,8 +269,8 @@ export default function Plan() {
   const renderPlanList = (plans, actuals, type) => {
     if (plans.length === 0) {
       return (
-        <div className="text-center py-8 bg-white rounded-3xl border border-dashed border-gray-200 mt-2">
-          <p className="text-gray-400 text-xs italic">Chưa lập kế hoạch {type === 'expense' ? 'chi tiêu' : 'thu nhập'} {planViewMode === 'default' ? 'mặc định' : ''}</p>
+        <div className="text-center py-8 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-gray-200 dark:border-white/10 mt-2">
+          <p className="text-gray-400 dark:text-slate-500 text-xs italic">Chưa lập kế hoạch {type === 'expense' ? 'chi tiêu' : 'thu nhập'} {planViewMode === 'default' ? 'mặc định' : ''}</p>
         </div>
       );
     }
@@ -290,39 +290,39 @@ export default function Plan() {
             <div 
               key={p.id} 
               onClick={() => handlePlanClick(p)}
-              className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 active:scale-[0.98] transition-all cursor-pointer"
+              className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-white/5 active:scale-[0.98] transition-all cursor-pointer"
             >
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-50 text-xl" style={{ backgroundColor: p.category?.color_hex + '20', color: p.category?.color_hex }}>
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-50 dark:bg-slate-800 text-xl" style={{ backgroundColor: p.category?.color_hex + '20', color: p.category?.color_hex }}>
                     {p.category?.icon}
                   </div>
                   <div>
                     <div className="flex items-center space-x-1.5">
-                      <h4 className="font-bold text-gray-900 text-sm leading-tight">{p.category?.name}</h4>
+                      <h4 className="font-bold text-gray-900 dark:text-slate-100 text-sm leading-tight">{p.category?.name}</h4>
                       {p.is_default && planViewMode === 'monthly' && (
-                        <span className="bg-gray-100 text-gray-500 text-[8px] font-black px-1 rounded uppercase">MẶC ĐỊNH</span>
+                        <span className="bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 text-[8px] font-black px-1 rounded uppercase">MẶC ĐỊNH</span>
                       )}
                     </div>
                     {planViewMode === 'monthly' && (
-                      <p className="text-[10px] font-medium text-gray-500 mt-0.5">{type === 'expense' ? 'Đã chi' : 'Tiến độ'} {Math.round(percentage)}%</p>
+                      <p className="text-[10px] font-medium text-gray-500 dark:text-slate-500 mt-0.5">{type === 'expense' ? 'Đã chi' : 'Tiến độ'} {Math.round(percentage)}%</p>
                     )}
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className={`font-bold text-sm leading-tight ${type === 'expense' && percentage >= 100 && planViewMode === 'monthly' ? 'text-red-500' : 'text-gray-900'}`}>
+                  <p className={`font-bold text-sm leading-tight ${type === 'expense' && percentage >= 100 && planViewMode === 'monthly' ? 'text-red-500 dark:text-rose-400' : 'text-gray-900 dark:text-slate-100'}`}>
                     {planViewMode === 'monthly' ? formatCurrency(actualVal) : formatCurrency(targetVal)} {planViewMode === 'monthly' && '₫'}
                   </p>
                   {planViewMode === 'monthly' && (
-                    <p className="text-[10px] text-gray-400 mt-0.5">/ {formatCurrency(targetVal)} đ</p>
+                    <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5">/ {formatCurrency(targetVal)} đ</p>
                   )}
                   {planViewMode === 'default' && (
-                    <p className="text-[10px] text-gray-400 mt-0.5">/ mỗi tháng</p>
+                    <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5">/ mỗi tháng</p>
                   )}
                 </div>
               </div>
               {planViewMode === 'monthly' && (
-                <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden relative mt-1">
+                <div className="w-full h-1.5 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden relative mt-1">
                   <div 
                     className={`absolute top-0 left-0 h-full ${progressColor} rounded-full transition-all duration-1000 ease-out`} 
                     style={{ width: `${percentage}%` }} 
@@ -341,31 +341,31 @@ export default function Plan() {
 
   return (
     <>
-      <div className="px-4 pt-safe pb-32 min-h-screen bg-gray-50">
+      <div className="px-4 pt-safe pb-32 min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
         
         {/* --- HEADER & NAVIGATION --- */}
         <div className="mb-6">
           <div className="flex justify-between items-center px-1 mb-4">
-            <h1 className="text-2xl font-black text-gray-900 tracking-tight">Kế hoạch</h1>
+            <h1 className="text-2xl font-black text-gray-900 dark:text-slate-100 mt-4 tracking-tight">Kế hoạch</h1>
             <button 
               onClick={() => setIsAddPlanOpen(true)}
-              className="w-10 h-10 flex items-center justify-center bg-gray-900 text-white rounded-2xl shadow-lg active:scale-95 transition-transform"
+              className="w-10 h-10 flex items-center justify-center bg-gray-900 dark:bg-indigo-600 text-white rounded-2xl shadow-lg active:scale-95 transition-transform mt-4"
             >
               <Plus size={20} />
             </button>
           </div>
 
-          <div className="bg-white p-1 rounded-2xl shadow-sm border border-gray-100 flex items-center">
+          <div className="bg-white dark:bg-slate-900/50 p-1 rounded-2xl shadow-sm border border-gray-100 dark:border-white/5 flex items-center">
             <button 
               onClick={() => setPlanViewMode('monthly')}
-              className={`flex-1 flex items-center justify-center space-x-2 py-2.5 rounded-xl text-sm font-bold transition-all ${planViewMode === 'monthly' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-500'}`}
+              className={`flex-1 flex items-center justify-center space-x-2 py-2.5 rounded-xl text-sm font-bold transition-all ${planViewMode === 'monthly' ? 'bg-gray-900 dark:bg-slate-800 text-white shadow-md' : 'text-gray-500 dark:text-slate-500'}`}
             >
               <Calendar size={16} />
               <span>Xem theo tháng</span>
             </button>
             <button 
               onClick={() => setPlanViewMode('default')}
-              className={`flex-1 flex items-center justify-center space-x-2 py-2.5 rounded-xl text-sm font-bold transition-all ${planViewMode === 'default' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-500'}`}
+              className={`flex-1 flex items-center justify-center space-x-2 py-2.5 rounded-xl text-sm font-bold transition-all ${planViewMode === 'default' ? 'bg-gray-900 dark:bg-slate-800 text-white shadow-md' : 'text-gray-500 dark:text-slate-500'}`}
             >
               <Settings2 size={16} />
               <span>Cấu hình mặc định</span>
@@ -376,17 +376,17 @@ export default function Plan() {
             <div className="flex items-center justify-between mt-4 px-1">
               <button 
                 onClick={() => changeMonth(-1)}
-                className="p-2 bg-white rounded-xl shadow-sm border border-gray-100 text-gray-400 active:scale-90 transition-all"
+                className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-white/5 text-gray-400 dark:text-slate-500 active:scale-90 transition-all"
               >
                 <ChevronLeft size={20} />
               </button>
               <div className="text-center">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{year}</p>
-                <h3 className="text-lg font-black text-indigo-600">{monthLabel}</h3>
+                <p className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest">{year}</p>
+                <h3 className="text-lg font-black text-indigo-600 dark:text-indigo-400">{monthLabel}</h3>
               </div>
               <button 
                 onClick={() => changeMonth(1)}
-                className="p-2 bg-white rounded-xl shadow-sm border border-gray-100 text-gray-400 active:scale-90 transition-all"
+                className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-white/5 text-gray-400 dark:text-slate-500 active:scale-90 transition-all"
               >
                 <ChevronRight size={20} />
               </button>
@@ -396,20 +396,20 @@ export default function Plan() {
 
         {/* --- SUMMARY CARD (Only in Monthly Mode) --- */}
         {planViewMode === 'monthly' && (
-          <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 mb-8">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-white/5 mb-8">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Dự thu</p>
-                <p className="text-lg font-black text-emerald-600">{formatCurrency(totalIncomePlan)} ₫</p>
+                <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase mb-1">Dự thu</p>
+                <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(totalIncomePlan)} ₫</p>
               </div>
               <div className="text-right">
-                <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Dự chi</p>
-                <p className="text-lg font-black text-blue-600">{formatCurrency(totalExpensePlan)} ₫</p>
+                <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase mb-1">Dự chi</p>
+                <p className="text-lg font-black text-blue-600 dark:text-blue-400">{formatCurrency(totalExpensePlan)} ₫</p>
               </div>
             </div>
-            <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between items-center">
-              <span className="text-xs font-bold text-gray-500">Kế hoạch dư ra (Savings)</span>
-              <span className="text-xl font-black text-indigo-600">{formatCurrency(activeMonthlySaving)} ₫</span>
+            <div className="mt-4 pt-4 border-t border-gray-50 dark:border-white/5 flex justify-between items-center">
+              <span className="text-xs font-bold text-gray-500 dark:text-slate-500">Kế hoạch dư ra (Savings)</span>
+              <span className="text-xl font-black text-indigo-600 dark:text-indigo-400">{formatCurrency(activeMonthlySaving)} ₫</span>
             </div>
           </div>
         )}
@@ -417,14 +417,14 @@ export default function Plan() {
         {/* --- SECTION: INCOME PLAN --- */}
         <section className="mb-8">
           <div className="flex items-center space-x-2 mb-4 px-1">
-            <div className="p-1.5 bg-emerald-100 text-emerald-600 rounded-lg">
+            <div className="p-1.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-lg">
               <TrendingUp size={18} />
             </div>
-            <h2 className="text-lg font-bold text-gray-900">{planViewMode === 'default' ? 'Dự thu mặc định' : 'Dự thu trong tháng'}</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">{planViewMode === 'default' ? 'Dự thu mặc định' : 'Dự thu trong tháng'}</h2>
           </div>
           {loading ? (
             <div className="flex justify-center p-8">
-              <div className="w-8 h-8 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
+              <div className="w-8 h-8 border-4 border-emerald-100 dark:border-emerald-900/30 border-t-emerald-600 rounded-full animate-spin"></div>
             </div>
           ) : renderPlanList(incomeBudgets, actualIncome, 'income')}
         </section>
@@ -432,40 +432,40 @@ export default function Plan() {
         {/* --- SECTION: EXPENSE BUDGETS --- */}
         <section className="mb-10">
           <div className="flex items-center space-x-2 mb-4 px-1">
-            <div className="p-1.5 bg-blue-100 text-blue-600 rounded-lg">
+            <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
               <TrendingDown size={18} />
             </div>
-            <h2 className="text-lg font-bold text-gray-900">{planViewMode === 'default' ? 'Dự chi mặc định' : 'Dự chi trong tháng'}</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">{planViewMode === 'default' ? 'Dự chi mặc định' : 'Dự chi trong tháng'}</h2>
           </div>
           {loading ? (
             <div className="flex justify-center p-8">
-              <div className="w-8 h-8 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+              <div className="w-8 h-8 border-4 border-blue-100 dark:border-blue-900/30 border-t-blue-600 rounded-full animate-spin"></div>
             </div>
           ) : renderPlanList(expenseBudgets, actualExpenses, 'expense')}
         </section>
 
         {/* --- SECTION: FINANCIAL PROJECTION --- */}
-        <section className="mb-10 pt-6 border-t border-gray-100">
+        <section className="mb-10 pt-6 border-t border-gray-100 dark:border-white/5">
           <div className="flex items-center space-x-2 mb-4 px-1">
-            <div className="p-1.5 bg-indigo-100 text-indigo-600 rounded-lg">
+            <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-lg">
               <Activity size={18} />
             </div>
-            <h2 className="text-lg font-bold text-gray-900">Tương lai & Tích luỹ</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">Tương lai & Tích luỹ</h2>
           </div>
 
           <div className="space-y-4">
              {/* Year Slider */}
-             <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+             <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm">
               <div className="flex justify-between items-center mb-1">
-                <label className="text-sm font-bold text-gray-700">Dự báo đến mốc</label>
+                <label className="text-sm font-bold text-gray-700 dark:text-slate-300">Dự báo đến mốc</label>
                 <input 
                   type="month"
                   value={targetProjectionMonth}
                   onChange={e => setTargetProjectionMonth(e.target.value)}
-                  className="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-xl text-xs font-bold outline-none border-none focus:ring-1 focus:ring-indigo-400"
+                  className="bg-indigo-50 dark:bg-slate-800 text-indigo-700 dark:text-indigo-400 px-3 py-1.5 rounded-xl text-xs font-bold outline-none border-none focus:ring-1 focus:ring-indigo-400"
                 />
               </div>
-              <p className="text-[10px] text-gray-400 font-medium">
+              <p className="text-[10px] text-gray-400 dark:text-slate-500 font-medium">
                 Khoảng {Math.floor(projectionMonths / 12)} năm {projectionMonths % 12 > 0 ? `${projectionMonths % 12} tháng` : ''} tính từ hiện tại
               </p>
             </div>
@@ -496,7 +496,7 @@ export default function Plan() {
             {/* Table Toggle */}
             <button
               onClick={() => setShowPlanTable(!showPlanTable)}
-              className="w-full py-4 bg-white border border-gray-100 text-indigo-600 rounded-2xl text-xs font-bold flex items-center justify-center space-x-2 active:scale-[0.98] transition-all shadow-sm"
+              className="w-full py-4 bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 text-indigo-600 dark:text-indigo-400 rounded-2xl text-xs font-bold flex items-center justify-center space-x-2 active:scale-[0.98] transition-all shadow-sm"
             >
               <Calendar size={14} />
               <span>{showPlanTable ? 'Thu gọn bảng kế hoạch' : 'Chi tiết kế hoạch từng tháng'}</span>
@@ -504,18 +504,18 @@ export default function Plan() {
             </button>
 
             {showPlanTable && (
-              <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-top-2">
+              <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-100 dark:border-white/5 overflow-hidden animate-in fade-in slide-in-from-top-2">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-center divide-y divide-gray-50">
-                        <thead className="bg-gray-50/50">
+                    <table className="w-full text-center divide-y divide-gray-50 dark:divide-white/5">
+                        <thead className="bg-gray-50/50 dark:bg-slate-800/50">
                             <tr>
-                                <th className="py-3 px-4 text-[9px] font-black text-gray-400 uppercase">Tháng</th>
-                                <th className="py-3 px-2 text-[9px] font-black text-emerald-500 uppercase">Dự Thu</th>
-                                <th className="py-3 px-2 text-[9px] font-black text-blue-500 uppercase">Dự Chi</th>
-                                <th className="py-3 px-4 text-[9px] font-black text-indigo-600 uppercase">Tiết kiệm</th>
+                                <th className="py-3 px-4 text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase">Tháng</th>
+                                <th className="py-3 px-2 text-[9px] font-black text-emerald-500 dark:text-emerald-400 uppercase">Dự Thu</th>
+                                <th className="py-3 px-2 text-[9px] font-black text-blue-500 dark:text-blue-400 uppercase">Dự Chi</th>
+                                <th className="py-3 px-4 text-[9px] font-black text-indigo-600 dark:text-indigo-400 uppercase">Tiết kiệm</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50">
+                        <tbody className="divide-y divide-gray-50 dark:divide-white/5">
                             {Array.from({ length: Math.min(60, projectionMonths) }).map((_, i) => {
                                 const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + i);
                                 const m = d.toISOString().slice(0, 7);
@@ -524,14 +524,14 @@ export default function Plan() {
                                 const finalSavings = overrideVal !== undefined ? overrideVal : stats.surplus;
                                 
                                 return (
-                                <tr key={m} className="group hover:bg-indigo-50/30 transition-colors">
+                                <tr key={m} className="group hover:bg-indigo-50/30 dark:hover:bg-indigo-900/20 transition-colors">
                                     <td className="py-3 px-4">
                                         <div className="flex flex-col items-center">
-                                            <span className="text-[10px] font-black text-gray-900">T{d.getMonth() + 1}/{d.getFullYear()}</span>
+                                            <span className="text-[10px] font-black text-gray-900 dark:text-slate-100">T{d.getMonth() + 1}/{d.getFullYear()}</span>
                                         </div>
                                     </td>
-                                    <td className="py-3 px-2 text-[10px] font-bold text-emerald-600">+{formatCurrency(stats.income)}</td>
-                                    <td className="py-3 px-2 text-[10px] font-bold text-blue-600">-{formatCurrency(stats.expense)}</td>
+                                    <td className="py-3 px-2 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">+{formatCurrency(stats.income)}</td>
+                                    <td className="py-3 px-2 text-[10px] font-bold text-blue-600 dark:text-blue-400">-{formatCurrency(stats.expense)}</td>
                                     <td className="py-3 px-4">
                                         <div className="flex items-center justify-center space-x-1">
                                             <input
@@ -539,9 +539,9 @@ export default function Plan() {
                                                 placeholder={formatCurrency(stats.surplus)}
                                                 value={overrideVal || ''}
                                                 onChange={(e) => updatePlanMonth(m, e.target.value)}
-                                                className={`text-center text-xs font-black outline-none w-20 py-1 rounded-lg border border-transparent focus:border-indigo-200 ${overrideVal ? 'text-indigo-600' : 'text-gray-400 opacity-50'}`}
+                                                className={`text-center text-xs font-black outline-none w-20 py-1 rounded-lg border border-transparent focus:border-indigo-200 dark:focus:border-indigo-900 bg-transparent ${overrideVal ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-slate-600 opacity-50'}`}
                                             />
-                                            <span className="text-[8px] text-gray-300 font-bold">₫</span>
+                                            <span className="text-[8px] text-gray-300 dark:text-slate-700 font-bold">₫</span>
                                         </div>
                                     </td>
                                 </tr>
@@ -550,9 +550,9 @@ export default function Plan() {
                         </tbody>
                     </table>
                 </div>
-                {projectionMonths > 60 && <div className="p-3 bg-gray-50 text-center text-[9px] text-gray-400 italic">Bảng chỉ hiển thị chi tiết 5 năm đầu tiên</div>}
-                <div className="p-3 bg-gray-50 border-t border-gray-100 flex justify-between px-6">
-                  <p className="text-[9px] text-gray-400">Ghi chú: Thay đổi cột Tiết kiệm để ghi đè kế hoạch tháng đó</p>
+                {projectionMonths > 60 && <div className="p-3 bg-gray-50 dark:bg-slate-800/50 text-center text-[9px] text-gray-400 dark:text-slate-500 italic">Bảng chỉ hiển thị chi tiết 5 năm đầu tiên</div>}
+                <div className="p-3 bg-gray-50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-white/5 flex justify-between px-6">
+                  <p className="text-[9px] text-gray-400 dark:text-slate-500">Ghi chú: Thay đổi cột Tiết kiệm để ghi đè kế hoạch tháng đó</p>
                   {Object.keys(savingsPlan).length > 0 && (
                     <button 
                       onClick={() => { if(window.confirm('Xoá tất cả ghi đè tiết kiệm?')) { setSavingsPlan({}); localStorage.removeItem(`savings_plan_${user.id}`); } }} 

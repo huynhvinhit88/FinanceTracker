@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 
-const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
+const COLORS = ['#6366F1', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
 
 export default function Statistics() {
   const { user } = useAuth();
@@ -115,26 +115,26 @@ export default function Statistics() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-slate-950">
+        <div className="w-10 h-10 border-4 border-blue-200 dark:border-slate-800 border-t-blue-600 dark:border-t-indigo-500 rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 safe-top pb-24 min-h-screen bg-gray-50">
+    <div className="p-4 safe-top pb-24 min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
       {/* Header & Year Selector */}
       <div className="flex justify-between items-center mb-6 mt-4 px-1">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Thống kê</h1>
-          <p className="text-xs text-gray-400 font-medium">Báo cáo tài chính năm {selectedYear}</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100 tracking-tight">Thống kê</h1>
+          <p className="text-xs text-gray-400 dark:text-slate-500 font-medium">Báo cáo tài chính năm {selectedYear}</p>
         </div>
-        <div className="flex items-center bg-white border border-gray-100 rounded-xl p-1 shadow-sm">
-          <button onClick={() => setSelectedYear(v => v - 1)} className="p-2 hover:bg-gray-50 rounded-lg text-gray-400">
+        <div className="flex items-center bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl p-1 shadow-sm transition-colors">
+          <button onClick={() => setSelectedYear(v => v - 1)} className="p-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-lg text-gray-400 dark:text-slate-500">
             <ChevronLeft size={18} />
           </button>
-          <span className="px-4 font-bold text-gray-700 text-sm">{selectedYear}</span>
-          <button onClick={() => setSelectedYear(v => v + 1)} className="p-2 hover:bg-gray-50 rounded-lg text-gray-400">
+          <span className="px-4 font-bold text-gray-700 dark:text-slate-200 text-sm">{selectedYear}</span>
+          <button onClick={() => setSelectedYear(v => v + 1)} className="p-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-lg text-gray-400 dark:text-slate-500">
             <ChevronRight size={18} />
           </button>
         </div>
@@ -142,53 +142,53 @@ export default function Statistics() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-3 mb-6">
-        <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden">
-          <div className="absolute -right-4 -top-4 w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-gray-100 dark:border-white/5 shadow-sm relative overflow-hidden transition-colors">
+          <div className="absolute -right-4 -top-4 w-12 h-12 bg-emerald-50 dark:bg-emerald-950/30 rounded-full flex items-center justify-center text-emerald-500">
             <TrendingUp size={20} />
           </div>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tổng Thu</p>
-          <p className="text-lg font-black text-emerald-600">{formatCurrency(totalSummary.income)}<span className="text-[10px] ml-0.5">₫</span></p>
+          <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Tổng Thu</p>
+          <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(totalSummary.income)}<span className="text-[10px] ml-0.5">₫</span></p>
         </div>
 
-        <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden">
-          <div className="absolute -right-4 -top-4 w-12 h-12 bg-red-50 rounded-full flex items-center justify-center text-red-500">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-gray-100 dark:border-white/5 shadow-sm relative overflow-hidden transition-colors">
+          <div className="absolute -right-4 -top-4 w-12 h-12 bg-red-50 dark:bg-rose-950/30 rounded-full flex items-center justify-center text-red-500 dark:text-rose-400">
             <TrendingDown size={20} />
           </div>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tổng Chi</p>
-          <p className="text-lg font-black text-red-600">{formatCurrency(totalSummary.expense)}<span className="text-[10px] ml-0.5">₫</span></p>
+          <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Tổng Chi</p>
+          <p className="text-lg font-black text-red-600 dark:text-rose-400">{formatCurrency(totalSummary.expense)}<span className="text-[10px] ml-0.5">₫</span></p>
         </div>
 
-        <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden">
-          <div className="absolute -right-4 -top-4 w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-500">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-gray-100 dark:border-white/5 shadow-sm relative overflow-hidden transition-colors">
+          <div className="absolute -right-4 -top-4 w-12 h-12 bg-blue-50 dark:bg-indigo-950/30 rounded-full flex items-center justify-center text-blue-500 dark:text-indigo-400">
             <PiggyBank size={20} />
           </div>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tích lũy năm</p>
-          <p className={`text-lg font-black ${totalSummary.net >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
+          <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Tích lũy năm</p>
+          <p className={`text-lg font-black ${totalSummary.net >= 0 ? 'text-blue-600 dark:text-indigo-400' : 'text-orange-600 dark:text-orange-400'}`}>
             {formatCurrency(totalSummary.net)}<span className="text-[10px] ml-0.5">₫</span>
           </p>
         </div>
 
-        <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden">
-          <div className="absolute -right-4 -top-4 w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-500">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-gray-100 dark:border-white/5 shadow-sm relative overflow-hidden transition-colors">
+          <div className="absolute -right-4 -top-4 w-12 h-12 bg-indigo-50 dark:bg-indigo-950/30 rounded-full flex items-center justify-center text-indigo-500 dark:text-indigo-400">
             <Calendar size={20} />
           </div>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tổng Tiết kiệm</p>
-          <p className="text-lg font-black text-indigo-600">{formatCurrency(totalSummary.totalSavingsBalance)}<span className="text-[10px] ml-0.5">₫</span></p>
+          <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Tổng Tiết kiệm</p>
+          <p className="text-lg font-black text-indigo-600 dark:text-indigo-400">{formatCurrency(totalSummary.totalSavingsBalance)}<span className="text-[10px] ml-0.5">₫</span></p>
         </div>
       </div>
 
       {/* Main Bar Chart: Income vs Expense */}
-      <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm mb-6">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-sm mb-6 transition-colors">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="font-bold text-gray-900 border-l-4 border-blue-500 pl-3">Dòng tiền hàng tháng</h3>
+          <h3 className="font-bold text-gray-900 dark:text-slate-100 border-l-4 border-blue-500 pl-3">Dòng tiền hàng tháng</h3>
           <div className="flex space-x-2">
             <div className="flex items-center space-x-1">
               <div className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span className="text-[10px] font-bold text-gray-400">Thu</span>
+              <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500">Thu</span>
             </div>
             <div className="flex items-center space-x-1">
               <div className="w-2 h-2 rounded-full bg-red-400" />
-              <span className="text-[10px] font-bold text-gray-400">Chi</span>
+              <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500">Chi</span>
             </div>
           </div>
         </div>
@@ -196,22 +196,31 @@ export default function Statistics() {
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={monthlyData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+              <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="currentColor" className="text-gray-100 dark:text-slate-800" />
               <XAxis 
                 dataKey="month" 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }}
+                tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }}
               />
               <YAxis 
                 axisLine={false} 
                 tickLine={false}
-                tick={{ fontSize: 10, fill: '#94a3b8' }}
-                tickFormatter={(val) => val >= 1000 ? `${val/1000}M` : val}
+                tick={{ fontSize: 10, fill: '#64748b' }}
+                tickFormatter={(val) => val >= 1000000 ? `${(val/1000000).toFixed(1)}M` : val >= 1000 ? `${(val/1000).toFixed(0)}K` : val}
               />
               <Tooltip 
-                cursor={{ fill: '#f8fafc' }}
-                contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px' }}
+                cursor={{ fill: 'currentColor', className: 'text-gray-50 dark:text-slate-800/50' }}
+                contentStyle={{ 
+                  borderRadius: '16px', 
+                  border: 'none', 
+                  boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', 
+                  fontSize: '12px',
+                  backgroundColor: 'var(--tw-bg-opacity, #ffffff)',
+                  color: 'var(--tw-text-opacity, #1e293b)'
+                }}
+                className="dark:!bg-slate-800 dark:!text-slate-100"
+                itemStyle={{ fontWeight: 'bold' }}
                 formatter={(val) => [`${formatCurrency(val)} ₫`]}
               />
               <Bar 
@@ -236,8 +245,8 @@ export default function Statistics() {
       {/* Pie Chart: Categories & Area Chart: Savings Trend Side by Side / Stacked */}
       <div className="grid grid-cols-1 gap-6">
         {/* Expense Category Breakdown */}
-        <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
-          <h3 className="font-bold text-gray-900 border-l-4 border-red-500 pl-3 mb-6">Cơ cấu chi tiêu</h3>
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-sm transition-colors">
+          <h3 className="font-bold text-gray-900 dark:text-slate-100 border-l-4 border-red-500 pl-3 mb-6">Cơ cấu chi tiêu</h3>
           <div className="flex flex-col items-center">
             <div className="h-48 w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -266,8 +275,8 @@ export default function Statistics() {
               {categoryData.slice(0, 6).map((cat, index) => (
                 <div key={cat.name} className="flex items-center space-x-2">
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                  <span className="text-[10px] font-bold text-gray-600 truncate">{cat.name}</span>
-                  <span className="text-[9px] text-gray-400 font-medium ml-auto">
+                  <span className="text-[10px] font-bold text-gray-600 dark:text-slate-400 truncate">{cat.name}</span>
+                  <span className="text-[9px] text-gray-400 dark:text-slate-500 font-medium ml-auto">
                     {Math.round((cat.value / (totalSummary.expense || 1)) * 100)}%
                   </span>
                 </div>
@@ -277,24 +286,24 @@ export default function Statistics() {
         </div>
 
         {/* Monthly Savings Progress */}
-        <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
-          <h3 className="font-bold text-gray-900 border-l-4 border-indigo-500 pl-3 mb-6">Hiệu quả tích lũy</h3>
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-sm transition-colors">
+          <h3 className="font-bold text-gray-900 dark:text-slate-100 border-l-4 border-indigo-500 pl-3 mb-6">Hiệu quả tích lũy</h3>
           <div className="h-48 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={monthlyData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorNet" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px' }}
-                  formatter={(val) => [`${formatCurrency(val)} ₫`]}
-                />
+                  <stop offset="5%" stopColor="#6366F1" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#6366F1" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="currentColor" className="text-gray-100 dark:text-slate-800" />
+              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
+              <Tooltip 
+                contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '12px' }}
+                formatter={(val) => [`${formatCurrency(val)} ₫`]}
+              />
                 <Area type="monotone" dataKey="net" stroke="#6366F1" strokeWidth={3} fillOpacity={1} fill="url(#colorNet)" />
               </AreaChart>
             </ResponsiveContainer>
@@ -304,11 +313,11 @@ export default function Statistics() {
 
       {/* Bonus Table: Detailed Monthly Breakdown */}
       <div className="mt-8">
-        <h3 className="text-sm font-bold text-gray-900 mb-4 px-2">Báo cáo chi tiết từng tháng</h3>
-        <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
+        <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100 mb-4 px-2">Báo cáo chi tiết từng tháng</h3>
+        <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden transition-colors">
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
-              <thead className="bg-gray-50 text-gray-500 font-bold uppercase tracking-widest text-[9px]">
+              <thead className="bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-slate-500 font-bold uppercase tracking-widest text-[9px]">
                 <tr>
                   <th className="px-4 py-4">Tháng</th>
                   <th className="px-4 py-4 text-emerald-600">Thu nhập</th>
@@ -316,13 +325,13 @@ export default function Statistics() {
                   <th className="px-4 py-4 text-blue-600">Tích lũy</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50 text-gray-700 font-bold">
+              <tbody className="divide-y divide-gray-50 dark:divide-white/5 text-gray-700 dark:text-slate-300 font-bold">
                 {monthlyData.filter(m => m.income > 0 || m.expense > 0).map((row) => (
-                  <tr key={row.month} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-4 font-black">{row.month}</td>
-                    <td className="px-4 py-4 text-emerald-600">{formatCurrency(row.income)}</td>
-                    <td className="px-4 py-4 text-red-500">{formatCurrency(row.expense)}</td>
-                    <td className={`px-4 py-4 ${row.net >= 0 ? 'text-blue-600' : 'text-orange-500'}`}>
+                  <tr key={row.month} className="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                    <td className="px-4 py-4 font-black dark:text-slate-100">{row.month}</td>
+                    <td className="px-4 py-4 text-emerald-600 dark:text-emerald-400">{formatCurrency(row.income)}</td>
+                    <td className="px-4 py-4 text-red-500 dark:text-rose-400">{formatCurrency(row.expense)}</td>
+                    <td className={`px-4 py-4 ${row.net >= 0 ? 'text-blue-600 dark:text-indigo-400' : 'text-orange-500 dark:text-orange-400'}`}>
                       {row.net > 0 ? '+' : ''}{formatCurrency(row.net)}
                     </td>
                   </tr>
@@ -331,7 +340,7 @@ export default function Statistics() {
             </table>
           </div>
           {monthlyData.filter(m => m.income > 0 || m.expense > 0).length === 0 && (
-            <div className="p-8 text-center text-gray-400 italic">
+            <div className="p-8 text-center text-gray-400 dark:text-slate-600 italic">
               Không có dữ liệu giao dịch trong năm {selectedYear}
             </div>
           )}

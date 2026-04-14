@@ -1,0 +1,10 @@
+{
+  "title": "FinanceTracker — Business Logic & Financial Calculations",
+  "summary": "Core financial calculation formulas used in the FinanceTracker app: net worth (totalAssetsGross - totalAllLiabilities), account sub_type classification, investment net value, loan balance tracking, savings interest, and budget logic. Read before touching Home.jsx, Accounts.jsx, or Plan.jsx.",
+  "created_at": "2026-04-14T12:21:00Z",
+  "updated_at": "2026-04-14T12:21:00Z",
+  "corpus": "huynhvinhit88/FinanceTracker",
+  "artifacts": [
+    "business_logic.md"
+  ]
+}

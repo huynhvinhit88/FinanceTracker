@@ -35,19 +35,19 @@ export function BottomSheet({ isOpen, onClose, title, children }) {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300, mass: 0.8 }}
-            className="relative w-full max-w-md bg-white rounded-t-3xl max-h-[82vh] flex flex-col shadow-2xl pointer-events-auto pb-safe px-1"
+            className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-t-3xl max-h-[82vh] flex flex-col shadow-2xl pointer-events-auto pb-safe px-1 transition-colors duration-300"
           >
             {/* Handle/Grabber */}
             <div className="flex justify-center pt-3 pb-2 w-full" onClick={onClose}>
-              <div className="w-12 h-1.5 bg-gray-200 rounded-full"></div>
+              <div className="w-12 h-1.5 bg-gray-200 dark:bg-slate-700 rounded-full"></div>
             </div>
 
             {/* Header */}
-            <div className="px-6 pb-4 flex items-center justify-between border-b border-gray-100 shrink-0">
-              <h2 className="text-xl font-bold text-gray-900">{title}</h2>
+            <div className="px-6 pb-4 flex items-center justify-between border-b border-gray-100 dark:border-white/5 shrink-0">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100">{title}</h2>
               <button 
                 onClick={onClose}
-                className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200"
+                className="w-8 h-8 flex items-center justify-center bg-gray-100 dark:bg-slate-800 rounded-full text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
               >
                 <X size={18} />
               </button>

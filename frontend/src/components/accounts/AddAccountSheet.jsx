@@ -73,13 +73,13 @@ export function AddAccountSheet({ isOpen, onClose, onSuccess }) {
       <form onSubmit={handleSubmit} className="space-y-6">
         
         {error && (
-          <div className="p-3 bg-red-50 text-red-600 rounded-xl text-sm font-medium">
+          <div className="p-3 bg-red-50 dark:bg-rose-900/20 text-red-600 dark:text-rose-400 rounded-xl text-sm font-medium border border-red-100 dark:border-rose-900/30">
             {error}
           </div>
         )}
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Số dư ban đầu</label>
+          <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 mb-2">Số dư ban đầu</label>
           <div className="relative">
             <input
               type="text"
@@ -87,28 +87,28 @@ export function AddAccountSheet({ isOpen, onClose, onSuccess }) {
               value={displayValue}
               onChange={handleInputChange}
               placeholder="0"
-              className="w-full bg-gray-50 text-gray-900 text-3xl font-bold py-4 pr-24 pl-4 rounded-2xl border-none focus:ring-2 focus:ring-blue-500 transition-all outline-none"
+              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 text-3xl font-bold py-4 pr-24 pl-4 rounded-2xl border-none focus:ring-2 focus:ring-blue-500 transition-all outline-none"
             />
             <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
-              <span className="text-xl font-bold text-gray-400">{suffix}</span>
+              <span className="text-xl font-bold text-gray-400 dark:text-slate-600">{suffix}</span>
             </div>
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Tên tài khoản</label>
+          <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 mb-2">Tên tài khoản</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Ví dụ: Tiền mặt, Thẻ VCB..."
-            className="w-full bg-gray-50 border border-transparent focus:border-blue-500 focus:bg-white rounded-xl px-4 py-3 outline-none transition-all"
+            className="w-full bg-gray-50 dark:bg-slate-800 border border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-700 dark:text-slate-100 rounded-xl px-4 py-3 outline-none transition-all"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Loại phân loại</label>
+          <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 mb-2">Loại phân loại</label>
           <div className="grid grid-cols-2 gap-3">
             {ACCOUNT_TYPES.map((type) => {
               const Icon = type.icon;
@@ -120,14 +120,14 @@ export function AddAccountSheet({ isOpen, onClose, onSuccess }) {
                   onClick={() => setSelectedType(type)}
                   className={`flex items-center space-x-2 p-3 rounded-xl border cursor-pointer transition-all ${
                     isSelected 
-                      ? 'border-blue-500 bg-blue-50 shadow-sm' 
-                      : 'border-gray-200 bg-white hover:bg-gray-50'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-sm' 
+                      : 'border-gray-200 dark:border-white/5 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700'
                   }`}
                 >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center`} style={{ backgroundColor: isSelected ? type.color : '#F3F4F6' }}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center`} style={{ backgroundColor: isSelected ? type.color : (theme === 'dark' ? '#1e293b' : '#F3F4F6') }}>
                     <Icon size={16} color={isSelected ? 'white' : '#6B7280'} />
                   </div>
-                  <span className={`text-sm font-medium ${isSelected ? 'text-blue-900' : 'text-gray-700'}`}>
+                  <span className={`text-sm font-medium ${isSelected ? 'text-blue-900 dark:text-blue-100' : 'text-gray-700 dark:text-slate-300'}`}>
                     {type.label}
                   </span>
                 </div>
@@ -139,7 +139,7 @@ export function AddAccountSheet({ isOpen, onClose, onSuccess }) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-4 mt-2 bg-blue-600 text-white font-semibold rounded-2xl shadow-lg shadow-blue-200 active:scale-[0.98] transition-transform flex items-center justify-center"
+          className="w-full py-4 mt-2 bg-blue-600 dark:bg-indigo-600 text-white font-semibold rounded-2xl shadow-lg shadow-blue-200 dark:shadow-none active:scale-[0.98] transition-transform flex items-center justify-center"
         >
           {loading ? (
             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

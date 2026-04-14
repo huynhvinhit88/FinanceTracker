@@ -100,7 +100,7 @@ export function useLoans() {
   const getLoanTransactions = async (loanId) => {
     try {
       return await db.transactions
-        .filter(t => t.loan_id === loanId && t.loan_principal_amount > 0)
+        .filter(t => t.loan_id === loanId)
         .toArray();
     } catch (err) {
       console.error('Error fetching loan transactions:', err);

@@ -124,10 +124,9 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
       }
     }
 
-    const interestThisMonth = remaining * (r / 100) * (daysPeriod / 365);
-    let principalThisMonth = 0;
+    const isUnderFreePeriod = freePrincipalMonths >= 1;
 
-    // Quét giao dịch lịch sử trong tháng này
+    // 1. Quét giao dịch lịch sử trong tháng này
     const currentMonthNum = currentPayDate.getMonth();
     const currentYearNum = currentPayDate.getFullYear();
     const eventsThisMonth = historicalEvents.filter(e => {
@@ -136,24 +135,44 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
     });
     const actualPrincipalPaid = eventsThisMonth.reduce((sum, e) => sum + (e.loan_principal_amount || 0), 0);
 
+    let principalThisMonth = 0;
+    let prepayThisMonth = 0;
+
     if (!isFuture && actualPrincipalPaid > 0) {
-      principalThisMonth = Math.min(actualPrincipalPaid, remaining);
-      if (freePrincipalMonths > 0) freePrincipalMonths -= 1;
-    } else if (freePrincipalMonths > 0) {
-      freePrincipalMonths -= 1;
+      // DỮ LIỆU THỰC TẾ TRONG QUÁ KHỨ
+      const targetNormal = isUnderFreePeriod ? 0 : basePrincipal;
+      principalThisMonth = Math.min(actualPrincipalPaid, targetNormal, remaining);
+      prepayThisMonth = Math.max(0, actualPrincipalPaid - principalThisMonth);
+      
+      // Nếu có trả thêm (Tất toán), cộng vào số tháng được miễn gốc cho tương lai
+      if (prepayThisMonth > 0) {
+        freePrincipalMonths += prepayThisMonth / basePrincipal;
+      }
+      
+      // Nếu đang trong kỳ miễn gốc và thực tế tháng này không đóng gốc (hoặc đóng ít hơn mức dư), ta tiêu thụ 1 kỳ miễn
+      if (isUnderFreePeriod && actualPrincipalPaid < basePrincipal) {
+        freePrincipalMonths = Math.max(0, freePrincipalMonths - 1);
+      }
     } else {
-      principalThisMonth = Math.min(basePrincipal, remaining);
+      // MÔ PHỎNG (Tương lai hoặc Quá khứ không có dữ liệu giao dịch)
+      if (isUnderFreePeriod) {
+        principalThisMonth = 0;
+        freePrincipalMonths = Math.max(0, freePrincipalMonths - 1);
+      } else {
+        principalThisMonth = Math.min(basePrincipal, remaining);
+      }
     }
 
+    const interestThisMonth = remaining * (r / 100) * (daysPeriod / 365);
     totalInterest += interestThisMonth;
-    remaining -= principalThisMonth;
+    remaining -= (principalThisMonth + prepayThisMonth);
 
     const currentBankPayment = principalThisMonth + interestThisMonth;
     if (currentMonthBudget > 0) {
       accumulatedExtra += Math.max(0, currentMonthBudget - currentBankPayment);
     }
 
-    let prepayEvent = 0;
+    let automatedPrepay = 0;
     let penaltyPaid = 0;
 
     if (threshold > 0 && remaining > 0) {
@@ -163,15 +182,15 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
       
       // Chỉ tất toán nếu tiền tích luỹ đủ để trả (Số tiền ngưỡng + Phí phạt của nó)
       if (accumulatedExtra >= (targetPrepay + penaltyForTarget)) {
-        prepayEvent = targetPrepay;
+        automatedPrepay = targetPrepay;
         penaltyPaid = penaltyForTarget;
         
         totalPenalty += penaltyPaid;
-        remaining -= prepayEvent;
-        accumulatedExtra -= (prepayEvent + penaltyPaid);
+        remaining -= automatedPrepay;
+        accumulatedExtra -= (automatedPrepay + penaltyPaid);
         
         // Cập nhật số tháng không cần trả gốc (giảm áp lực dòng tiền)
-        freePrincipalMonths += prepayEvent / basePrincipal;
+        freePrincipalMonths += automatedPrepay / basePrincipal;
       }
     }
 
@@ -181,11 +200,11 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
       dateObj: new Date(currentPayDate),
       interest: Math.round(interestThisMonth),
       principal: Math.round(principalThisMonth),
-      prepay: Math.round(prepayEvent),
+      prepay: Math.round(prepayThisMonth + automatedPrepay), // Gộp cả trả thêm thủ công và tự động
       penalty: Math.round(penaltyPaid),
       adjustment: Math.round(adjustment),
       actualEventsCount: eventsThisMonth.length,
-      total: Math.round(currentBankPayment + prepayEvent + penaltyPaid),
+      total: Math.round(currentBankPayment + prepayThisMonth + automatedPrepay + penaltyPaid),
       accumulated: Math.round(accumulatedExtra),
       remaining: Math.max(0, Math.round(remaining)),
     });

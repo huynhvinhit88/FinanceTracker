@@ -100,37 +100,36 @@ export default function Accounts() {
     const daysPassed = Math.max(0, Math.floor((new Date() - new Date(sav.start_date)) / (1000 * 60 * 60 * 24)));
     const dailyRate = ((sav.interest_rate || 0) / 100) / 365;
     const accruedInterest = (sav.principal_amount || 0) * dailyRate * daysPassed;
-    // Lãi dự kiến cho cả kỳ
     const expectedTotalInterest = (sav.principal_amount || 0) * ((sav.interest_rate || 0) / 100) * ((sav.term_months || 0) / 12);
     return { accruedInterest: Math.floor(accruedInterest), expectedTotalInterest: Math.floor(expectedTotalInterest), daysPassed };
   };
 
   const totalSavingsValue = savings.reduce((acc, curr) => {
     if (curr.status !== 'active') return acc;
-    // Khối lượng tiết kiệm chỉ tính tổng tiền gốc
     return acc + curr.principal_amount;
   }, 0);
 
   // Investment Math
-  const totalInvestmentCurrent = investments.reduce((acc, curr) => {
-    if (curr.type === 'real_estate') {
-      return acc + ((curr.current_price || 0) - (curr.loan_amount || 0));
-    }
-    return acc + ((curr.current_price || 0) * (curr.quantity || 0));
+  const totalInvestmentNet = investments.reduce((acc, curr) => {
+    const marketVal = (curr.current_price || 0) * (curr.type === 'real_estate' ? 1 : (curr.quantity || 1));
+    const debt = curr.loan_amount || 0;
+    return acc + (marketVal - debt);
   }, 0);
 
   const totalInvestmentMarketValue = investments.reduce((acc, curr) => {
     return acc + (curr.current_price * (curr.type === 'real_estate' ? 1 : curr.quantity));
   }, 0);
 
-  const totalInvestmentCost = investments.reduce((acc, curr) => {
-    if (curr.type === 'real_estate') return acc + curr.buy_price;
-    return acc + (curr.buy_price * curr.quantity);
+  const totalOtherLiabilities = totalDebtAccounts + loans.reduce((acc, l) => {
+    if (l.status === 'active' && !l.linked_investment_id) {
+       return acc + (l.remaining_principal ?? l.total_amount ?? 0);
+    }
+    return acc;
   }, 0);
 
   const totalLoanRemaining = loans.reduce((acc, l) => acc + (l.status === 'active' ? (l.remaining_principal ?? l.total_amount ?? 0) : 0), 0);
-  const totalLiabilities = totalDebtAccounts + totalLoanRemaining;
-  const globalNetWorth = totalCashAndReceivable + totalSavingsValue + totalInvestmentMarketValue - totalLiabilities;
+  
+  const globalNetWorth = totalCashAndReceivable + totalSavingsValue + totalInvestmentNet - totalOtherLiabilities;
   const activeLoans = loans.filter(l => l.status === 'active');
   const paidOffLoans = loans.filter(l => l.status === 'paid_off');
 
@@ -265,8 +264,8 @@ export default function Accounts() {
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3 mb-2">
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-purple-100">
-          <p className="text-[10px] font-bold text-purple-500 uppercase tracking-widest mb-1">Tài sản ròng (Equity)</p>
-          <p className="text-lg font-black text-gray-900">{formatCurrency(totalInvestmentCurrent)} ₫</p>
+        <p className="text-[10px] font-bold text-purple-500 uppercase tracking-widest mb-1">Tài sản ròng (Equity)</p>
+        <p className="text-lg font-black text-gray-900">{formatCurrency(totalInvestmentNet)} ₫</p>
         </div>
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-purple-50">
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tổng thị trường</p>
@@ -417,10 +416,10 @@ export default function Accounts() {
         </div>
 
         {loans.length === 0 ? (
-          <div className="bg-white border border-dashed border-gray-200 rounded-2xl py-8 text-center">
+          <div className="bg-white border border-dashed border-gray-200 rounded-2xl py-8 text-center text-gray-500">
             <HandCoins size={28} className="text-gray-300 mx-auto mb-2" />
-            <p className="text-gray-400 text-sm font-medium">Chưa có hồ sơ vay nào.</p>
-            <p className="text-gray-300 text-xs mt-1">Nhấn + để thêm khoản vay mới</p>
+            <p className="text-sm font-medium">Chưa có hồ sơ vay nào.</p>
+            <p className="text-xs mt-1">Nhấn + để thêm khoản vay mới</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -441,25 +440,7 @@ export default function Accounts() {
   return (
     <>
       <div className="p-4 safe-top pb-24 min-h-screen bg-gray-50">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4 mt-4">Danh mục Tài sản</h1>
-        
-        <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-fuchsia-900 rounded-3xl p-6 text-white shadow-2xl relative overflow-hidden mb-6">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
-          <div className="relative z-10">
-            <p className="text-purple-100/70 text-sm font-medium mb-1">Tổng tài sản ròng toàn cầu</p>
-            <h2 className="text-3xl font-black tracking-tight mb-4">{formatCurrency(globalNetWorth)} ₫</h2>
-            <div className="grid grid-cols-2 gap-x-6 gap-y-2 pt-4 border-t border-white/10 text-xs font-bold">
-              <div className="flex justify-between items-center bg-white/5 p-2 rounded-xl leading-tight">
-                <span className="text-purple-200/60">Tài sản (Gross)</span>
-                <span className="text-emerald-400">+{formatCurrency(totalCashAndReceivable + totalSavingsValue + totalInvestmentMarketValue)}</span>
-              </div>
-              <div className="flex justify-between items-center bg-white/5 p-2 rounded-xl leading-tight">
-                <span className="text-purple-200/60">Tổng nợ</span>
-                <span className="text-red-400">-{formatCurrency(totalLiabilities)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6 mt-4">Danh mục Tài sản</h1>
         
         {/* Custom Tabs - 3 tabs only */}
         <div className="flex bg-gray-200/60 p-1 rounded-xl mb-6">

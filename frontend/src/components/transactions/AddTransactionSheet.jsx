@@ -50,9 +50,9 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
     if (isOpen) {
       if (initialData) {
         setType(initialData.type || 'repayment');
-        if (initialData.amount) setExternalValue(initialData.amount);
+        if (initialData.amount !== undefined && initialData.amount !== null) setExternalValue(initialData.amount);
         if (initialData.loanId) setLoanId(initialData.loanId);
-        if (initialData.principal) setExternalPrincipal(initialData.principal);
+        if (initialData.principal !== undefined && initialData.principal !== null) setExternalPrincipal(initialData.principal);
         if (initialData.date) {
             const d = new Date(initialData.date);
             setDate(d.toISOString().split('T')[0]);

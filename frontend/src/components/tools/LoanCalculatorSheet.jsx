@@ -485,7 +485,7 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
         onClose={() => setIsAddRealLoanOpen(false)} 
         initialProfile={{
           name: profiles.find(x => x.id === activeProfileId)?.name || 'Khoản vay mới',
-          principal, termMonths, promoRate, promoMonths, baseRate, marginRate, penaltyConfig, startDate, firstPaymentDate
+          principal, termMonths, promoRate, promoMonths, baseRate, marginRate, penaltyConfig, startDate, firstPaymentDate, periods
         }}
       />
     </BottomSheet>

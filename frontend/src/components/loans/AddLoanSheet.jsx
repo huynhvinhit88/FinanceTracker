@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { db } from '../../lib/db';
 import { useLoans } from '../../hooks/useLoans';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
+import { formatCurrency, parseCurrencyInput } from '../../utils/format';
 import { Building, Clock, Percent, Save, Calculator, ChevronDown, CheckCircle, PlusCircle, XCircle } from 'lucide-react';
 
 // Helper: hiển thị số thập phân dùng dấu phẩy (kiểu VN)

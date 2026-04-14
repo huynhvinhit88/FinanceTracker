@@ -160,6 +160,35 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
     }
   };
 
+  const updateAccountBalances = async (payload, direction = 1) => {
+    const { account_id, to_account_id, amount, type } = payload;
+    
+    // 1. Cập nhật tài khoản nguồn (hoặc duy nhất)
+    const fromAcc = await db.accounts.get(account_id);
+    if (fromAcc) {
+      let diff = 0;
+      if (type === 'income') {
+        diff = fromAcc.sub_type === 'debt' ? -amount : amount;
+      } else {
+        diff = fromAcc.sub_type === 'debt' ? amount : -amount;
+      }
+      await db.accounts.update(account_id, { 
+        balance: (fromAcc.balance || 0) + (diff * direction) 
+      });
+    }
+
+    // 2. Cập nhật tài khoản đích (nếu là chuyển khoản)
+    if (type === 'transfer' && to_account_id) {
+       const toAcc = await db.accounts.get(to_account_id);
+       if (toAcc) {
+         const diff = toAcc.sub_type === 'debt' ? -amount : amount;
+         await db.accounts.update(to_account_id, { 
+           balance: (toAcc.balance || 0) + (diff * direction) 
+         });
+       }
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (rawAmount <= 0) { setError('Số tiền phải lớn hơn 0'); return; }
@@ -203,7 +232,14 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
         loan_principal_amount: isLoanMode ? principalRaw : 0
       };
 
+      // 1. Rollback old balance impacts
+      await updateAccountBalances(transaction, -1);
+
+      // 2. Update transaction
       await db.transactions.update(transaction.id, payload);
+
+      // 3. Apply new balance impacts
+      await updateAccountBalances(payload, 1);
 
       // Xử lý cập nhật số dư nợ (Rollback & Apply)
       if (oldLoanInfo) {
@@ -232,6 +268,9 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
     setError('');
 
     try {
+      // Rollback balances
+      await updateAccountBalances(transaction, -1);
+
       await db.transactions.delete(transaction.id);
 
       // Rollback dư nợ nếu là giao dịch trả nợ

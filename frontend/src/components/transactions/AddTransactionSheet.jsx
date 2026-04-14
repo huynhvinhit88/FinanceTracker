@@ -167,6 +167,40 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
     }
   }, [loanId, isLoanMode, repaymentType, loans, date]);
 
+  const updateAccountBalances = async (payload, direction = 1) => {
+    const { account_id, to_account_id, amount, type } = payload;
+    
+    // 1. Cập nhật tài khoản nguồn (hoặc duy nhất)
+    const fromAcc = await db.accounts.get(account_id);
+    if (fromAcc) {
+      let diff = 0;
+      if (type === 'income') {
+        // Thu nhập: + vào ví thường, - vào ví nợ
+        diff = fromAcc.sub_type === 'debt' ? -amount : amount;
+      } else {
+        // Chi tiêu/Chuyển/Trả nợ: - vào ví thường, + vào ví nợ
+        diff = fromAcc.sub_type === 'debt' ? amount : -amount;
+      }
+      
+      // Áp dụng direction (1 là thêm mới, -1 là rollback)
+      await db.accounts.update(account_id, { 
+        balance: fromAcc.balance + (diff * direction) 
+      });
+    }
+
+    // 2. Cập nhật tài khoản đích (nếu là chuyển khoản)
+    if (type === 'transfer' && to_account_id) {
+       const toAcc = await db.accounts.get(to_account_id);
+       if (toAcc) {
+         // Chuyển đến: + vào ví thường, - vào ví nợ
+         const diff = toAcc.sub_type === 'debt' ? -amount : amount;
+         await db.accounts.update(to_account_id, { 
+           balance: toAcc.balance + (diff * direction) 
+         });
+       }
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (rawAmount <= 0) { setError('Số tiền phải lớn hơn 0'); return; }
@@ -202,6 +236,9 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
 
       await db.transactions.add(payload);
       
+      // Cập nhật số dư tài khoản
+      await updateAccountBalances(payload);
+
       // Nếu là trả nợ vay, cập nhật số dư nợ
       if (isLoanMode && loanId) {
         await updateLoanBalance(loanId, principalRaw);

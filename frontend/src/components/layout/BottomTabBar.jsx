@@ -47,7 +47,7 @@ export function BottomTabBar() {
                   )}>
                     {tab.name}
                   </span>
-                  
+
                   {/* Indicator Line for Active Tab */}
                   {isActive && (
                     <div className="absolute top-0 left-1/4 right-1/4 h-0.5 bg-blue-600 dark:bg-blue-400 rounded-full" />

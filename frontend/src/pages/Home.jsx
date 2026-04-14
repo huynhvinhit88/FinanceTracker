@@ -89,22 +89,17 @@ export default function Home() {
     return sum + (sav.principal_amount || 0);
   }, 0);
 
-  const totalInvestmentsNet = investments.reduce((sum, inv) => {
-    const marketVal = (inv.current_price || 0) * (inv.type === 'real_estate' ? 1 : (inv.quantity || 1));
-    const debt = inv.loan_amount || 0;
-    return sum + (marketVal - debt);
+  const totalInvestmentMarketValue = investments.reduce((sum, inv) => {
+    return sum + ((inv.current_price || 0) * (inv.type === 'real_estate' ? 1 : (inv.quantity || 1)));
   }, 0);
 
-  const totalOtherLiabilities = totalDebtAccounts + loans.reduce((sum, loan) => {
-    // Chỉ cộng các khoản nợ rời (không gắn với tài sản)
-    // Vì nợ gắn với tài sản đã được trừ vào totalInvestmentsNet (Equity)
-    if (loan.status === 'active' && !loan.linked_investment_id) {
-      return sum + (loan.remaining_principal || loan.total_amount || 0);
-    }
+  const totalAllLiabilities = totalDebtAccounts + loans.reduce((sum, loan) => {
+    if (loan.status === 'active') return sum + (loan.remaining_principal || loan.total_amount || 0);
     return sum;
   }, 0);
 
-  const globalNetWorth = totalCashAndReceivable + totalSavings + totalInvestmentsNet - totalOtherLiabilities;
+  const totalAssetsGross = totalCashAndReceivable + totalSavings + totalInvestmentMarketValue;
+  const globalNetWorth = totalAssetsGross - totalAllLiabilities;
 
   // Chart Data: Expense breakdown for current month
   const currentMonthDateStr = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
@@ -181,11 +176,23 @@ export default function Home() {
         <div className="bg-gradient-to-tr from-gray-900 to-gray-800 rounded-2xl p-6 text-white shadow-xl mb-6 relative overflow-hidden">
           <div className="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
           <p className="text-gray-300 text-sm mb-1 font-medium">Tổng tài sản ròng</p>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-white/70 text-[10px] sm:text-xs font-semibold">
-            {totalCashAndReceivable > 0 && <p>Tiền mặt: +{formatCurrency(totalCashAndReceivable)} đ</p>}
-            {totalSavings > 0 && <p>Tiết kiệm: +{formatCurrency(totalSavings)} đ</p>}
-            {totalInvestmentsNet !== 0 && <p>Đầu tư: {totalInvestmentsNet > 0 ? '+' : ''}{formatCurrency(totalInvestmentsNet)} đ</p>}
-            {totalOtherLiabilities > 0 && <p>Nợ rời: -{formatCurrency(totalOtherLiabilities)} đ</p>}
+          <h2 className="text-3xl font-bold tracking-tight mb-4">{formatCurrency(globalNetWorth)} ₫</h2>
+          
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <div className="bg-white/5 p-3 rounded-2xl border border-white/5">
+              <p className="text-[10px] text-emerald-300 font-bold uppercase tracking-wider mb-1">Tổng tài sản</p>
+              <p className="text-sm font-black text-emerald-400">+{formatCurrency(totalAssetsGross)} đ</p>
+            </div>
+            <div className="bg-white/5 p-3 rounded-2xl border border-white/5">
+              <p className="text-[10px] text-red-300 font-bold uppercase tracking-wider mb-1">Tổng nợ vay</p>
+              <p className="text-sm font-black text-red-400">-{formatCurrency(totalAllLiabilities)} đ</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-white/40 text-[9px] sm:text-[10px] font-bold uppercase tracking-tight">
+            <p>Tiền mặt: {formatCurrency(totalCashAndReceivable)}</p>
+            <p>Tiết kiệm: {formatCurrency(totalSavings)}</p>
+            <p>Đầu tư (Thị trường): {formatCurrency(totalInvestmentMarketValue)}</p>
           </div>
           
           <div className={`flex space-x-6 border-t border-gray-700 pt-4 mt-4`}>

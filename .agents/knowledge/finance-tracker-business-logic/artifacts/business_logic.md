@@ -205,6 +205,35 @@ const dateStr = record.date || new Date().toISOString().split('T')[0]
 
 ---
 
+## Interest Rate Handling Standards
+
+To ensure consistent decimal handling (comma for display, dot for storage) and prevent data corruption (like values being reset to 0 mid-typing):
+
+### 1. RateInput Usage
+Always use the `RateInput` component for interest rates. It manages a local string state for the display and propagates a numeric value to the parent.
+
+### 2. Propagation Logic
+The `onChange` callback should only be triggered if the parsed value is a valid number to prevent "partial" strings (like `8,`) from being saved as `0`.
+```js
+const handleChange = (e) => {
+  const raw = e.target.value;
+  if (!/^[\d,\.]*$/.test(raw)) return;
+  setDisplay(raw);
+
+  const parsed = fromViDecimal(raw);
+  if (!isNaN(parsed)) {
+    onChange(parsed);
+  }
+};
+```
+
+### 3. Parse/Format Helpers
+Always use `toViDecimal(num)` for display and `fromViDecimal(str)` for parsing.
+- `toViDecimal(8.5)` -> `"8,5"`
+- `fromViDecimal("8,5")` -> `8.5`
+
+---
+
 ## formatCurrency Usage
 
 ```js

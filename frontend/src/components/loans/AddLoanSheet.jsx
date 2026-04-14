@@ -22,17 +22,26 @@ function fromViDecimal(str) {
 function RateInput({ label, value, onChange, className = '' }) {
   const [display, setDisplay] = useState(toViDecimal(value));
 
+  // Sync khi value thay đổi từ bên ngoài (load hồ sơ)
   useEffect(() => {
-    // Sync khi value thay đổi từ bên ngoài (load hồ sơ)
-    setDisplay(toViDecimal(value));
+    const currentParsed = fromViDecimal(display);
+    if (value !== currentParsed) {
+      setDisplay(toViDecimal(value));
+    }
   }, [value]);
 
   const handleChange = (e) => {
-    const raw = e.target.value;
+    let raw = e.target.value;
     // Chỉ cho phép số, dấu phẩy, dấu chấm
     if (!/^[\d,\.]*$/.test(raw)) return;
+
     setDisplay(raw);
-    onChange(fromViDecimal(raw));
+    
+    // Only propagate to parent if it's a valid "completable" number
+    const parsed = fromViDecimal(raw);
+    if (!isNaN(parsed)) {
+      onChange(parsed);
+    }
   };
 
   return (
@@ -43,6 +52,7 @@ function RateInput({ label, value, onChange, className = '' }) {
         inputMode="decimal"
         value={display}
         onChange={handleChange}
+        onBlur={() => setDisplay(toViDecimal(value))}
         className={`w-full bg-white dark:bg-slate-800 border border-gray-100 dark:border-white/5 rounded-xl py-3 px-4 text-sm font-bold text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-indigo-500 transition-all ${className}`}
       />
     </div>

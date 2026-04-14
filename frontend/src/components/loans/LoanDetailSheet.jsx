@@ -21,18 +21,43 @@ function fromViDecimal(str) {
 }
 function RateInput({ label, value, onChange, className = '' }) {
   const [display, setDisplay] = useState(toViDecimal(value));
-  useEffect(() => { setDisplay(toViDecimal(value)); }, [value]);
+  
+  // Update display only when value changes externally (e.g. loading data)
+  // and it differs from our parsed display to avoid cursor jumps
+  useEffect(() => {
+    const currentParsed = fromViDecimal(display);
+    if (value !== currentParsed) {
+      setDisplay(toViDecimal(value));
+    }
+  }, [value]);
+
   const handleChange = (e) => {
-    const raw = e.target.value;
+    let raw = e.target.value;
+    
+    // Only allow digits, comma, and dot
     if (!/^[\d,\.]*$/.test(raw)) return;
+    
     setDisplay(raw);
-    onChange(fromViDecimal(raw));
+
+    // Only propagate to parent if it's a valid "completable" number
+    // We treat empty or just a comma as 0 for the parent logic
+    const parsed = fromViDecimal(raw);
+    if (!isNaN(parsed)) {
+      onChange(parsed);
+    }
   };
+
   return (
     <div className="space-y-1">
       <label className="text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1 block">{label}</label>
-      <input type="text" inputMode="decimal" value={display} onChange={handleChange}
-        className={`w-full bg-white dark:bg-slate-800 border border-gray-100 dark:border-white/5 rounded-xl py-3 px-4 text-sm font-bold text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-indigo-500 transition-all ${className}`} />
+      <input 
+        type="text" 
+        inputMode="decimal" 
+        value={display} 
+        onChange={handleChange}
+        onBlur={() => setDisplay(toViDecimal(value))} // Format on blur
+        className={`w-full bg-white dark:bg-slate-800 border border-gray-100 dark:border-white/5 rounded-xl py-3 px-4 text-sm font-bold text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-indigo-500 transition-all ${className}`} 
+      />
     </div>
   );
 }

@@ -246,3 +246,22 @@ Recharts tooltips require manual dark styling (CSS class `dark:` doesn't always 
 {/* White spinner (inside colored buttons) */}
 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
 ```
+
+---
+
+## Specialized Tool UI Patterns (Simulation & Calc)
+
+### 1. Advanced Projection Tables
+Used in `LoanCalculatorSheet` to show complex monthly breakdowns.
+
+- **Header**: `bg-gray-50 dark:bg-slate-800 text-gray-400 dark:text-slate-500`
+- **Rows**: `hover:bg-gray-50/50 dark:hover:bg-slate-800/50`
+- **Sticky Column**: `bg-white dark:bg-slate-900 shadow-sm`
+- **Dividers**: `border-gray-100 dark:border-white/5`
+
+### 2. Result Summary Blocks
+Large "wow" factors at the bottom of sheets.
+
+- **Primary Result**: `bg-gray-50 dark:bg-slate-900/50 border-gray-100 dark:border-white/5`
+- **Inverse Highlight**: `bg-slate-800 dark:bg-slate-900 text-white`
+- **Sub-highlights**: `bg-blue-50 dark:bg-indigo-900/10 text-blue-800 dark:text-indigo-400`

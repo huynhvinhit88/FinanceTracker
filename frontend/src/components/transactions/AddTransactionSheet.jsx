@@ -59,9 +59,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
         if (initialData.note) setNote(initialData.note);
         setIsLoanMode(initialData.type === 'repayment' || !!initialData.loanId);
         
-        // Default category for repayment
-        const loanCat = categories.find(c => c.name === 'Trả nợ vay' || c.icon === '🏦');
-        if (loanCat) setCategoryId(loanCat.id);
+        setIsLoanMode(initialData.type === 'repayment' || !!initialData.loanId);
       }
       fetchDependencies();
       fetchLoans();
@@ -123,6 +121,14 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
   }, [type, categoryId, categories, loans]);
 
   useEffect(() => {
+    if (type === 'repayment') {
+      const loanCat = categories.find(c => c.name === 'Trả nợ vay' || c.icon === '🏦');
+      if (loanCat) {
+        setCategoryId(loanCat.id);
+        return;
+      }
+    }
+
     const relevantCats = categories.filter(c => c.type === type);
     if (relevantCats.length > 0) {
       const isValid = relevantCats.some(c => c.id === categoryId);

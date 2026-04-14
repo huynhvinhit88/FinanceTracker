@@ -295,7 +295,7 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
     <BottomSheet isOpen={isOpen} onClose={onClose} title="Sửa giao dịch">
       <form onSubmit={handleSubmit} className="space-y-5">
         
-        <div className="flex bg-gray-100 p-1 rounded-xl">
+        <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-xl">
           {[
             { id: 'expense', name: 'Khoản chi' },
             { id: 'income', name: 'Khoản thu' },
@@ -326,8 +326,8 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
               }}
               className={`flex-1 py-2 text-[10px] font-black uppercase tracking-tight rounded-lg transition-all ${
                 type === t.id 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 shadow-sm' 
+                  : 'text-gray-500 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300'
               }`}
             >
               {t.name}
@@ -336,13 +336,13 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
         </div>
 
         {error && (
-          <div className="p-3 bg-red-50 text-red-600 rounded-xl text-sm font-medium">
+          <div className="p-3 bg-red-50 dark:bg-rose-900/20 text-red-600 dark:text-rose-400 rounded-xl text-sm font-medium border border-red-100 dark:border-rose-900/30">
             {error}
           </div>
         )}
 
         <div>
-          <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1 mb-1">
+          <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1 mb-1">
             {isLoanMode ? 'Tổng số tiền trả (Gốc + Lãi)' : 'Số tiền'}
           </label>
           <div className="relative">
@@ -351,21 +351,21 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
               inputMode="numeric"
               value={displayValue}
               onChange={handleInputChange}
-              className="w-full bg-gray-50 text-gray-900 text-3xl font-black py-4 pr-24 pl-4 rounded-2xl border-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-all outline-none"
+              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 text-3xl font-black py-4 pr-24 pl-4 rounded-2xl border-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-all outline-none"
             />
             <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
-              <span className="text-xl font-bold text-gray-300">{suffix}</span>
+              <span className="text-xl font-bold text-gray-300 dark:text-slate-600">{suffix}</span>
             </div>
           </div>
         </div>
 
         <div className={type === 'transfer' ? 'grid grid-cols-2 gap-3' : ''}>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Từ tài khoản</label>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 mb-2">Từ tài khoản</label>
             <select
               value={accountId}
               onChange={(e) => setAccountId(e.target.value)}
-              className="w-full bg-gray-50 border border-transparent focus:border-blue-500 rounded-xl px-4 py-3 outline-none truncate"
+              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-transparent dark:border-white/5 focus:border-blue-500 dark:focus:border-indigo-500 rounded-xl px-4 py-3 outline-none truncate"
             >
               {accounts.map(acc => (
                 <option key={acc.id} value={acc.id}>{acc.name}</option>
@@ -375,11 +375,11 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
           
           {type === 'transfer' && (
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Đến tài khoản</label>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 mb-2">Đến tài khoản</label>
               <select
                 value={toAccountId}
                 onChange={(e) => setToAccountId(e.target.value)}
-                className="w-full bg-gray-50 border border-transparent focus:border-blue-500 rounded-xl px-4 py-3 outline-none truncate"
+                className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-transparent dark:border-white/5 focus:border-blue-500 dark:focus:border-indigo-500 rounded-xl px-4 py-3 outline-none truncate"
               >
                 <option value="">Chọn...</option>
                 {accounts.filter(a => a.id !== accountId).map(acc => (
@@ -392,11 +392,11 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
 
         {type !== 'transfer' && (
           <div className="space-y-1">
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Danh mục</label>
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Danh mục</label>
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 font-semibold outline-none"
+              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none"
             >
               {categories.filter(c => c.type === (type === 'repayment' ? 'expense' : type)).map(cat => (
                 <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
@@ -407,14 +407,14 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
 
         {/* LOAN SPECIFIC FIELDS */}
         {isLoanMode && (
-          <div className="bg-blue-50/50 p-5 rounded-[2rem] border border-blue-100 space-y-5 animate-in slide-in-from-top-2">
-            <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] flex items-center">
+          <div className="bg-blue-50/50 dark:bg-blue-900/10 p-5 rounded-[2rem] border border-blue-100 dark:border-blue-900/30 space-y-5 animate-in slide-in-from-top-2">
+            <h4 className="text-[10px] font-black text-blue-500 dark:text-blue-400 uppercase tracking-[0.2em] flex items-center">
               <Landmark size={14} className="mr-2" /> Chi tiết trả nợ vay
             </h4>
 
             <div className="space-y-1">
-              <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">Chọn khoản vay</label>
-              <select value={loanId} onChange={(e) => setLoanId(e.target.value)} className="w-full bg-white border border-blue-100 rounded-xl px-4 py-3 text-sm font-bold">
+              <label className="block text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Chọn khoản vay</label>
+              <select value={loanId} onChange={(e) => setLoanId(e.target.value)} className="w-full bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-blue-100 dark:border-blue-900/30 rounded-xl px-4 py-3 text-sm font-bold">
                 {loans.map(l => <option key={l.id} value={l.id}>{l.name} (Dư nợ: {formatCurrency(l.remaining_principal)}₫)</option>)}
               </select>
             </div>
@@ -424,7 +424,7 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
                  <button
                    key={mode} type="button" onClick={() => setRepaymentType(mode)}
                    className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
-                     repaymentType === mode ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-gray-400 border-gray-100'
+                     repaymentType === mode ? 'bg-blue-600 dark:bg-blue-700 text-white border-blue-600 dark:border-blue-700 shadow-md' : 'bg-white dark:bg-slate-800 text-gray-400 dark:text-slate-500 border-gray-100 dark:border-white/5'
                    }`}
                  >
                    {mode === 'periodic' ? 'Trả định kỳ' : 'Tất toán'}
@@ -434,10 +434,10 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
 
             <div className="space-y-4">
               <div className="space-y-1">
-                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1 flex justify-between">
+                <label className="block text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1 flex justify-between">
                   <span>Số tiền gốc trả</span>
                   {repaymentType === 'periodic' && (
-                    <span className="text-blue-500 font-black italic">
+                    <span className="text-blue-500 dark:text-blue-400 font-black italic">
                       Lãi dự kiến: {formatCurrency(suggestInterest(loans.find(l => l.id === loanId)))}₫
                     </span>
                   )}
@@ -445,13 +445,13 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
                 <div className="relative">
                   <input
                     type="text" inputMode="numeric" value={principalDisplay} onChange={handlePrincipalChange}
-                    className="w-full bg-white border border-blue-100 rounded-xl py-3 pl-4 pr-16 text-sm font-black text-blue-600 outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+                    className="w-full bg-white dark:bg-slate-800 border border-blue-100 dark:border-blue-900/30 text-gray-900 dark:text-slate-100 rounded-xl py-3 pl-4 pr-16 text-sm font-black text-blue-600 dark:text-blue-400 outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
                     placeholder="VD: 5.000.000"
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-300">{principalSuffix}</span>
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-300 dark:text-slate-600">{principalSuffix}</span>
                 </div>
                 {repaymentType === 'payoff' && (
-                  <p className="text-[9px] text-gray-400 ml-1">Kế hoạch: Trả toàn bộ dư nợ gốc {formatCurrency(loans.find(l => l.id === loanId)?.remaining_principal)}₫</p>
+                  <p className="text-[9px] text-gray-400 dark:text-slate-500 ml-1">Kế hoạch: Trả toàn bộ dư nợ gốc {formatCurrency(loans.find(l => l.id === loanId)?.remaining_principal)}₫</p>
                 )}
               </div>
 
@@ -470,28 +470,28 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
             
             <div className="flex items-start space-x-2 text-[9px] text-blue-400 font-bold italic leading-relaxed">
                <Info size={12} className="mt-0.5 flex-shrink-0" />
-               <p>Hệ thống sẽ tự động trừ số tiền gốc vào dư nợ và tính toán lại lãi các tháng sau.</p>
+               <p className="dark:text-blue-400/80">Hệ thống sẽ tự động trừ số tiền gốc vào dư nợ và tính toán lại lãi các tháng sau.</p>
             </div>
           </div>
         )}
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Ngày thực hiện</label>
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Ngày thực hiện</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 font-semibold outline-none"
+              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none"
             />
           </div>
           <div className="space-y-1">
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Ghi chú</label>
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Ghi chú</label>
             <input
               type="text"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 font-semibold outline-none"
+              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none"
             />
           </div>
         </div>
@@ -501,15 +501,15 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
             type="button"
             onClick={handleDelete}
             disabled={isDeleting || loading}
-            className="px-4 py-4 bg-red-50 text-red-600 font-semibold rounded-2xl active:scale-[0.98] transition-all border border-red-100 flex-shrink-0"
+            className="px-4 py-4 bg-red-50 dark:bg-rose-900/10 text-red-600 dark:text-rose-400 font-semibold rounded-2xl active:scale-[0.98] transition-all border border-red-100 dark:border-rose-900/30 flex-shrink-0"
           >
-            {isDeleting ? <div className="w-5 h-5 border-2 border-red-600 border-t-transparent rounded-full animate-spin" /> : <Trash2 size={20} />}
+            {isDeleting ? <div className="w-5 h-5 border-2 border-red-600 dark:border-rose-400 border-t-transparent rounded-full animate-spin" /> : <Trash2 size={20} />}
           </button>
           
           <button
             type="submit"
             disabled={loading || isDeleting}
-            className="flex-1 py-4 bg-blue-600 text-white font-semibold rounded-2xl shadow-lg shadow-blue-200 active:scale-[0.98] transition-transform flex items-center justify-center"
+            className="flex-1 py-4 bg-blue-600 dark:bg-indigo-600 text-white font-semibold rounded-2xl shadow-lg shadow-blue-200 dark:shadow-none active:scale-[0.98] transition-transform flex items-center justify-center"
           >
             {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'Lưu lại'}
           </button>

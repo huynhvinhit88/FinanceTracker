@@ -9,8 +9,9 @@ import { db } from '../../lib/db';
 import { 
   History, Calendar, AlertCircle, TrendingUp,
   Info, Pencil, Trash2, Save, X, ChevronDown,
-  Clock, Percent, PlusCircle, XCircle
+  Clock, Percent, PlusCircle, XCircle, CheckCircle2
 } from 'lucide-react';
+import { AddTransactionSheet } from '../transactions/AddTransactionSheet';
 
 function RateInput({ label, value, onChange, className = '' }) {
   const [display, setDisplay] = useState(toViDecimal(value));
@@ -63,6 +64,8 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
   const [deleting, setDeleting] = useState(false);
   const [investments, setInvestments] = useState([]);
   const [historicalEvents, setHistoricalEvents] = useState([]);
+  const [isAddTxOpen, setIsAddTxOpen] = useState(false);
+  const [quickPayData, setQuickPayData] = useState(null);
 
   // Edit form state
   const { displayValue: displayPrincipal, value: principalEdit, handleInputChange: handlePrincipalChange, setExternalValue: setExternalPrincipal, suffix } = useCurrencyInput('');
@@ -184,6 +187,23 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
     }
   };
 
+  const handleQuickPay = (row) => {
+    setQuickPayData({
+      loanId: loan.id,
+      amount: row.total,
+      principal: row.principal + row.prepay,
+      date: new Date(row.dateObj),
+      type: 'repayment',
+      note: `Trả nợ ${loan.name} (Kỳ ${row.month})`
+    });
+    setIsAddTxOpen(true);
+  };
+
+  const handleTxSuccess = () => {
+    getLoanTransactions(loan.id).then(setHistoricalEvents);
+    onUpdated?.();
+  };
+
   if (!loan) return null;
 
   return (
@@ -278,6 +298,7 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                           <th className="px-3 py-3 text-blue-600 dark:text-indigo-400">Tổng</th>
                           <th className="px-3 py-3 text-red-600 dark:text-rose-400 bg-red-50/50 dark:bg-rose-900/10">Tất toán</th>
                           <th className="px-3 py-3 pr-4">Dư nợ</th>
+                          <th className="px-3 py-3 text-center"></th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50 dark:divide-white/5">
@@ -309,6 +330,16 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                                   <Info size={10} className="mr-0.5" /> Điều chỉnh
                                 </p>
                               )}
+                            </td>
+                            <td className="px-3 py-2.5 pr-4 text-center">
+                               <button 
+                                 type="button"
+                                 onClick={() => handleQuickPay(row)}
+                                 className={`p-1.5 rounded-full transition-all active:scale-90 ${row.actualEventsCount > 0 ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-blue-50 text-blue-500 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400'}`}
+                                 title={row.actualEventsCount > 0 ? 'Đã ghi nhận' : 'Ghi nhận trả nợ'}
+                               >
+                                 <CheckCircle2 size={16} />
+                               </button>
                             </td>
                           </tr>
                         ))}
@@ -513,6 +544,13 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
             </div>
           </form>
         )}
+
+        <AddTransactionSheet 
+          isOpen={isAddTxOpen} 
+          onClose={() => setIsAddTxOpen(false)} 
+          onSuccess={handleTxSuccess}
+          initialData={quickPayData}
+        />
       </div>
     </BottomSheet>
   );

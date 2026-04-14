@@ -175,7 +175,9 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
     let automatedPrepay = 0;
     let penaltyPaid = 0;
 
-    if (threshold > 0 && remaining > 0) {
+    // Chỉ chạy mô phỏng tất toán tự động (Dựa trên thặng dư ngân sách) cho các kỳ TƯƠNG LAI
+    // Quá khứ phải dựa hoàn toàn vào dữ liệu giao dịch thực tế
+    if (isFuture && threshold > 0 && remaining > 0) {
       const pRate = getPenaltyRate(m);
       const targetPrepay = Math.min(threshold, remaining);
       const penaltyForTarget = targetPrepay * (pRate / 100);

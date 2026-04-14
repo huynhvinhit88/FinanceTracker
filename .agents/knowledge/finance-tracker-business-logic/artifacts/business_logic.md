@@ -109,9 +109,9 @@ suggestInterest(loan) = Math.round(loan.remaining_principal * (loan.interest_rat
 
 ### Self-Correcting Schedule Algorithm
 The `calculateLoanSchedule` utility employs a hybrid historical-simulation approach to prevent inaccurate historical projections:
-1. **Past Periods**: Uses `loan.principal_amount` as the initial term. It fetches matching actual repayment transactions (from `db.transactions`) to accurately reduce the simulated balance just as it happened in reality.
+1. **Past Periods**: Uses `loan.principal_amount` as the initial term. It fetches matching actual repayment transactions (from `db.transactions`) to accurately reduce the simulated balance just as it happened in reality. Automated prepayments (budget-based offsets) are **BLOCKED** for past periods to prevent hallucinatory data.
 2. **Transition Point**: At the current month, if the simulated remaining balance diverges from `loan.remaining_principal` (e.g., due to missing historical entries before using the app), it forces a self-correction (`adjustment`) so the projection snaps back to real data.
-3. **Future Periods**: Continues the standard simulation cleanly using the exact updated `loan.remaining_principal`.
+3. **Future Periods**: Continues the standard simulation cleanly using the exact updated `loan.remaining_principal`, including automated principal offsets if budget surplus exceeds the threshold.
 
 ---
 

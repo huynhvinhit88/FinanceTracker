@@ -21,7 +21,7 @@ const DEFAULT_CATEGORIES = [
   { name: 'Khác', type: 'transfer', icon: '🔄', color_hex: '#6B7280' },
 ];
 
-export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
+export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData }) {
   const { loans, fetchLoans, updateLoanBalance, suggestInterest } = useLoans();
   
   const [type, setType] = useState('expense'); // expense, income, transfer, repayment
@@ -47,10 +47,22 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess }) {
 
   useEffect(() => {
     if (isOpen) {
+      if (initialData) {
+        setType(initialData.type || 'repayment');
+        if (initialData.amount) setExternalValue(initialData.amount);
+        if (initialData.loanId) setLoanId(initialData.loanId);
+        if (initialData.principal) setExternalPrincipal(initialData.principal);
+        if (initialData.date) {
+            const d = new Date(initialData.date);
+            setDate(d.toISOString().split('T')[0]);
+        }
+        if (initialData.note) setNote(initialData.note);
+        setIsLoanMode(initialData.type === 'repayment' || !!initialData.loanId);
+      }
       fetchDependencies();
       fetchLoans();
     }
-  }, [isOpen]);
+  }, [isOpen, initialData]);
 
   const fetchDependencies = async () => {
     try {

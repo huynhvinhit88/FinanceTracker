@@ -93,8 +93,20 @@ export default function Home() {
     return sum + ((inv.current_price || 0) * (inv.type === 'real_estate' ? 1 : (inv.quantity || 1)));
   }, 0);
 
+  const totalInvestmentsNet = investments.reduce((sum, inv) => {
+    const marketVal = (inv.current_price || 0) * (inv.type === 'real_estate' ? 1 : (inv.quantity || 1));
+    const debt = inv.loan_amount || 0;
+    return sum + (marketVal - debt);
+  }, 0);
+
+  // Tổng nợ = Nợ thẻ + Nợ trong bảng Loans + Nợ trong Investments (nếu chưa được link vào bảng Loans)
   const totalAllLiabilities = totalDebtAccounts + loans.reduce((sum, loan) => {
     if (loan.status === 'active') return sum + (loan.remaining_principal || loan.total_amount || 0);
+    return sum;
+  }, 0) + investments.reduce((sum, inv) => {
+    // Nếu đầu tư có nợ nhưng KHÔNG có khoản vay nào trong bảng Loans gắn với nó (tránh đếm trùng)
+    const hasLinkedLoan = loans.some(l => l.linked_investment_id === inv.id);
+    if (!hasLinkedLoan && inv.loan_amount > 0) return sum + inv.loan_amount;
     return sum;
   }, 0);
 
@@ -192,7 +204,7 @@ export default function Home() {
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-white/40 text-[9px] sm:text-[10px] font-bold uppercase tracking-tight">
             <p>Tiền mặt: {formatCurrency(totalCashAndReceivable)}</p>
             <p>Tiết kiệm: {formatCurrency(totalSavings)}</p>
-            <p>Đầu tư (Thị trường): {formatCurrency(totalInvestmentMarketValue)}</p>
+            <p>Đầu tư (Ròng): {formatCurrency(totalInvestmentsNet)}</p>
           </div>
           
           <div className={`flex space-x-6 border-t border-gray-700 pt-4 mt-4`}>

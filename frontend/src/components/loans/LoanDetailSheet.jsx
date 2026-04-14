@@ -30,9 +30,9 @@ function RateInput({ label, value, onChange, className = '' }) {
   };
   return (
     <div className="space-y-1">
-      <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1 block">{label}</label>
+      <label className="text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1 block">{label}</label>
       <input type="text" inputMode="decimal" value={display} onChange={handleChange}
-        className={`w-full bg-white border border-gray-100 rounded-xl py-3 px-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-300 ${className}`} />
+        className={`w-full bg-white dark:bg-slate-800 border border-gray-100 dark:border-white/5 rounded-xl py-3 px-4 text-sm font-bold text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-indigo-500 transition-all ${className}`} />
     </div>
   );
 }
@@ -206,12 +206,12 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                 <h3 className="text-2xl font-black mb-6">{loan.name}</h3>
                 <div className="flex justify-between items-end">
                   <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Dư nợ hiện tại</p>
+                    <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase mb-1">Dư nợ hiện tại</p>
                     <p className="text-3xl font-black text-white">{formatCurrency(principalRemaining)}<span className="text-xs ml-1 text-gray-400">₫</span></p>
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-black text-emerald-400">{progress}%</p>
-                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Đã trả</p>
+                    <p className="text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest">Đã trả</p>
                   </div>
                 </div>
                 <div className="w-full h-2 bg-white/10 rounded-full mt-6 overflow-hidden">
@@ -223,15 +223,15 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
             {/* Stats */}
             {result && (
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase mb-2 flex items-center"><Calendar size={12} className="mr-1" /> Kỳ hạn còn lại</p>
-                  <p className="text-lg font-black text-gray-900">{result.actualMonths} <span className="text-xs text-gray-400">tháng</span></p>
-                  <p className="text-[9px] text-gray-400 mt-1 uppercase">Tất toán: {result.payoffDateStr}</p>
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-3xl border border-gray-100 dark:border-white/5 shadow-sm transition-all">
+                  <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase mb-2 flex items-center"><Calendar size={12} className="mr-1" /> Kỳ hạn còn lại</p>
+                  <p className="text-lg font-black text-gray-900 dark:text-slate-100">{result.actualMonths} <span className="text-xs text-gray-400 dark:text-slate-600">tháng</span></p>
+                  <p className="text-[9px] text-gray-400 dark:text-slate-500 mt-1 uppercase">Tất toán: {result.payoffDateStr}</p>
                 </div>
-                <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase mb-2 flex items-center"><AlertCircle size={12} className="mr-1" /> Lãi tháng tới</p>
-                  <p className="text-lg font-black text-blue-600">~{formatCurrency(schedule[0]?.interest || 0)} <span className="text-xs">₫</span></p>
-                  <p className="text-[9px] text-gray-400 mt-1 uppercase">Lãi suất dự kiến</p>
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-3xl border border-gray-100 dark:border-white/5 shadow-sm transition-all">
+                  <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase mb-2 flex items-center"><AlertCircle size={12} className="mr-1" /> Lãi tháng tới</p>
+                  <p className="text-lg font-black text-blue-600 dark:text-indigo-400">~{formatCurrency(schedule[0]?.interest || 0)} <span className="text-xs">₫</span></p>
+                  <p className="text-[9px] text-gray-400 dark:text-slate-500 mt-1 uppercase">Lãi suất dự kiến</p>
                 </div>
               </div>
             )}
@@ -247,42 +247,42 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                     <Info size={12} className="mr-1" /> Tự động cập nhật
                   </div>
                 </div>
-                <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
-                  <div className="max-h-[420px] overflow-y-auto overflow-x-auto">
+                <div className="bg-white dark:bg-slate-800 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden transition-all">
+                  <div className="max-h-[420px] overflow-y-auto overflow-x-auto no-scrollbar">
                     <table className="w-full text-right font-mono whitespace-nowrap" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      <thead className="bg-gray-50 text-[10px] text-gray-400 font-bold uppercase tracking-widest border-b border-gray-100">
+                      <thead className="bg-gray-50 dark:bg-slate-900/50 text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase tracking-widest border-b border-gray-100 dark:border-white/5">
                         <tr>
                           <th className="px-3 py-3 text-center">Kỳ</th>
                           <th className="px-3 py-3 text-left">Ngày</th>
                           <th className="px-3 py-3">Gốc</th>
                           <th className="px-3 py-3">Lãi</th>
-                          <th className="px-3 py-3 text-blue-600">Tổng</th>
-                          <th className="px-3 py-3 text-red-600 bg-red-50/50">Tất toán</th>
+                          <th className="px-3 py-3 text-blue-600 dark:text-indigo-400">Tổng</th>
+                          <th className="px-3 py-3 text-red-600 dark:text-rose-400 bg-red-50/50 dark:bg-rose-900/10">Tất toán</th>
                           <th className="px-3 py-3 pr-4">Dư nợ</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-50">
+                      <tbody className="divide-y divide-gray-50 dark:divide-white/5">
                         {schedule.map((row, idx) => (
-                          <tr key={idx} className={`transition-colors hover:bg-gray-50/50 ${row.prepay > 0 ? 'bg-orange-50/50' : ''}`}>
-                            <td className="px-3 py-2.5 text-[10px] font-black text-gray-400 text-center">
+                          <tr key={idx} className={`transition-all hover:bg-gray-50/50 dark:hover:bg-slate-700/50 ${row.prepay > 0 ? 'bg-orange-50/50 dark:bg-orange-900/10' : ''}`}>
+                            <td className="px-3 py-2.5 text-[10px] font-black text-gray-400 dark:text-slate-600 text-center">
                               {row.month}
                             </td>
-                            <td className="px-3 py-2.5 text-[10px] font-bold text-gray-600 text-left">
+                            <td className="px-3 py-2.5 text-[10px] font-bold text-gray-600 dark:text-slate-400 text-left">
                               {row.date}
                             </td>
-                            <td className="px-3 py-2.5 text-[10px] font-bold text-gray-900">
+                            <td className="px-3 py-2.5 text-[10px] font-bold text-gray-900 dark:text-slate-100">
                               {formatCurrency(row.principal)}
                             </td>
-                            <td className="px-3 py-2.5 text-[10px] font-bold text-red-500">
+                            <td className="px-3 py-2.5 text-[10px] font-bold text-red-500 dark:text-rose-400">
                               {formatCurrency(row.interest)}
                             </td>
-                            <td className="px-3 py-2.5 text-[10px] font-black text-gray-900 bg-gray-50/30">
+                            <td className="px-3 py-2.5 text-[10px] font-black text-gray-900 dark:text-slate-100 bg-gray-50/30 dark:bg-slate-700/30">
                               {formatCurrency(row.total)}
                             </td>
-                            <td className="px-3 py-2.5 text-[10px] font-black text-red-600">
+                            <td className="px-3 py-2.5 text-[10px] font-black text-red-600 dark:text-rose-400">
                               {row.prepay > 0 ? formatCurrency(row.prepay) : '-'}
                             </td>
-                            <td className="px-3 py-2.5 pr-4 text-[10px] font-black text-gray-900">
+                            <td className="px-3 py-2.5 pr-4 text-[10px] font-black text-gray-900 dark:text-slate-100 font-black">
                               {formatCurrency(row.remaining)}
                             </td>
                           </tr>
@@ -320,112 +320,112 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
 
             {/* Tên */}
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1 block">Tên khoản vay</label>
+              <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1 block">Tên khoản vay</label>
               <input type="text" required value={editForm.name}
                 onChange={e => setEditForm(p => ({...p, name: e.target.value}))}
-                className="w-full bg-gray-50 rounded-2xl py-4 px-4 text-gray-900 font-semibold focus:ring-2 focus:ring-blue-500/20 outline-none"
+                className="w-full bg-gray-50 dark:bg-slate-800 rounded-2xl py-4 px-4 text-gray-900 dark:text-slate-100 font-semibold border border-transparent focus:border-blue-500 dark:focus:border-indigo-500 outline-none transition-all"
               />
             </div>
 
             {/* Số tiền & Kỳ hạn */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1 block">Số tiền vay</label>
+                <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1 block">Số tiền vay</label>
                 <div className="relative">
                   <input type="text" inputMode="numeric" value={displayPrincipal} onChange={handlePrincipalChange}
-                    className="w-full bg-gray-50 rounded-2xl py-4 px-4 pr-16 text-gray-900 font-bold focus:ring-2 focus:ring-blue-500/20 outline-none" />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">{suffix}</span>
+                    className="w-full bg-gray-50 dark:bg-slate-800 rounded-2xl py-4 px-4 pr-16 text-gray-900 dark:text-slate-100 font-bold border border-transparent focus:border-blue-500 dark:focus:border-indigo-500 outline-none transition-all" />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400 dark:text-slate-600">{suffix}</span>
                 </div>
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1 block">Hạn vay (tháng)</label>
+                <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1 block">Hạn vay (tháng)</label>
                 <input type="number" value={editForm.term_months}
                   onChange={e => setEditForm(p => ({...p, term_months: Number(e.target.value)}))}
-                  className="w-full bg-gray-50 rounded-2xl py-4 px-4 text-gray-900 font-bold focus:ring-2 focus:ring-blue-500/20 outline-none"
+                  className="w-full bg-gray-50 dark:bg-slate-800 rounded-2xl py-4 px-4 text-gray-900 dark:text-slate-100 font-bold border border-transparent focus:border-blue-500 dark:focus:border-indigo-500 outline-none transition-all"
                 />
               </div>
             </div>
 
             {/* Lãi suất */}
-            <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-3">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center">
+            <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-2xl border border-gray-100 dark:border-white/5 space-y-3 transition-all">
+              <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest flex items-center">
                 <Percent size={12} className="mr-1" /> Lãi suất & Ưu đãi
               </p>
               <div className="grid grid-cols-2 gap-3">
-                <RateInput label="Lãi ưu đãi (%/năm)" value={promoRate} onChange={setPromoRate} className="text-emerald-600" />
+                <RateInput label="Lãi ưu đãi (%/năm)" value={promoRate} onChange={setPromoRate} className="text-emerald-600 dark:text-emerald-400" />
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-gray-400 ml-1 uppercase tracking-widest block">Kỳ ưu đãi (tháng)</label>
+                  <label className="text-[9px] font-bold text-gray-400 dark:text-slate-500 ml-1 uppercase tracking-widest block">Kỳ ưu đãi (tháng)</label>
                   <input type="number" value={promoMonths} onChange={e => setPromoMonths(Number(e.target.value))}
-                    className="w-full bg-white border border-gray-100 rounded-xl py-3 px-4 text-sm font-bold text-emerald-600 outline-none focus:ring-2 focus:ring-emerald-200" />
+                    className="w-full bg-white dark:bg-slate-700 border border-gray-100 dark:border-white/5 rounded-xl py-3 px-4 text-sm font-bold text-emerald-600 dark:text-emerald-400 outline-none focus:ring-2 focus:ring-emerald-200 dark:focus:ring-emerald-500 transition-all" />
                 </div>
-                <RateInput label="Lãi cơ sở (%)" value={baseRate} onChange={setBaseRate} className="text-blue-600" />
-                <RateInput label="Biên độ (+%)" value={marginRate} onChange={setMarginRate} className="text-blue-600" />
+                <RateInput label="Lãi cơ sở (%)" value={baseRate} onChange={setBaseRate} className="text-blue-600 dark:text-blue-400" />
+                <RateInput label="Biên độ (+%)" value={marginRate} onChange={setMarginRate} className="text-blue-600 dark:text-blue-400" />
               </div>
             </div>
 
             {/* Ngày */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1 block">Ngày giải ngân</label>
+                <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1 block">Ngày giải ngân</label>
                 <input type="date" value={editForm.start_date}
                   onChange={e => setEditForm(p => ({...p, start_date: e.target.value}))}
-                  className="w-full bg-gray-50 rounded-2xl py-4 px-4 text-gray-900 font-semibold outline-none focus:ring-2 focus:ring-blue-500/20" />
+                  className="w-full bg-gray-50 dark:bg-slate-800 rounded-2xl py-4 px-4 text-gray-900 dark:text-slate-100 font-semibold border border-transparent focus:border-blue-500 dark:focus:border-indigo-500 outline-none transition-all" />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1 block">Ngày trả đầu tiên</label>
+                <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1 block">Ngày trả đầu tiên</label>
                 <input type="date" value={editForm.first_payment_date}
                   onChange={e => setEditForm(p => ({...p, first_payment_date: e.target.value}))}
-                  className="w-full bg-gray-50 rounded-2xl py-4 px-4 text-gray-900 font-semibold outline-none focus:ring-2 focus:ring-blue-500/20" />
+                  className="w-full bg-gray-50 dark:bg-slate-800 rounded-2xl py-4 px-4 text-gray-900 dark:text-slate-100 font-semibold border border-transparent focus:border-blue-500 dark:focus:border-indigo-500 outline-none transition-all" />
               </div>
             </div>
 
             {/* Tất toán sớm */}
-            <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-3">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Kế hoạch Tất toán sớm</p>
+            <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-2xl border border-gray-100 dark:border-white/5 space-y-3 transition-all">
+              <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest">Kế hoạch Tất toán sớm</p>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold text-gray-400 ml-1">Phí phạt (%/năm theo từng năm)</label>
+                <label className="text-[9px] font-bold text-gray-400 dark:text-slate-500 ml-1">Phí phạt (%/năm theo từng năm)</label>
                 <input type="text" value={editForm.penalty_config}
                   onChange={e => setEditForm(p => ({...p, penalty_config: e.target.value}))}
-                  className="w-full bg-white border border-gray-100 rounded-xl py-3 px-4 text-sm font-medium text-gray-800 outline-none focus:ring-2 focus:ring-blue-300" />
-                <p className="text-[9px] text-gray-400 ml-1">Cách nhau bởi dấu phẩy, mỗi vị trí là 1 năm</p>
+                  className="w-full bg-white dark:bg-slate-700 border border-gray-100 dark:border-white/5 rounded-xl py-3 px-4 text-sm font-medium text-gray-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-indigo-500 transition-all" />
+                <p className="text-[9px] text-gray-400 dark:text-slate-500 ml-1">Cách nhau bởi dấu phẩy, mỗi vị trí là 1 năm</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-gray-400 ml-1">Ngân sách/tháng</label>
+                  <label className="text-[9px] font-bold text-gray-400 dark:text-slate-500 ml-1">Ngân sách/tháng</label>
                   <div className="relative">
                     <input type="text" inputMode="numeric" value={displayExtra} onChange={handleExtraChange}
-                      className="w-full bg-white border border-gray-100 rounded-xl py-3 px-4 pr-10 text-sm font-bold text-gray-800 outline-none focus:ring-2 focus:ring-blue-300" />
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] text-gray-400 font-bold">{extraSuffix}</span>
+                      className="w-full bg-white dark:bg-slate-700 border border-gray-100 dark:border-white/5 rounded-xl py-3 px-4 pr-10 text-sm font-bold text-gray-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-indigo-500 transition-all" />
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] text-gray-400 dark:text-slate-500 font-bold">{extraSuffix}</span>
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-gray-400 ml-1">Ngưỡng tất toán</label>
+                  <label className="text-[9px] font-bold text-gray-400 dark:text-slate-500 ml-1">Ngưỡng tất toán</label>
                   <div className="relative">
                     <input type="text" inputMode="numeric" value={displayThreshold} onChange={handleThresholdChange}
-                      className="w-full bg-white border border-gray-100 rounded-xl py-3 px-4 pr-10 text-sm font-bold text-gray-800 outline-none focus:ring-2 focus:ring-blue-300" />
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] text-gray-400 font-bold">{thresholdSuffix}</span>
+                      className="w-full bg-white dark:bg-slate-700 border border-gray-100 dark:border-white/5 rounded-xl py-3 px-4 pr-10 text-sm font-bold text-gray-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-indigo-500 transition-all" />
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] text-gray-400 dark:text-slate-500 font-bold">{thresholdSuffix}</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Giai đoạn */}
-            <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 space-y-3">
+            <div className="bg-purple-50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-900/30 rounded-2xl p-4 space-y-3 transition-all">
               <div className="flex items-center justify-between">
-                <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Kế hoạch theo Giai đoạn</p>
+                <p className="text-[10px] font-bold text-gray-600 dark:text-slate-500 uppercase tracking-widest">Kế hoạch theo Giai đoạn</p>
                 <button type="button" onClick={() => setShowPeriods(v => !v)}
-                  className={`text-xs font-bold px-3 py-1 rounded-full transition-colors ${showPeriods ? 'bg-purple-600 text-white' : 'bg-purple-100 text-purple-700'}`}>
+                  className={`text-xs font-bold px-3 py-1 rounded-full transition-all ${showPeriods ? 'bg-purple-600 dark:bg-indigo-600 text-white' : 'bg-purple-100 dark:bg-slate-700 text-purple-700 dark:text-slate-400'}`}>
                   {showPeriods ? 'Đang bật' : 'Bật lên'}
                 </button>
               </div>
               {showPeriods && (
                 <div className="space-y-3">
                   {periods.map((pd, idx) => (
-                    <div key={idx} className="bg-white border border-purple-100 rounded-xl p-3">
+                    <div key={idx} className="bg-white dark:bg-slate-800 border border-purple-100 dark:border-white/5 rounded-xl p-3 transition-all">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold text-purple-700">Giai đoạn {idx + 1}</span>
+                        <span className="text-xs font-bold text-purple-700 dark:text-indigo-300">Giai đoạn {idx + 1}</span>
                         <button type="button" onClick={() => setPeriods(prev => prev.filter((_, i) => i !== idx))}>
-                          <XCircle size={16} className="text-red-400" />
+                          <XCircle size={16} className="text-red-400 dark:text-rose-400" />
                         </button>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
@@ -433,28 +433,28 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                           <input key={field} type="number" min="1" value={pd[field]}
                             placeholder={field === 'fromMonth' ? 'Từ kỳ' : 'Đến kỳ'}
                             onChange={e => setPeriods(prev => prev.map((p, i) => i === idx ? {...p, [field]: e.target.value} : p))}
-                            className="w-full bg-purple-50 border border-purple-100 rounded-lg px-3 py-2 text-sm font-bold outline-none" />
+                            className="w-full bg-purple-50 dark:bg-slate-700 border border-purple-100 dark:border-white/5 rounded-lg px-3 py-2 text-sm font-bold text-gray-900 dark:text-slate-100 outline-none focus:ring-1 focus:ring-purple-400" />
                         ))}
                         <input type="text" inputMode="decimal" value={toViDecimal(pd.rate)} placeholder="Lãi (%/năm)"
                           onChange={e => { if (/^[\d,\.]*$/.test(e.target.value)) setPeriods(prev => prev.map((p, i) => i === idx ? {...p, rate: e.target.value} : p)); }}
-                          className="w-full bg-purple-50 border border-purple-100 rounded-lg px-3 py-2 text-sm font-bold outline-none" />
+                          className="w-full bg-purple-50 dark:bg-slate-700 border border-purple-100 dark:border-white/5 rounded-lg px-3 py-2 text-sm font-bold text-gray-900 dark:text-slate-100 outline-none focus:ring-1 focus:ring-purple-400" />
                         <div className="relative">
                           <input
                             type="text"
                             inputMode="numeric"
                             value={pd.budget}
                             onChange={e => setPeriods(prev => prev.map((p, i) => i === idx ? {...p, budget: e.target.value} : p))}
-                            className="w-full bg-purple-50 border border-purple-100 rounded-lg px-3 py-2 pr-10 text-sm font-bold outline-none focus:ring-1 focus:ring-purple-400"
+                            className="w-full bg-purple-50 dark:bg-slate-700 border border-purple-100 dark:border-white/5 rounded-lg px-3 py-2 pr-10 text-sm font-bold text-gray-900 dark:text-slate-100 outline-none focus:ring-1 focus:ring-purple-400 font-bold"
                             placeholder="Ngân sách"
                           />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gray-400">₫</span>
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gray-400 dark:text-slate-600">₫</span>
                         </div>
                       </div>
                     </div>
                   ))}
                   <button type="button"
                     onClick={() => { const last = periods[periods.length-1]; const f = last ? parseInt(last.toMonth)+1 : 1; setPeriods(p => [...p, {fromMonth:f, toMonth:f+11, rate:'', budget:''}]); }}
-                    className="w-full flex items-center justify-center space-x-2 py-2.5 border-2 border-dashed border-purple-300 text-purple-600 rounded-xl font-semibold text-sm">
+                    className="w-full flex items-center justify-center space-x-2 py-2.5 border-2 border-dashed border-purple-300 dark:border-white/10 text-purple-600 dark:text-indigo-400 rounded-xl font-semibold text-sm active:scale-95 transition-all">
                     <PlusCircle size={16} /><span>Thêm Giai đoạn</span>
                   </button>
                 </div>
@@ -463,23 +463,26 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
 
             {/* Tài sản liên kết */}
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1 block">Gắn với Tài sản (BĐS)</label>
-              <select value={editForm.linked_investment_id}
-                onChange={e => setEditForm(p => ({...p, linked_investment_id: e.target.value}))}
-                className="w-full bg-gray-50 rounded-2xl py-4 px-4 text-gray-900 font-semibold outline-none appearance-none focus:ring-2 focus:ring-blue-500/20">
-                <option value="">Không gắn tài sản</option>
-                {investments.map(inv => <option key={inv.id} value={inv.id}>{inv.symbol}</option>)}
-              </select>
+              <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1 block">Gắn với Tài sản (BĐS)</label>
+              <div className="relative">
+                <select value={editForm.linked_investment_id}
+                  onChange={e => setEditForm(p => ({...p, linked_investment_id: e.target.value}))}
+                  className="w-full bg-gray-50 dark:bg-slate-800 rounded-2xl py-4 px-4 text-gray-900 dark:text-slate-100 font-semibold border border-transparent focus:border-blue-500 dark:focus:border-indigo-500 outline-none appearance-none transition-all">
+                  <option value="">Không gắn tài sản</option>
+                  {investments.map(inv => <option key={inv.id} value={inv.id}>{inv.name || inv.symbol}</option>)}
+                </select>
+                <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 pointer-events-none" />
+              </div>
             </div>
 
             {/* Actions */}
             <div className="grid grid-cols-2 gap-3 pt-2">
               <button type="button" onClick={() => setMode('view')}
-                className="py-4 bg-gray-100 text-gray-700 font-bold rounded-2xl active:scale-95 transition-all flex items-center justify-center space-x-2">
+                className="py-4 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 font-bold rounded-2xl active:scale-95 transition-all flex items-center justify-center space-x-2 border border-transparent dark:border-white/5">
                 <X size={18} /><span>Huỷ</span>
               </button>
               <button type="submit" disabled={saving}
-                className="py-4 bg-gray-900 text-white font-black rounded-2xl shadow-lg active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center space-x-2">
+                className="py-4 bg-gray-900 dark:bg-indigo-600 text-white font-black rounded-2xl shadow-lg dark:shadow-none active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center space-x-2 border border-transparent dark:border-indigo-400/30">
                 {saving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Save size={18} /><span>Lưu</span></>}
               </button>
             </div>

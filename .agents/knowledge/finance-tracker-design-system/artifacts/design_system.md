@@ -65,6 +65,14 @@ The app uses **Tailwind CSS v4** with a custom class-based dark mode called the 
 | Danger/Delete | `bg-red-500` or `text-red-600` | `dark:bg-red-900/20 dark:text-rose-400` |
 | Neutral | `bg-gray-900` | `dark:bg-slate-800` |
 
+### Specialized Segment Backgrounds (Dark Mode)
+| Role | Color | Usage |
+|---|---|---|
+| Simulation Profile | `dark:bg-indigo-900/10` | Loan simulation selector |
+| Loan Period | `dark:bg-purple-900/10` | Segmented interest/budget list |
+| Equity Summary | `dark:bg-emerald-900/10` | Real Estate net equity card |
+| Danger Area | `dark:bg-red-900/10` | Delete buttons area |
+
 ---
 
 ## Component Patterns
@@ -155,6 +163,28 @@ Each settings section follows this pattern:
     {error}
   </div>
 )}
+
+### Specialized Input Components
+
+#### RateInput (with Vietnamese decimal comma)
+Standard for interest rates and percentages:
+```jsx
+<input
+  type="text"
+  inputMode="decimal"
+  className="w-full bg-white dark:bg-slate-800 
+             border border-gray-100 dark:border-white/5 
+             text-gray-900 dark:text-slate-100 font-bold"
+/>
+```
+
+#### Equity Summary Card (Emerald)
+```jsx
+<div className="bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl p-4 
+                border border-emerald-100 dark:border-emerald-900/30">
+   {/* Equity calculation content */}
+</div>
+```
 ```
 
 ### Submit Button

@@ -1,5 +1,5 @@
 export const formatCurrency = (value) => {
-  if (value === null || value === undefined) return '';
+  if (value === null || value === undefined || isNaN(value)) return '0';
   // Use 'vi-VN' locale: dot as thousand separator, comma as decimal (e.g. 1.500.000)
   return new Intl.NumberFormat('vi-VN').format(value);
 };

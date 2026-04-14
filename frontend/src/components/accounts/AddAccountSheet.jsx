@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BottomSheet } from '../ui/BottomSheet';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { db } from '../../lib/db';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { Wallet, BriefcaseBusiness, PiggyBank, CreditCard, HandCoins } from 'lucide-react';
@@ -17,6 +18,7 @@ const ACCOUNT_TYPES = [
 
 export function AddAccountSheet({ isOpen, onClose, onSuccess }) {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [name, setName] = useState('');
   const [selectedType, setSelectedType] = useState(ACCOUNT_TYPES[0]);
   const [loading, setLoading] = useState(false);

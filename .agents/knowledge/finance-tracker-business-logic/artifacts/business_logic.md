@@ -173,12 +173,47 @@ if (account.sub_type !== 'debt' && account.balance < transactionAmount) {
 
 ---
 
+## Defensive Programming Standards
+
+To prevent "white screen" crashes, all UI components must follow these safeguards:
+
+### 1. Calculation Guards (Financial Arithmetic)
+NEVER perform arithmetic on raw database properties. Always cast to Number and provide a fallback.
+```js
+// INSECURE
+const total = items.reduce((sum, item) => sum + item.amount, 0) 
+
+// SECURE
+const total = items.reduce((sum, item) => {
+  const val = Number(item.amount) || 0
+  return sum + val
+}, 0)
+```
+
+### 2. Icon Resilience
+When using icons (e.g., Lucide), always ensure the component doesn't crash if the icon name is missing or the import fails.
+```js
+// Standard fallback pattern for dynamic icons
+const IconComponent = Icons[iconName] || Icons.HelpCircle
+```
+
+### 3. Date Safety
+Always provide a fallback for date inputs or display.
+```js
+const dateStr = record.date || new Date().toISOString().split('T')[0]
+```
+
+---
+
 ## formatCurrency Usage
 
 ```js
 import { formatCurrency } from '../utils/format';
 
 // Always use formatCurrency for displaying monetary values
+// UPDATE: formatCurrency is now NaN-safe. If NaN is passed, it returns "0" instead of crashing.
+formatCurrency(NaN) // → "0"
+
 formatCurrency(1500000) // → "1.500.000" (vi-VN locale, dots as thousand separators)
 
 // Display pattern

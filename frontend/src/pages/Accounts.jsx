@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/db';
-import { Plus, Wallet, PiggyBank, TrendingUp, HandCoins, Building, CreditCard } from 'lucide-react';
+import { Plus, Wallet, PiggyBank, TrendingUp, HandCoins, Building, CreditCard, CircleDollarSign } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 import { AddAccountSheet } from '../components/accounts/AddAccountSheet';
 import { EditAccountSheet } from '../components/accounts/EditAccountSheet';
@@ -90,50 +90,56 @@ export default function Accounts() {
 
   // --- Calculations ---
   
-  const totalCashAndReceivable = accounts.reduce((acc, curr) => {
-    if (curr.sub_type === 'debt') return acc;
-    return acc + (curr.balance || 0);
+  const totalCashAndReceivable = (accounts || []).reduce((acc, curr) => {
+    if (curr?.sub_type === 'debt') return acc;
+    return acc + (Number(curr?.balance) || 0);
   }, 0);
 
-  const totalDebtAccounts = accounts.reduce((acc, curr) => {
-    if (curr.sub_type === 'debt') return acc + (curr.balance || 0);
+  const totalDebtAccounts = (accounts || []).reduce((acc, curr) => {
+    if (curr?.sub_type === 'debt') return acc + (Number(curr?.balance) || 0);
     return acc;
   }, 0);
 
   // Savings Math
   const computeSavingsMath = (sav) => {
-    const daysPassed = Math.max(0, Math.floor((new Date() - new Date(sav.start_date)) / (1000 * 60 * 60 * 24)));
-    const dailyRate = ((sav.interest_rate || 0) / 100) / 365;
-    const accruedInterest = (sav.principal_amount || 0) * dailyRate * daysPassed;
-    const expectedTotalInterest = (sav.principal_amount || 0) * ((sav.interest_rate || 0) / 100) * ((sav.term_months || 0) / 12);
-    return { accruedInterest: Math.floor(accruedInterest), expectedTotalInterest: Math.floor(expectedTotalInterest), daysPassed };
+    if (!sav) return { accruedInterest: 0, expectedTotalInterest: 0, daysPassed: 0 };
+    const startDate = sav.start_date ? new Date(sav.start_date) : new Date();
+    const daysPassed = Math.max(0, Math.floor((new Date() - startDate) / (1000 * 60 * 60 * 24)));
+    const dailyRate = ((Number(sav.interest_rate) || 0) / 100) / 365;
+    const accruedInterest = (Number(sav.principal_amount) || 0) * dailyRate * (isNaN(daysPassed) ? 0 : daysPassed);
+    const expectedTotalInterest = (Number(sav.principal_amount) || 0) * ((Number(sav.interest_rate) || 0) / 100) * ((Number(sav.term_months) || 0) / 12);
+    return { 
+      accruedInterest: isNaN(accruedInterest) ? 0 : Math.floor(accruedInterest), 
+      expectedTotalInterest: isNaN(expectedTotalInterest) ? 0 : Math.floor(expectedTotalInterest), 
+      daysPassed: isNaN(daysPassed) ? 0 : daysPassed 
+    };
   };
 
-  const totalSavingsValue = savings.reduce((acc, curr) => {
-    if (curr.status !== 'active') return acc;
-    return acc + curr.principal_amount;
+  const totalSavingsValue = (savings || []).reduce((acc, curr) => {
+    if (curr?.status !== 'active') return acc;
+    return acc + (Number(curr?.principal_amount) || 0);
   }, 0);
 
   // Investment Math
-  const totalInvestmentNet = investments.reduce((acc, curr) => {
-    const marketVal = (curr.current_price || 0) * (curr.type === 'real_estate' ? 1 : (curr.quantity || 1));
-    const debt = curr.loan_amount || 0;
+  const totalInvestmentNet = (investments || []).reduce((acc, curr) => {
+    const marketVal = (Number(curr?.current_price) || 0) * (curr?.type === 'real_estate' ? 1 : (Number(curr?.quantity) || 1));
+    const debt = Number(curr?.loan_amount) || 0;
     return acc + (marketVal - debt);
   }, 0);
 
-  const totalInvestmentMarketValue = investments.reduce((acc, curr) => {
-    const marketVal = (curr.current_price || 0) * (curr.type === 'real_estate' ? 1 : (curr.quantity || 1));
+  const totalInvestmentMarketValue = (investments || []).reduce((acc, curr) => {
+    const marketVal = (Number(curr?.current_price) || 0) * (curr?.type === 'real_estate' ? 1 : (Number(curr?.quantity) || 1));
     return acc + marketVal;
   }, 0);
 
-  const totalOtherLiabilities = totalDebtAccounts + loans.reduce((acc, l) => {
-    if (l.status === 'active' && !l.linked_investment_id) {
-       return acc + (l.remaining_principal ?? l.total_amount ?? 0);
+  const totalOtherLiabilities = totalDebtAccounts + (loans || []).reduce((acc, l) => {
+    if (l?.status === 'active' && !l?.linked_investment_id) {
+       return acc + (Number(l?.remaining_principal) ?? Number(l?.total_amount) ?? 0);
     }
     return acc;
   }, 0);
 
-  const totalLoanRemaining = loans.reduce((acc, l) => acc + (l.status === 'active' ? (l.remaining_principal ?? l.total_amount ?? 0) : 0), 0);
+  const totalLoanRemaining = (loans || []).reduce((acc, l) => acc + (l?.status === 'active' ? (Number(l?.remaining_principal) ?? Number(l?.total_amount) ?? 0) : 0), 0);
   
   const globalNetWorth = totalCashAndReceivable + totalSavingsValue + totalInvestmentNet - totalOtherLiabilities;
   const activeLoans = loans.filter(l => l.status === 'active');
@@ -147,10 +153,16 @@ export default function Accounts() {
     const debtAccounts = accounts.filter(a => a.sub_type === 'debt');
 
     const getAccountIcon = (type, sub_type) => {
-      if (sub_type === 'debt') return <CreditCard className="text-red-500" />;
-      if (sub_type === 'receivable') return <HandCoins className="text-emerald-500 dark:text-emerald-400" />;
-      if (type === 'bank') return <Building className="text-blue-500 dark:text-blue-400" />;
-      return <Wallet className="text-gray-700 dark:text-slate-400" />;
+      // Safety: Use icons only if they are defined (handle potentially missing icons in old lucide versions)
+      const SafeHandCoins = HandCoins || CircleDollarSign || Wallet;
+      const SafeCreditCard = CreditCard || Wallet;
+      const SafeBuilding = Building || Wallet;
+      const SafeWallet = Wallet;
+
+      if (sub_type === 'debt') return <SafeCreditCard className="text-red-500" />;
+      if (sub_type === 'receivable') return <SafeHandCoins className="text-emerald-500 dark:text-emerald-400" />;
+      if (type === 'bank') return <SafeBuilding className="text-blue-500 dark:text-blue-400" />;
+      return <SafeWallet className="text-gray-700 dark:text-slate-400" />;
     };
 
     const renderGroup = (title, items) => {
@@ -352,9 +364,9 @@ export default function Accounts() {
   );
 
   const renderLoanCard = (loan) => {
-    const total = loan.total_amount || loan.principal_amount || 1; // Fallback to principal_amount if old data
-    const remaining = loan.remaining_principal ?? total;
-    const progress = Math.round(((total - remaining) / total) * 100);
+    const total = Number(loan?.total_amount) || Number(loan?.principal_amount) || 1;
+    const remaining = Number(loan?.remaining_principal) ?? total;
+    const progress = Math.max(0, Math.min(100, Math.round(((total - remaining) / total) * 100))) || 0;
     return (
       <div 
         key={loan.id} 

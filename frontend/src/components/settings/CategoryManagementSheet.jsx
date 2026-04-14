@@ -122,11 +122,11 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
       {/* --- LIST VIEW --- */}
       {!editingCat && (
         <div className="space-y-4 pb-12 animate-in fade-in">
-          <div className="flex bg-gray-100 p-1 rounded-xl">
+          <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-xl">
             <button
               onClick={() => setActiveTab('expense')}
               className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
-                activeTab === 'expense' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
+                activeTab === 'expense' ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 shadow-sm' : 'text-gray-500 dark:text-slate-400'
               }`}
             >
               Khoản Chi
@@ -134,7 +134,7 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
             <button
               onClick={() => setActiveTab('income')}
               className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
-                activeTab === 'income' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
+                activeTab === 'income' ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 shadow-sm' : 'text-gray-500 dark:text-slate-400'
               }`}
             >
               Khoản Thu
@@ -143,12 +143,12 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
 
           <div className="space-y-2 mt-4">
             {currentList.map(cat => (
-              <div key={cat.id} className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-xl shadow-sm">
+              <div key={cat.id} className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 border border-gray-100 dark:border-white/5 rounded-xl shadow-sm">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg" style={{ backgroundColor: cat.color_hex + '20', color: cat.color_hex }}>
                     {cat.icon}
                   </div>
-                  <span className="font-semibold text-gray-800">{cat.name}</span>
+                  <span className="font-semibold text-gray-800 dark:text-slate-100">{cat.name}</span>
                 </div>
                 <div className="flex items-center">
                   <button onClick={() => handleOpenEdit(cat)} className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
@@ -165,14 +165,14 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
             
             {!loading && currentList.length === 0 && (
               <div className="text-center py-6">
-                <p className="text-gray-400 text-sm">Chưa có danh mục nào.</p>
+                <p className="text-gray-400 dark:text-slate-500 text-sm">Chưa có danh mục nào.</p>
               </div>
             )}
           </div>
 
           <button 
             onClick={handleOpenAdd}
-            className="w-full py-4 bg-gray-100 text-gray-700 hover:bg-gray-200 font-bold rounded-xl mt-4 flex items-center justify-center space-x-2 transition-colors active:scale-95"
+            className="w-full py-4 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 font-bold rounded-xl mt-4 flex items-center justify-center space-x-2 transition-colors active:scale-95 border-none dark:border dark:border-white/5"
           >
             <Plus size={18} />
             <span>Thêm danh mục {activeTab === 'expense' ? 'Chi' : 'Thu'}</span>
@@ -184,21 +184,21 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
       {editingCat && (
         <form onSubmit={handleSave} className="space-y-6 pb-6 animate-in slide-in-from-right-2">
           
-          <button type="button" onClick={() => setEditingCat(null)} className="flex items-center space-x-2 text-gray-500 hover:text-gray-800 transition-colors font-medium text-sm mb-2">
+          <button type="button" onClick={() => setEditingCat(null)} className="flex items-center space-x-2 text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 transition-colors font-medium text-sm mb-2">
              <ArrowLeft size={16} />
              <span>Quay lại</span>
           </button>
 
-          {error && <div className="p-3 bg-red-50 text-red-600 rounded-xl text-sm font-medium">{error}</div>}
+          {error && <div className="p-3 bg-red-50 dark:bg-rose-900/20 text-red-600 dark:text-rose-400 border border-red-100 dark:border-rose-900/30 rounded-xl text-sm font-medium">{error}</div>}
 
           <div>
-             <label className="block text-sm font-semibold text-gray-700 mb-2">Tên danh mục</label>
-             <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="VD: Mua sắm shoppee" className="w-full bg-gray-50 border border-transparent focus:border-blue-500 rounded-xl px-4 py-3 outline-none font-medium text-lg"/>
+             <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 mb-2">Tên danh mục</label>
+             <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="VD: Mua sắm shoppee" className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-transparent focus:border-blue-500 rounded-xl px-4 py-3 outline-none font-medium text-lg"/>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Biểu tượng (Emoji)</label>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 mb-2">Biểu tượng (Emoji)</label>
                 <div className="relative">
                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-2xl" style={{ pointerEvents: 'none' }}>{icon}</div>
                    <input 
@@ -210,7 +210,7 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
                        if (chars.length > 0) setIcon(chars[chars.length - 1]);
                        else setIcon('');
                      }} 
-                     className="w-full bg-gray-50 border border-transparent rounded-xl py-3 pl-12 pr-4 outline-none font-medium text-lg caret-blue-500" 
+                     className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-transparent focus:border-blue-500 rounded-xl py-3 pl-12 pr-4 outline-none font-medium text-lg caret-blue-500" 
                      placeholder="Thêm Icon..."
                    />
                 </div>
@@ -218,7 +218,7 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
           </div>
 
           <div>
-             <label className="block text-sm font-semibold text-gray-700 mb-3">Màu sắc nhận diện</label>
+             <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 mb-3">Màu sắc nhận diện</label>
              <div className="flex flex-wrap gap-3">
                 {COLORS.map(c => (
                    <button 
@@ -234,7 +234,7 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
              </div>
           </div>
 
-          <button type="submit" className="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-lg shadow-blue-200 mt-8 active:scale-95 transition-transform">
+          <button type="submit" className="w-full py-4 bg-blue-600 dark:bg-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-blue-200 dark:shadow-none mt-8 active:scale-95 transition-transform">
             Lưu danh mục
           </button>
         </form>

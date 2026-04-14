@@ -122,7 +122,8 @@ export default function Accounts() {
   }, 0);
 
   const totalInvestmentMarketValue = investments.reduce((acc, curr) => {
-    return acc + (curr.current_price * (curr.type === 'real_estate' ? 1 : curr.quantity));
+    const marketVal = (curr.current_price || 0) * (curr.type === 'real_estate' ? 1 : (curr.quantity || 1));
+    return acc + marketVal;
   }, 0);
 
   const totalOtherLiabilities = totalDebtAccounts + loans.reduce((acc, l) => {

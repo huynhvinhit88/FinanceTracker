@@ -306,7 +306,7 @@ export default function Accounts() {
                     </div>
                     <div className="text-right">
                       <p className="font-black text-gray-900">{formatCurrency(marketValue)} ₫</p>
-                      {!isRE && (
+                      {(inv.buy_price > 0 || !isRE) && (
                         <p className={`text-[10px] font-bold ${diff >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                           {profitStr} ({((diff / (principal || 1)) * 100).toFixed(1)}%)
                         </p>

@@ -11,6 +11,7 @@ export function EditInvestmentSheet({ isOpen, onClose, investment, onSuccess }) 
   
   const [type, setType] = useState('gold');
   const [symbol, setSymbol] = useState('');
+  const [purchaseDate, setPurchaseDate] = useState('');
   const [quantity, setQuantity] = useState('1');
   
   const [loading, setLoading] = useState(false);
@@ -26,6 +27,7 @@ export function EditInvestmentSheet({ isOpen, onClose, investment, onSuccess }) 
       setType(investment.type);
       setSymbol(investment.symbol);
       setQuantity(investment.quantity.toString());
+      setPurchaseDate(investment.purchase_date || new Date().toISOString().split('T')[0]);
       setBuyPrice(investment.buy_price);
       setCurrentPrice(investment.current_price);
       setLoanAmount(investment.loan_amount || 0);
@@ -48,10 +50,12 @@ export function EditInvestmentSheet({ isOpen, onClose, investment, onSuccess }) 
       await db.investments.update(investment.id, {
         type,
         symbol: symbol.trim().toUpperCase(),
+        name: symbol.trim(),
         quantity: isRE ? 1 : parseFloat(quantity),
         buy_price: buyPrice,
         current_price: currentPrice,
-        loan_amount: isRE ? loanAmount : 0
+        loan_amount: isRE ? loanAmount : 0,
+        purchase_date: purchaseDate
       });
       
       onSuccess();
@@ -111,7 +115,7 @@ export function EditInvestmentSheet({ isOpen, onClose, investment, onSuccess }) 
           ))}
         </div>
 
-        <div className={isRE ? "block" : "grid grid-cols-2 gap-3"}>
+        <div className={isRE ? "grid grid-cols-2 gap-3" : "grid grid-cols-2 gap-3"}>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">{isRE ? 'Tên Bất động sản' : 'Mã tài sản'}</label>
             <input
@@ -120,6 +124,15 @@ export function EditInvestmentSheet({ isOpen, onClose, investment, onSuccess }) 
               onChange={e => setSymbol(e.target.value)}
               className="w-full bg-gray-50 border border-transparent focus:border-purple-500 rounded-xl px-4 py-3 outline-none uppercase font-semibold"
             />
+          </div>
+          <div>
+             <label className="block text-sm font-semibold text-gray-700 mb-2">Ngày mua</label>
+             <input
+               type="date"
+               value={purchaseDate}
+               onChange={e => setPurchaseDate(e.target.value)}
+               className="w-full bg-gray-50 border border-transparent focus:border-purple-500 rounded-xl px-4 py-3 outline-none font-medium text-xs"
+             />
           </div>
           {!isRE && (
             <div>
@@ -137,6 +150,22 @@ export function EditInvestmentSheet({ isOpen, onClose, investment, onSuccess }) 
 
         {isRE ? (
           <>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Giá vốn / Vốn tự có ban đầu</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={displayBuyRow}
+                  onChange={handleBuyPriceChange}
+                  className="w-full bg-gray-50 text-purple-600 text-xl font-bold py-3 pr-24 pl-4 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none"
+                />
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
+                  <span className="text-xl font-bold text-gray-400">{suffix}</span>
+                </div>
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Tổng giá trị hiện tại</label>
               <div className="relative">

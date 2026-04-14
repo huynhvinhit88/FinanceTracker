@@ -49,13 +49,18 @@ export default function Accounts() {
   const fetchWealthData = async () => {
     setLoading(true);
     try {
-      const accData = await db.accounts.orderBy('name').toArray();
-      const savData = await db.savings.orderBy('start_date').reverse().toArray();
-      const invData = await db.investments.orderBy('purchase_date').reverse().toArray();
+      const accRaw = await db.accounts.toArray();
+      const savRaw = await db.savings.toArray();
+      const invRaw = await db.investments.toArray();
       
-      setAccounts(accData || []);
-      setSavings(savData || []);
-      setInvestments(invData || []);
+      // Sắp xếp thủ công để tránh mất dữ liệu nếu thiếu trường index
+      const accData = accRaw.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      const savData = savRaw.sort((a, b) => new Date(b.start_date || 0) - new Date(a.start_date || 0));
+      const invData = invRaw.sort((a, b) => new Date(b.purchase_date || 0) - new Date(a.purchase_date || 0));
+      
+      setAccounts(accData);
+      setSavings(savData);
+      setInvestments(invData);
     } catch (err) {
       console.error(err);
     } finally {

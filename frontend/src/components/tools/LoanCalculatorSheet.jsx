@@ -452,7 +452,7 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
                 <table className="w-full text-[9px] text-right whitespace-nowrap">
                   <thead className="bg-gray-50 text-gray-400 font-bold uppercase tracking-widest border-b">
                     <tr>
-                      <th className="px-1.5 py-3 text-center w-8">Kỳ</th>
+                      <th className="sticky left-0 z-10 bg-gray-50 px-1.5 py-3 text-center w-8 border-r border-gray-100">Kỳ</th>
                       <th className="px-2 py-3 text-left">Ngày</th>
                       <th className="px-2 py-3">Gốc</th>
                       <th className="px-2 py-3">Lãi</th>
@@ -463,8 +463,8 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
                   </thead>
                   <tbody className="divide-y divide-gray-50 font-semibold text-gray-600">
                     {schedule.map((row) => (
-                      <tr key={row.month} className={`${row.prepay > 0 ? 'bg-orange-50/50' : 'hover:bg-gray-50/50'}`}>
-                        <td className="px-1.5 py-3 text-center text-gray-400 border-r border-gray-50">{row.month}</td>
+                      <tr key={row.month} className={`${row.prepay > 0 ? 'bg-orange-50/50' : 'hover:bg-gray-50/50 group'}`}>
+                        <td className={`sticky left-0 z-10 px-1.5 py-3 text-center text-gray-400 border-r border-gray-50 transition-colors ${row.prepay > 0 ? 'bg-orange-50' : 'bg-white group-hover:bg-gray-50'}`}>{row.month}</td>
                         <td className="px-2 py-3 text-left text-[8px] font-normal">{row.dateStr}</td>
                         <td className="px-2 py-3">{formatCurrency(row.principal)}</td>
                         <td className="px-2 py-3 text-red-400/80">{formatCurrency(row.interest)}</td>

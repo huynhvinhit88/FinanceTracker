@@ -272,8 +272,7 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                     <table className="w-full text-right font-mono whitespace-nowrap" style={{ fontVariantNumeric: 'tabular-nums' }}>
                       <thead className="bg-gray-50 dark:bg-slate-900/50 text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase tracking-widest border-b border-gray-100 dark:border-white/5">
                         <tr>
-                          <th className="px-3 py-3 text-center">Kỳ</th>
-                          <th className="px-3 py-3 text-left">Ngày</th>
+                          <th className="px-3 py-3 text-center min-w-[80px]">Kỳ trả</th>
                           <th className="px-3 py-3">Gốc</th>
                           <th className="px-3 py-3">Lãi</th>
                           <th className="px-3 py-3 text-blue-600 dark:text-indigo-400">Tổng</th>

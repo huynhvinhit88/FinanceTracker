@@ -22,7 +22,7 @@ const DEFAULT_CATEGORIES = [
 ];
 
 export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData }) {
-  const { loans, fetchLoans, updateLoanBalance, suggestInterest } = useLoans();
+  const { loans, fetchLoans, updateLoanBalance, suggestInterest, getLoanTransactions } = useLoans();
   
   const [type, setType] = useState('expense'); // expense, income, transfer, repayment
   const [accounts, setAccounts] = useState([]);
@@ -43,6 +43,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isFirstRenderFromInitialData, setIsFirstRenderFromInitialData] = useState(false);
+  const [loanTransactions, setLoanTransactions] = useState([]);
 
   const { displayValue, value: rawAmount, handleInputChange, reset: resetAmount, suffix, setExternalValue } = useCurrencyInput(0, { useShortcut: type !== 'repayment' });
 
@@ -105,6 +106,14 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
       setError('Lỗi khi lấy dữ liệu: ' + err.message);
     }
   };
+
+  useEffect(() => {
+    if (loanId) {
+      getLoanTransactions(loanId).then(setLoanTransactions);
+    } else {
+      setLoanTransactions([]);
+    }
+  }, [loanId, getLoanTransactions]);
 
   useEffect(() => {
     if (type === 'repayment') {
@@ -171,7 +180,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
             extraPayment: loan.extra_payment,
             offsetThreshold: loan.offset_threshold,
             periods: loan.periods || [],
-          });
+          }, loanTransactions, loan.remaining_principal);
 
           const now = new Date(date);
           const currentMonth = now.getMonth();
@@ -195,7 +204,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
         }
       }
     }
-  }, [loanId, isLoanMode, repaymentType, loans, date]);
+  }, [loanId, isLoanMode, repaymentType, loans, date, loanTransactions]);
 
   const updateAccountBalances = async (payload, direction = 1) => {
     const { account_id, to_account_id, amount, type } = payload;

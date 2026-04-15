@@ -113,21 +113,7 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
       daysPeriod = Math.round((currentPayDate - prevPayDate) / (1000 * 60 * 60 * 24));
     }
 
-    // 1. Quét giao dịch thực tế trong tháng này (phải làm TRƯỚC khi xác định isFuture)
-    const currentMonthNum = currentPayDate.getMonth();
-    const currentYearNum = currentPayDate.getFullYear();
-    const eventsThisMonth = historicalEvents.filter(e => {
-        const d = new Date(e.date);
-        return d.getMonth() === currentMonthNum && d.getFullYear() === currentYearNum;
-    });
-    const actualPrincipalPaid = eventsThisMonth.reduce((sum, e) => sum + (e.loan_principal_amount || 0), 0);
-    const hasPayoffEvent = eventsThisMonth.some(e => e.loan_payment_type === 'payoff');
-
-    // Một kỳ được coi là TƯƠNG LAI chỉ khi:
-    // - Ngày thanh toán dự kiến chưa đến (>= đầu tháng hiện tại), VÀ
-    // - Chưa có giao dịch thực tế nào được ghi nhận trong tháng đó
-    // Nếu đã có giao dịch thực tế (kể cả tháng hiện tại), xử lý như QUÁ KHỨ
-    const isFuture = eventsThisMonth.length === 0 && currentPayDate >= currentMonthStart;
+    const isFuture = currentPayDate >= currentMonthStart;
     let adjustment = 0;
 
     if (isFuture && !isFutureStarted && actualRemainingPrincipal !== null) {
@@ -139,6 +125,17 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
     }
 
     const isUnderFreePeriod = freePrincipalMonths >= 1;
+
+    // 1. Quét giao dịch lịch sử trong tháng này
+    const currentMonthNum = currentPayDate.getMonth();
+    const currentYearNum = currentPayDate.getFullYear();
+    const eventsThisMonth = historicalEvents.filter(e => {
+        const d = new Date(e.date);
+        return d.getMonth() === currentMonthNum && d.getFullYear() === currentYearNum;
+    });
+    const actualPrincipalPaid = eventsThisMonth.reduce((sum, e) => sum + (e.loan_principal_amount || 0), 0);
+    // Kiểm tra xem tháng này có giao dịch tất toán (payoff) không
+    const hasPayoffEvent = eventsThisMonth.some(e => e.loan_payment_type === 'payoff');
 
     let principalThisMonth = 0;
     let prepayThisMonth = 0;
@@ -162,17 +159,6 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
       
       // Nếu đang trong kỳ miễn gốc và thực tế tháng này không đóng gốc (hoặc đóng ít hơn mức dư), ta tiêu thụ 1 kỳ miễn
       if (!hasPayoffEvent && isUnderFreePeriod && actualPrincipalPaid < basePrincipal) {
-        freePrincipalMonths = Math.max(0, freePrincipalMonths - 1);
-      }
-    } else if (!isFuture && eventsThisMonth.length > 0 && !isFutureStarted && actualRemainingPrincipal !== null) {
-      // Tháng có giao dịch thực tế nhưng không trả gốc (chỉ trả lãi)
-      // Đồng bộ remaining với DB để tránh lệch khi bước sang tương lai
-      isFutureStarted = true;
-      if (Math.abs(remaining - actualRemainingPrincipal) > 0) {
-        remaining = actualRemainingPrincipal;
-      }
-      // Vẫn tiêu thụ kỳ miễn gốc nếu đang trong kỳ miễn
-      if (isUnderFreePeriod) {
         freePrincipalMonths = Math.max(0, freePrincipalMonths - 1);
       }
     } else {

@@ -41,22 +41,10 @@ export default function Accounts() {
   const [isEditInvestOpen, setIsEditInvestOpen] = useState(false);
   const [selectedInvestment, setSelectedInvestment] = useState(null);
 
-  // Đồng bộ selectedLoan với dữ liệu mới nhất từ loans array sau mỗi lần fetchLoans
-  // Quan trọng: giữ cho LoanDetailSheet hiển thị dư nợ chính xác ngay sau giao dịch
-  useEffect(() => {
-    if (selectedLoan && loans.length > 0) {
-      const updatedLoan = loans.find(l => l.id === selectedLoan.id);
-      if (updatedLoan && updatedLoan.remaining_principal !== selectedLoan.remaining_principal) {
-        setSelectedLoan(updatedLoan);
-      }
-    }
-  }, [loans]);
-
   useEffect(() => {
     fetchWealthData();
     fetchLoans();
   }, [user]);
-
 
   const fetchWealthData = async () => {
     setLoading(true);

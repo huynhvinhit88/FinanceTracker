@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/db';
 import { Plus, Wallet, PiggyBank, TrendingUp, HandCoins, Building, CreditCard, CircleDollarSign } from 'lucide-react';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, toViDecimal } from '../utils/format';
 import { AddAccountSheet } from '../components/accounts/AddAccountSheet';
 import { EditAccountSheet } from '../components/accounts/EditAccountSheet';
 import { AddSavingsSheet } from '../components/wealth/AddSavingsSheet';
@@ -256,7 +256,7 @@ export default function Accounts() {
                   {isSettled && <div className="absolute top-0 right-0 bg-gray-200 dark:bg-slate-700 text-xs px-2 py-1 font-bold text-gray-600 dark:text-slate-400 rounded-bl-lg">Đã tất toán</div>}
                   <h4 className="font-bold text-gray-900 dark:text-slate-100 text-lg mb-1">{sav.name}</h4>
                   <div className="flex space-x-2 text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded w-fit mb-4 border border-emerald-100 dark:border-emerald-900/50">
-                    <span>{sav.interest_rate}%/năm</span> • <span>Kỳ hạn {sav.term_months} tháng</span>
+                    <span>{toViDecimal(sav.interest_rate)}%/năm</span> • <span>Kỳ hạn {sav.term_months} tháng</span>
                   </div>
                   
                   <div className="flex justify-between items-end border-t border-gray-100 dark:border-white/5 pt-3">
@@ -381,7 +381,7 @@ export default function Accounts() {
             <div>
               <h4 className="font-bold text-gray-900 dark:text-slate-100 leading-tight">{loan.name}</h4>
               <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">
-                Lãi suất: {loan.interest_rate}%/năm
+                Lãi suất: {toViDecimal(loan.interest_rate)}%/năm
               </p>
             </div>
           </div>

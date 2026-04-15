@@ -124,26 +124,44 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
       }
     }
 
+    const periodStartRemaining = remaining;
     const isUnderFreePeriod = freePrincipalMonths >= 1;
 
-    // 1. Quét giao dịch lịch sử trong tháng này
+    // 1. Quét giao dịch thực tế trong tháng này
     const currentMonthNum = currentPayDate.getMonth();
     const currentYearNum = currentPayDate.getFullYear();
     const eventsThisMonth = historicalEvents.filter(e => {
         const d = new Date(e.date);
         return d.getMonth() === currentMonthNum && d.getFullYear() === currentYearNum;
     });
+    const hasActualTransactions = eventsThisMonth.length > 0;
     const actualPrincipalPaid = eventsThisMonth.reduce((sum, e) => sum + (e.loan_principal_amount || 0), 0);
-    // Kiểm tra xem tháng này có giao dịch tất toán (payoff) không
     const hasPayoffEvent = eventsThisMonth.some(e => e.loan_payment_type === 'payoff');
+
+    const isFuture = currentPayDate >= currentMonthStart;
+    let adjustment = 0;
+
+    // ĐỒNG BỘ DỮ LIỆU (ANCHORING): Chỉ thực hiện một lần khi bắt đầu chạm đến vùng "Hiện tại/Tương lai"
+    if (isFuture && !isFutureStarted && actualRemainingPrincipal !== null) {
+      isFutureStarted = true;
+      let targetStartRemaining;
+      if (hasActualTransactions) {
+        // Tháng hiện tại đã có giao dịch: Để dư nợ cuối kỳ khớp với DB, 
+        // ta phải bắt đầu từ [Dư nợ DB hiện tại] + [Gốc đã đóng thực tế trong tháng này]
+        targetStartRemaining = actualRemainingPrincipal + actualPrincipalPaid;
+      } else {
+        targetStartRemaining = actualRemainingPrincipal;
+      }
+      adjustment = targetStartRemaining - remaining;
+      remaining = targetStartRemaining;
+    }
 
     let principalThisMonth = 0;
     let prepayThisMonth = 0;
 
-    if (!isFuture && actualPrincipalPaid > 0) {
-      // DỮ LIỆU THỰC TẾ TRONG QUÁ KHỨ
+    if (hasActualTransactions) {
+      // SỬ DỤNG DỮ LIỆU THỰC TẾ (Quá khứ hoặc Hiện tại đã đóng tiền)
       if (hasPayoffEvent) {
-        // Tất toán sớm: toàn bộ tiền gốc là khoản tất toán (prepay), không phải kỳ gốc định kỳ
         principalThisMonth = 0;
         prepayThisMonth = Math.min(actualPrincipalPaid, remaining);
       } else {
@@ -152,17 +170,15 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
         prepayThisMonth = Math.max(0, actualPrincipalPaid - principalThisMonth);
       }
       
-      // Nếu có trả thêm (Tất toán), cộng vào số tháng được miễn gốc cho tương lai
       if (prepayThisMonth > 0) {
         freePrincipalMonths += prepayThisMonth / basePrincipal;
       }
       
-      // Nếu đang trong kỳ miễn gốc và thực tế tháng này không đóng gốc (hoặc đóng ít hơn mức dư), ta tiêu thụ 1 kỳ miễn
       if (!hasPayoffEvent && isUnderFreePeriod && actualPrincipalPaid < basePrincipal) {
         freePrincipalMonths = Math.max(0, freePrincipalMonths - 1);
       }
     } else {
-      // MÔ PHỎNG (Tương lai hoặc Quá khứ không có dữ liệu giao dịch)
+      // MÔ PHỎNG (Kỳ tương lai hoặc Kỳ quá khứ chưa có dữ liệu giao dịch)
       if (isUnderFreePeriod) {
         principalThisMonth = 0;
         freePrincipalMonths = Math.max(0, freePrincipalMonths - 1);
@@ -176,32 +192,35 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
     remaining -= (principalThisMonth + prepayThisMonth);
 
     const currentBankPayment = principalThisMonth + interestThisMonth;
-    if (currentMonthBudget > 0) {
-      accumulatedExtra += Math.max(0, currentMonthBudget - currentBankPayment);
-    }
-
     let automatedPrepay = 0;
     let penaltyPaid = 0;
 
-    // Chỉ chạy mô phỏng tất toán tự động (Dựa trên thặng dư ngân sách) cho các kỳ TƯƠNG LAI
-    // Quá khứ phải dựa hoàn toàn vào dữ liệu giao dịch thực tế
-    if (isFuture && threshold > 0 && remaining > 0) {
+    // CHẠY MÔ PHỎNG TẤT TOÁN TỰ ĐỘNG
+    // Chỉ kích hoạt nếu kỳ này CHƯA có giao dịch thực tế và Dư nợ vẫn còn
+    if (!hasActualTransactions && threshold > 0 && remaining > 0) {
       const pRate = getPenaltyRate(m);
       const targetPrepay = Math.min(threshold, remaining);
       const penaltyForTarget = targetPrepay * (pRate / 100);
       
-      // Chỉ tất toán nếu tiền tích luỹ đủ để trả (Số tiền ngưỡng + Phí phạt của nó)
-      if (accumulatedExtra >= (targetPrepay + penaltyForTarget)) {
+      // Số dư khả năng tích lũy sau khi đóng gốc lãi định kỳ tháng này
+      const potentialAccumulated = accumulatedExtra + currentMonthBudget - currentBankPayment;
+
+      if (potentialAccumulated >= (targetPrepay + penaltyForTarget)) {
         automatedPrepay = targetPrepay;
         penaltyPaid = penaltyForTarget;
         
         totalPenalty += penaltyPaid;
         remaining -= automatedPrepay;
-        accumulatedExtra -= (automatedPrepay + penaltyPaid);
         
         // Cập nhật số tháng không cần trả gốc (giảm áp lực dòng tiền)
         freePrincipalMonths += automatedPrepay / basePrincipal;
       }
+    }
+
+    // CẬP NHẬT VÍ TÍCH LŨY (Theo thực tế dòng tiền ra vào)
+    if (currentMonthBudget > 0) {
+      const totalOutflow = principalThisMonth + interestThisMonth + prepayThisMonth + automatedPrepay + penaltyPaid;
+      accumulatedExtra += (currentMonthBudget - totalOutflow);
     }
 
     schedule.push({
@@ -210,13 +229,13 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
       dateObj: new Date(currentPayDate),
       interest: Math.round(interestThisMonth),
       principal: Math.round(principalThisMonth),
-      prepay: Math.round(prepayThisMonth + automatedPrepay), // Gộp cả trả thêm thủ công và tự động
+      prepay: Math.round(prepayThisMonth + automatedPrepay),
       penalty: Math.round(penaltyPaid),
       adjustment: Math.round(adjustment),
       actualEventsCount: eventsThisMonth.length,
       total: Math.round(currentBankPayment + prepayThisMonth + automatedPrepay + penaltyPaid),
-      accumulated: Math.round(accumulatedExtra),
-      remaining: Math.max(0, Math.round(remaining)),
+      accumulated: Math.max(0, Math.round(accumulatedExtra)),
+      remaining: Math.max(0, Math.round(periodStartRemaining)), // HIỂN THỊ DƯ NỢ ĐẦU KỲ
     });
   }
 

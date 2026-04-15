@@ -99,7 +99,7 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
 
       if (p.baseRate || p.extraPayment || p.marginRate) setShowAdvanced(true);
       if (p.periods?.length > 0) { setShowAdvanced(true); setShowPeriods(true); }
-      setResult(null); 
+      setResult(null);
     }
   };
 
@@ -139,7 +139,7 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
       const newProfiles = profiles.filter(p => p.id !== activeProfileId);
       setProfiles(newProfiles);
       localStorage.setItem(storageKey, JSON.stringify(newProfiles));
-      loadProfile(''); 
+      loadProfile('');
     }
   };
 
@@ -168,7 +168,7 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
         payoffDate.setMonth(payoffDate.getMonth() + summary.actualMonths - 1);
       }
       const diffTotalMonths = Math.max(0, Math.round((payoffDate - new Date()) / (1000 * 60 * 60 * 24 * 30.44)));
-      
+
       setResult({
         ...summary,
         yearsFromNow: Math.floor(diffTotalMonths / 12),
@@ -186,18 +186,18 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
           <div className="flex items-center justify-between">
             <label className="text-sm font-semibold text-gray-700 dark:text-slate-400">Tải hồ sơ đã lưu:</label>
             {activeProfileId && (
-              <button 
-                onClick={handleDeleteProfile} 
-                className="text-red-500 bg-red-50 dark:bg-rose-900/20 p-1.5 rounded-lg active:scale-95 transition-all" 
+              <button
+                onClick={handleDeleteProfile}
+                className="text-red-500 bg-red-50 dark:bg-rose-900/20 p-1.5 rounded-lg active:scale-95 transition-all"
                 title="Xoá hồ sơ"
               >
                 <Trash2 size={16} />
               </button>
             )}
           </div>
-          <select 
-            value={activeProfileId} 
-            onChange={(e) => loadProfile(e.target.value)} 
+          <select
+            value={activeProfileId}
+            onChange={(e) => loadProfile(e.target.value)}
             className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/5 rounded-lg px-3 py-2.5 outline-none font-medium text-gray-800 dark:text-slate-100 text-sm transition-all"
           >
             <option value="">-- Tạo hồ sơ mô phỏng mới --</option>
@@ -322,8 +322,8 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
                           <button type="button" onClick={() => setPeriods(prev => prev.filter((_, i) => i !== idx))} className="text-red-400 dark:text-rose-400"><XCircle size={16} /></button>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                          <input type="number" min="1" value={pd.fromMonth} onChange={e => setPeriods(prev => prev.map((p, i) => i === idx ? { ...p, fromMonth: e.target.value } : p))} className="bg-white dark:bg-slate-800 border border-transparent dark:border-white/5 rounded-lg px-3 py-2 text-sm font-bold shadow-sm dark:text-white outline-none" placeholder="Từ kỳ"/>
-                          <input type="number" min="1" value={pd.toMonth} onChange={e => setPeriods(prev => prev.map((p, i) => i === idx ? { ...p, toMonth: e.target.value } : p))} className="bg-white dark:bg-slate-800 border border-transparent dark:border-white/5 rounded-lg px-3 py-2 text-sm font-bold shadow-sm dark:text-white outline-none" placeholder="Đến kỳ"/>
+                          <input type="number" min="1" value={pd.fromMonth} onChange={e => setPeriods(prev => prev.map((p, i) => i === idx ? { ...p, fromMonth: e.target.value } : p))} className="bg-white dark:bg-slate-800 border border-transparent dark:border-white/5 rounded-lg px-3 py-2 text-sm font-bold shadow-sm dark:text-white outline-none" placeholder="Từ kỳ" />
+                          <input type="number" min="1" value={pd.toMonth} onChange={e => setPeriods(prev => prev.map((p, i) => i === idx ? { ...p, toMonth: e.target.value } : p))} className="bg-white dark:bg-slate-800 border border-transparent dark:border-white/5 rounded-lg px-3 py-2 text-sm font-bold shadow-sm dark:text-white outline-none" placeholder="Đến kỳ" />
                           <input
                             type="text"
                             inputMode="decimal"
@@ -394,34 +394,34 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
               <p className="text-gray-500 dark:text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">Tháng đầu tiên phải trả</p>
               <p className="text-3xl font-black text-gray-900 dark:text-white">{formatCurrency(result.initialMonthlyPayment)} ₫</p>
             </div>
- 
+
             <div className="bg-slate-800 dark:bg-slate-900 rounded-2xl p-4 mb-6 text-white shadow-md grid grid-cols-2 gap-3 transition-colors">
-                <div className="bg-white/10 dark:bg-white/5 rounded-xl p-3 text-center">
-                  <p className="text-slate-300 dark:text-slate-500 text-[10px] font-semibold uppercase mb-1">Tổng thời gian</p>
-                  <p className="font-black text-xl">{result.totalYears > 0 ? `${result.totalYears}n ` : ''}{result.totalRemMonths}th</p>
-                </div>
-                <div className="bg-white/10 dark:bg-white/5 rounded-xl p-3 text-center">
-                  <p className="text-slate-300 dark:text-slate-500 text-[10px] font-semibold uppercase mb-1">Tất toán dự kiến</p>
-                  <p className="font-black text-lg">{result.payoffDateStr}</p>
-                </div>
+              <div className="bg-white/10 dark:bg-white/5 rounded-xl p-3 text-center">
+                <p className="text-slate-300 dark:text-slate-500 text-[10px] font-semibold uppercase mb-1">Tổng thời gian</p>
+                <p className="font-black text-xl">{result.totalYears > 0 ? `${result.totalYears}n ` : ''}{result.totalRemMonths}th</p>
+              </div>
+              <div className="bg-white/10 dark:bg-white/5 rounded-xl p-3 text-center">
+                <p className="text-slate-300 dark:text-slate-500 text-[10px] font-semibold uppercase mb-1">Tất toán dự kiến</p>
+                <p className="font-black text-lg">{result.payoffDateStr}</p>
+              </div>
             </div>
 
             {result.interestSaved > 0 && (
               <div className="bg-green-600 p-5 rounded-3xl text-white shadow-lg mb-6">
                 <h3 className="font-bold text-green-100 mb-4 text-sm uppercase tracking-wider text-center">Hiệu quả Trả nợ sớm</h3>
                 <div className="grid grid-cols-2 gap-3">
-                   <div className="bg-white/10 p-3 rounded-xl col-span-2 text-center">
-                     <p className="text-green-200 text-xs mb-1">Tiết kiệm tiền Lãi</p>
-                     <p className="font-bold text-2xl truncate">+{formatCurrency(result.interestSaved)} ₫</p>
-                   </div>
-                   <div className="bg-white/10 p-3 rounded-xl text-center">
-                     <p className="text-green-200 text-xs mb-1">Rút ngắn được</p>
-                     <p className="font-bold text-xl">{result.monthsSaved} Tháng</p>
-                   </div>
-                   <div className="bg-white/10 p-3 rounded-xl text-center">
-                     <p className="text-green-200 text-xs mb-1">Tại tháng</p>
-                     <p className="font-bold text-xl">{result.actualMonths}</p>
-                   </div>
+                  <div className="bg-white/10 p-3 rounded-xl col-span-2 text-center">
+                    <p className="text-green-200 text-xs mb-1">Tiết kiệm tiền Lãi</p>
+                    <p className="font-bold text-2xl truncate">+{formatCurrency(result.interestSaved)} ₫</p>
+                  </div>
+                  <div className="bg-white/10 p-3 rounded-xl text-center">
+                    <p className="text-green-200 text-xs mb-1">Rút ngắn được</p>
+                    <p className="font-bold text-xl">{result.monthsSaved} Tháng</p>
+                  </div>
+                  <div className="bg-white/10 p-3 rounded-xl text-center">
+                    <p className="text-green-200 text-xs mb-1">Tại tháng</p>
+                    <p className="font-bold text-xl">{result.actualMonths}</p>
+                  </div>
                 </div>
               </div>
             )}
@@ -481,9 +481,9 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
           </div>
         )}
       </div>
-      <AddLoanSheet 
-        isOpen={isAddRealLoanOpen} 
-        onClose={() => setIsAddRealLoanOpen(false)} 
+      <AddLoanSheet
+        isOpen={isAddRealLoanOpen}
+        onClose={() => setIsAddRealLoanOpen(false)}
         initialProfile={{
           name: profiles.find(x => x.id === activeProfileId)?.name || 'Khoản vay mới',
           principal, termMonths, promoRate, promoMonths, baseRate, marginRate, penaltyConfig, startDate, firstPaymentDate, periods

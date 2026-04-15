@@ -113,17 +113,6 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
       daysPeriod = Math.round((currentPayDate - prevPayDate) / (1000 * 60 * 60 * 24));
     }
 
-    const isFuture = currentPayDate >= currentMonthStart;
-    let adjustment = 0;
-
-    if (isFuture && !isFutureStarted && actualRemainingPrincipal !== null) {
-      isFutureStarted = true;
-      if (Math.abs(remaining - actualRemainingPrincipal) > 0) {
-        adjustment = remaining - actualRemainingPrincipal;
-        remaining = actualRemainingPrincipal;
-      }
-    }
-
     const periodStartRemaining = remaining;
     const isUnderFreePeriod = freePrincipalMonths >= 1;
 

@@ -3,7 +3,7 @@ import { BottomSheet } from '../ui/BottomSheet';
 import { useAuth } from '../../contexts/AuthContext';
 import { db } from '../../lib/db';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
-import { Landmark } from 'lucide-react';
+import { Landmark, List } from 'lucide-react';
 import { formatCurrency } from '../../utils/format';
 
 export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
@@ -51,6 +51,7 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
     if (!interestRate || parseFloat(interestRate) < 0) return setError('Lãi suất không hợp lệ');
     if (!termMonths || parseInt(termMonths) <= 0) return setError('Kỳ hạn phải lớn hơn 0 tháng');
     if (!accountId) return setError('Vui lòng chọn tài khoản nguồn');
+    if (!categoryId) return setError('Vui lòng chọn hạng mục');
     
     setLoading(true);
     setError('');
@@ -163,21 +164,39 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 flex items-center">
-            <Landmark size={14} className="mr-1.5 text-blue-500" /> Tài khoản nguồn (Trích tiền từ ví này)
-          </label>
-          <select
-            value={accountId}
-            onChange={(e) => setAccountId(e.target.value)}
-            className="w-full bg-gray-50 dark:bg-slate-800 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-          >
-            {accounts.map(acc => (
-              <option key={acc.id} value={acc.id}>
-                {acc.name} ({formatCurrency(acc.balance)}₫)
-              </option>
-            ))}
-          </select>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 flex items-center">
+              <Landmark size={14} className="mr-1.5 text-blue-500" /> Tài khoản nguồn
+            </label>
+            <select
+              value={accountId}
+              onChange={(e) => setAccountId(e.target.value)}
+              className="w-full bg-gray-50 dark:bg-slate-800 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            >
+              {accounts.map(acc => (
+                <option key={acc.id} value={acc.id}>
+                  {acc.name} ({formatCurrency(acc.balance)}₫)
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 flex items-center">
+              <List size={14} className="mr-1.5 text-indigo-500" /> Hạng mục
+            </label>
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="w-full bg-gray-50 dark:bg-slate-800 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            >
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.icon} {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <button

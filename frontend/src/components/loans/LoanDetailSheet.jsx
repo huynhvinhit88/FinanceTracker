@@ -269,9 +269,9 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                   <p className="text-[9px] text-gray-400 dark:text-slate-500 mt-1 uppercase">Tất toán: {result.payoffDateStr}</p>
                 </div>
                 <div className="bg-white dark:bg-slate-800 p-4 rounded-3xl border border-gray-100 dark:border-white/5 shadow-sm transition-all">
-                  <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase mb-2 flex items-center"><AlertCircle size={12} className="mr-1" /> Lãi tháng tới</p>
-                  <p className="text-lg font-black text-blue-600 dark:text-indigo-400">~{formatCurrency(schedule[0]?.interest || 0)} <span className="text-xs">₫</span></p>
-                  <p className="text-[9px] text-gray-400 dark:text-slate-500 mt-1 uppercase">Lãi suất dự kiến</p>
+                  <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase mb-2 flex items-center"><Percent size={12} className="mr-1" /> Tổng lãi dự kiến</p>
+                  <p className="text-lg font-black text-blue-600 dark:text-indigo-400">{formatCurrency(result.actualTotalInterest)} <span className="text-xs">₫</span></p>
+                  <p className="text-[9px] text-gray-400 dark:text-slate-500 mt-1 uppercase">Lần trả cuối: {result.payoffDateStr}</p>
                 </div>
               </div>
             )}

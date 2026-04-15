@@ -122,8 +122,18 @@ When processing historical transactions, the algorithm distinguishes between `lo
 
 ---
 
-## Savings Interest Calculation (for Plan projection)
+## Savings Book Lifecycle
 
+### 1. Opening a Savings Book (`AddSavingsSheet.jsx`)
+When a new savings book is created, the system performs an atomic-like operation:
+1. **Source Account Selection**: User must select a source account (non-debt types).
+2. **Category Selection**: User selects an expense category for the transaction (defaults to a "Tiết kiệm" category if found).
+3. **Balance Validation**: System blocks the creation if `account.balance < principal_amount`.
+4. **Account Update**: `account.balance -= principal_amount`.
+5. **Transaction Creation**: A new transaction of type `'expense'` is created with the chosen `account_id` and `category_id` to log the withdrawal.
+6. **Savings Record**: A new record is added to `db.savings` containing `account_id` for tracking source.
+
+### 2. Interest Calculation (for Plan projection)
 ```js
 savAnnualInterest = activeSavings.reduce((s, x) => {
   return s + ((x.principal_amount || 0) * (x.interest_rate || 0) / 100)

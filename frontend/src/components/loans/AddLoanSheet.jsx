@@ -320,7 +320,7 @@ export function AddLoanSheet({ isOpen, onClose, onSuccess, initialProfile = null
                 type="number"
                 value={promoMonths}
                 onChange={e => setPromoMonths(Number(e.target.value))}
-                className="w-full bg-white dark:bg-slate-700 border border-gray-100 dark:border-white/5 rounded-xl py-3 px-4 text-sm font-bold text-emerald-600 dark:text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:focus:ring-emerald-500 transition-all"
+                className="w-full bg-white dark:bg-slate-800 border border-gray-100 dark:border-white/5 rounded-xl py-3 px-4 text-sm font-bold text-emerald-600 dark:text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:focus:ring-emerald-500 transition-all"
               />
             </div>
           </div>

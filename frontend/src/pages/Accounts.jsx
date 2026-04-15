@@ -55,7 +55,26 @@ export default function Accounts() {
       
       // Sắp xếp thủ công để tránh mất dữ liệu nếu thiếu trường index
       const accData = accRaw.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-      const savData = savRaw.sort((a, b) => new Date(b.start_date || 0) - new Date(a.start_date || 0));
+      
+      const savData = savRaw.sort((a, b) => {
+        // Active first
+        if (a.status === 'active' && b.status !== 'active') return -1;
+        if (a.status !== 'active' && b.status === 'active') return 1;
+        
+        // Then by maturity date
+        if (a.status === 'active') {
+          // Both active: soonest maturity first
+          const dateA = a.maturity_date ? new Date(a.maturity_date) : new Date(8640000000000000); // Far future if missing
+          const dateB = b.maturity_date ? new Date(b.maturity_date) : new Date(8640000000000000);
+          return dateA - dateB;
+        } else {
+          // Both settled: most recently matured first (descending)
+          const dateA = a.maturity_date ? new Date(a.maturity_date) : new Date(0);
+          const dateB = b.maturity_date ? new Date(b.maturity_date) : new Date(0);
+          return dateB - dateA;
+        }
+      });
+
       const invData = invRaw.sort((a, b) => new Date(b.purchase_date || 0) - new Date(a.purchase_date || 0));
       
       setAccounts(accData);
@@ -171,30 +190,47 @@ export default function Accounts() {
         <div className="mb-6">
           <h3 className="font-bold text-gray-900 dark:text-slate-100 text-lg mb-3 px-1">{title}</h3>
           <div className="grid grid-cols-1 gap-3">
-            {items.map(acc => (
-              <div 
-                key={acc.id} 
-                onClick={() => handleAccountClick(acc)}
-                className={`bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border ${acc.sub_type === 'debt' ? 'border-red-50 dark:border-rose-900/30' : acc.sub_type === 'receivable' ? 'border-emerald-50 dark:border-emerald-900/30' : 'border-gray-100 dark:border-white/5'} flex items-center justify-between active:scale-[0.98] transition-all cursor-pointer`}
-              >
-                <div className="flex items-center space-x-4">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center border ${acc.sub_type === 'debt' ? 'bg-red-50 dark:bg-rose-900/20 border-red-100 dark:border-rose-900/50' : acc.sub_type === 'receivable' ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-900/50' : 'bg-gray-50 dark:bg-slate-800 border-gray-100 dark:border-white/5'}`}>
-                    {getAccountIcon(acc.type, acc.sub_type)}
+            {items.map(acc => {
+              // Calculate linked active savings
+              const linkedSavings = savings.filter(s => s.account_id === acc.id && s.status === 'active');
+              const totalSavingsForAcc = linkedSavings.reduce((sum, s) => sum + (Number(s.principal_amount) || 0), 0);
+              const hasSavings = totalSavingsForAcc > 0;
+              
+              return (
+                <div 
+                  key={acc.id} 
+                  onClick={() => handleAccountClick(acc)}
+                  className={`bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border ${acc.sub_type === 'debt' ? 'border-red-50 dark:border-rose-900/30' : acc.sub_type === 'receivable' ? 'border-emerald-50 dark:border-emerald-900/30' : 'border-gray-100 dark:border-white/5'} flex items-center justify-between active:scale-[0.98] transition-all cursor-pointer`}
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center border ${acc.sub_type === 'debt' ? 'bg-red-50 dark:bg-rose-900/20 border-red-100 dark:border-rose-900/50' : acc.sub_type === 'receivable' ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-900/50' : 'bg-gray-50 dark:bg-slate-800 border-gray-100 dark:border-white/5'}`}>
+                      {getAccountIcon(acc.type, acc.sub_type)}
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900 dark:text-slate-100 leading-tight">{acc.name}</h4>
+                      <p className={`text-xs font-medium uppercase tracking-wider mt-1 ${acc.sub_type === 'debt' ? 'text-red-500 dark:text-rose-400' : acc.sub_type === 'receivable' ? 'text-emerald-500 dark:text-emerald-400' : 'text-gray-500 dark:text-slate-500'}`}>
+                        {acc.type}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-slate-100 leading-tight">{acc.name}</h4>
-                    <p className={`text-xs font-medium uppercase tracking-wider mt-1 ${acc.sub_type === 'debt' ? 'text-red-500 dark:text-rose-400' : acc.sub_type === 'receivable' ? 'text-emerald-500 dark:text-emerald-400' : 'text-gray-500 dark:text-slate-500'}`}>
-                      {acc.type}
+                  <div className="text-right">
+                    <p className={`font-bold text-lg ${acc.sub_type === 'debt' ? 'text-red-600 dark:text-rose-400' : acc.sub_type === 'receivable' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-slate-100'}`}>
+                      {acc.sub_type === 'debt' ? '-' : acc.sub_type === 'receivable' ? '+' : ''}{formatCurrency(acc.balance)} đ
                     </p>
+                    {hasSavings && (
+                      <div className="flex flex-col items-end mt-1">
+                        <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded">
+                          <PiggyBank size={10} className="mr-1" /> Tiết kiệm: +{formatCurrency(totalSavingsForAcc)} đ
+                        </p>
+                        <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-tighter mt-0.5">
+                          Tổng: {formatCurrency(acc.balance + totalSavingsForAcc)} đ
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className={`font-bold text-lg ${acc.sub_type === 'debt' ? 'text-red-600 dark:text-rose-400' : acc.sub_type === 'receivable' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-slate-100'}`}>
-                    {acc.sub_type === 'debt' ? '-' : acc.sub_type === 'receivable' ? '+' : ''}{formatCurrency(acc.balance)} đ
-                  </p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       );

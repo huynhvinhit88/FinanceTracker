@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BottomSheet } from '../ui/BottomSheet';
 import { db } from '../../lib/db';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
@@ -42,7 +42,9 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [isFirstRenderFromInitialData, setIsFirstRenderFromInitialData] = useState(false);
+  // Dùng ref để bảo vệ giá trị từ Quick Pay khỏi bị ghi đè bởi các async re-trigger
+  // Đếm số lần cần bỏ qua: 2 (1 cho loans, 1 cho loanTransactions)
+  const skipSuggestionCount = useRef(0);
   const [loanTransactions, setLoanTransactions] = useState([]);
 
   const { displayValue, value: rawAmount, handleInputChange, reset: resetAmount, suffix, setExternalValue } = useCurrencyInput(0, { useShortcut: type !== 'repayment' });
@@ -60,9 +62,10 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
         }
         if (initialData.note) setNote(initialData.note);
         setIsLoanMode(initialData.type === 'repayment' || !!initialData.loanId);
-        setIsFirstRenderFromInitialData(true);
+        // Bỏ qua 2 lần chạy effect tiếp theo (do loans & loanTransactions bất đồng bộ)
+        skipSuggestionCount.current = 2;
       } else {
-        setIsFirstRenderFromInitialData(false);
+        skipSuggestionCount.current = 0;
       }
       fetchDependencies();
       fetchLoans();
@@ -150,9 +153,9 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
   // Khi chọn khoản vay, gợi ý tiền lãi và gốc từ bảng kế hoạch
   useEffect(() => {
     if (isLoanMode && loanId && loans.length > 0) {
-      // Nếu vừa mở từ Quick Pay, bỏ qua lượt gợi ý đầu tiên để không ghi đè dữ liệu truyền vào
-      if (isFirstRenderFromInitialData) {
-        setIsFirstRenderFromInitialData(false);
+      // Bảo vệ giá trị Quick Pay khỏi bị ghi đè bởi async re-triggers
+      if (skipSuggestionCount.current > 0) {
+        skipSuggestionCount.current -= 1;
         return;
       }
 
@@ -194,7 +197,8 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
           });
 
           if (match) {
-            setExternalPrincipal(match.principal);
+            // Số tiền gốc = Gốc định kỳ + Tất toán sớm (prepay) trong kỳ này
+            setExternalPrincipal(match.principal + (match.prepay || 0));
             setExternalValue(match.total);
           } else {
             // Trường hợp không tìm thấy kỳ khớp (quá hạn hoặc chưa đến kỳ): Để trống

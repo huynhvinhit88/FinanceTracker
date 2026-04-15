@@ -218,13 +218,18 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
     setError('');
 
     try {
+      const transactionDate = new Date(date);
+      const now = new Date();
+      // Nếu là ngày hiện tại thì lấy giờ phút giây hiện tại, nếu ngày khác thì cũng nên gắn giờ hiện tại để giữ thứ tự nhập
+      transactionDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+
       const payload = {
         account_id: accountId,
         category_id: type !== 'transfer' ? categoryId : null,
         to_account_id: type === 'transfer' ? toAccountId : null,
         amount: rawAmount,
         type: type === 'repayment' ? 'expense' : type,
-        date: new Date(date).toISOString(),
+        date: transactionDate.toISOString(),
         note: note.trim(),
         // Loan fields
         loan_id: isLoanMode ? loanId : null,

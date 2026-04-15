@@ -228,6 +228,10 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
     setError('');
 
     try {
+      const transactionDate = new Date(date);
+      const now = new Date();
+      transactionDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+
       const payload = {
         id: crypto.randomUUID(),
         account_id: accountId,
@@ -235,7 +239,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
         to_account_id: type === 'transfer' ? toAccountId : null,
         amount: rawAmount,
         type: type === 'repayment' ? 'expense' : type,
-        date: new Date(date).toISOString(),
+        date: transactionDate.toISOString(),
         note: note.trim() || (type === 'repayment' ? `Trả nợ ${loans.find(l=>l.id===loanId)?.name}` : ''),
         loan_id: isLoanMode ? loanId : null,
         loan_payment_type: isLoanMode ? repaymentType : null,

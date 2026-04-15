@@ -305,7 +305,7 @@ export default function Home() {
                         {isIncome ? '+' : isTransfer ? '' : '-'}{formatCurrency(tx.amount)} đ
                       </p>
                       <p className="text-[10px] text-gray-400 dark:text-slate-500">
-                        {new Date(tx.date).toLocaleDateString('vi-VN')}
+                        {new Date(tx.date).toLocaleDateString('vi-VN')} • {new Date(tx.date).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </div>

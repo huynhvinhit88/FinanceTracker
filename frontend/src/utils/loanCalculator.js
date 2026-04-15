@@ -194,39 +194,33 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
     totalInterest += interestThisMonth;
     remaining -= (principalThisMonth + prepayThisMonth);
 
+    const currentBankPayment = principalThisMonth + interestThisMonth;
+    if (currentMonthBudget > 0) {
+      accumulatedExtra += Math.max(0, currentMonthBudget - currentBankPayment);
+    }
+
     let automatedPrepay = 0;
     let penaltyPaid = 0;
 
     // Chỉ chạy mô phỏng tất toán tự động (Dựa trên thặng dư ngân sách) cho các kỳ TƯƠNG LAI
-    // Quá khứ đã dựa hoàn toàn vào dữ liệu giao dịch thực tế
+    // Quá khứ phải dựa hoàn toàn vào dữ liệu giao dịch thực tế
     if (isFuture && threshold > 0 && remaining > 0) {
       const pRate = getPenaltyRate(m);
       const targetPrepay = Math.min(threshold, remaining);
       const penaltyForTarget = targetPrepay * (pRate / 100);
       
-      // Kiểm tra xem tích lũy (bao gồm cả thặng dư tháng này) có đủ để tất toán không
-      // Tích lũy tạm tính = tích lũy cũ + (ngân sách tháng này - gốc/lãi định kỳ)
-      const currentBankPayment = principalThisMonth + interestThisMonth;
-      const potentialAccumulated = accumulatedExtra + Math.max(0, currentMonthBudget - currentBankPayment);
-
-      if (potentialAccumulated >= (targetPrepay + penaltyForTarget)) {
+      // Chỉ tất toán nếu tiền tích luỹ đủ để trả (Số tiền ngưỡng + Phí phạt của nó)
+      if (accumulatedExtra >= (targetPrepay + penaltyForTarget)) {
         automatedPrepay = targetPrepay;
         penaltyPaid = penaltyForTarget;
         
         totalPenalty += penaltyPaid;
         remaining -= automatedPrepay;
+        accumulatedExtra -= (automatedPrepay + penaltyPaid);
         
         // Cập nhật số tháng không cần trả gốc (giảm áp lực dòng tiền)
         freePrincipalMonths += automatedPrepay / basePrincipal;
       }
-    }
-
-    // CẬP NHẬT VÍ TÍCH LŨY (accumulatedExtra) cuối mỗi kỳ
-    // Công thức: [Tích lũy mới] = [Tích lũy cũ] + [Ngân sách tháng này] - [Tổng chi thực tế/mô phỏng trong tháng]
-    // Tổng chi bao gồm: Gốc định kỳ + Lãi + Tất toán (thủ công/tự động) + Phí phạt
-    if (currentMonthBudget > 0) {
-      const totalOutflow = principalThisMonth + interestThisMonth + prepayThisMonth + automatedPrepay + penaltyPaid;
-      accumulatedExtra += (currentMonthBudget - totalOutflow);
     }
 
     schedule.push({

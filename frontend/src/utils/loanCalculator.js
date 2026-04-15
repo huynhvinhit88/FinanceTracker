@@ -123,18 +123,30 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
     const actualPrincipalPaid = eventsThisMonth.reduce((sum, e) => sum + (e.loan_principal_amount || 0), 0);
     const hasPayoffEvent = eventsThisMonth.some(e => e.loan_payment_type === 'payoff');
 
-    // isFuture = kỳ chưa có giao dịch thực tế VÀ ngày kỳ >= đầu tháng hiện tại
+    // Một kỳ được coi là TƯƠNG LAI chỉ khi:
+    // - Ngày thanh toán dự kiến chưa đến (>= đầu tháng hiện tại), VÀ
+    // - Chưa có giao dịch thực tế nào được ghi nhận trong tháng đó
     // Nếu đã có giao dịch thực tế (kể cả tháng hiện tại), xử lý như lịch sử thực tế
     const isFuture = eventsThisMonth.length === 0 && currentPayDate >= currentMonthStart;
+    const isCurrentOrFuture = currentPayDate >= currentMonthStart;
     let adjustment = 0;
 
-    // Chỉ áp dụng điều chỉnh anchor cho kỳ TƯƠNG LAI thuần túy (không có giao dịch)
-    if (isFuture && !isFutureStarted && actualRemainingPrincipal !== null) {
+    // ĐỒNG BỘ DỮ LIỆU (ANCHORING): Chỉ thực hiện một lần khi bắt đầu chạm đến vùng "Hiện tại/Tương lai"
+    // Giúp bảng kế hoạch khớp chính xác với dư nợ thực tế trong DB mà không làm sai lệch lịch sử quá khứ
+    if (!isFutureStarted && isCurrentOrFuture && actualRemainingPrincipal !== null) {
       isFutureStarted = true;
-      if (Math.abs(remaining - actualRemainingPrincipal) > 0) {
-        adjustment = remaining - actualRemainingPrincipal;
-        remaining = actualRemainingPrincipal;
+      let targetStartRemaining;
+      if (eventsThisMonth.length > 0) {
+        // Tháng hiện tại đã có giao dịch: Để kết thúc kỳ này dư nợ khớp với DB, 
+        // ta phải bắt đầu từ [Dư nợ DB hiện tại] + [Gốc đã đóng thực tế trong kỳ này]
+        targetStartRemaining = actualRemainingPrincipal + actualPrincipalPaid;
+      } else {
+        // Kỳ tương lai chưa có giao dịch: Bắt đầu thẳng từ dư nợ DB hiện tại
+        targetStartRemaining = actualRemainingPrincipal;
       }
+
+      adjustment = targetStartRemaining - remaining;
+      remaining = targetStartRemaining;
     }
 
     const isUnderFreePeriod = freePrincipalMonths >= 1;
@@ -144,13 +156,6 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
 
     if (!isFuture && actualPrincipalPaid > 0) {
       // DỮ LIỆU THỰC TẾ: kỳ đã có giao dịch trả gốc
-      // Neo remaining về giá trị TRƯỚC khi thanh toán kỳ này:
-      //   = dư nợ hiện tại (DB) + gốc đã trả trong kỳ này
-      // Đảm bảo tính toán dư nợ sau giao dịch chính xác dù simulation trước đó bị lệch
-      if (!isFutureStarted && actualRemainingPrincipal !== null) {
-        isFutureStarted = true;
-        remaining = actualRemainingPrincipal + actualPrincipalPaid;
-      }
 
       if (hasPayoffEvent) {
         // Tất toán sớm: toàn bộ tiền gốc là khoản tất toán (prepay)
@@ -171,11 +176,7 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
       }
     } else if (!isFuture && eventsThisMonth.length > 0) {
       // Tháng có giao dịch nhưng không trả gốc (VD: chỉ trả lãi)
-      // Đồng bộ remaining = actualRemainingPrincipal và tiêu thụ kỳ miễn nếu cần
-      if (!isFutureStarted && actualRemainingPrincipal !== null) {
-        isFutureStarted = true;
-        remaining = actualRemainingPrincipal;
-      }
+      // Tiêu thụ kỳ miễn nếu cần
       if (isUnderFreePeriod) {
         freePrincipalMonths = Math.max(0, freePrincipalMonths - 1);
       }

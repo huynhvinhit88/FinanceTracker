@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BottomSheet } from '../ui/BottomSheet';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { formatCurrency, parseCurrencyInput, toViDecimal, fromViDecimal } from '../../utils/format';
-import { Calculator, ChevronRight, Settings2, Save, FilePlus2, Trash2, PlusCircle, XCircle, Landmark } from 'lucide-react';
+import { Calculator, ChevronRight, Settings2, Save, FilePlus2, Trash2, PlusCircle, XCircle, Landmark, Check } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { AddLoanSheet } from '../loans/AddLoanSheet';
 import { calculateLoanSchedule } from '../../utils/loanCalculator';
@@ -20,6 +20,8 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
   // Profiles State
   const [profiles, setProfiles] = useState([]);
   const [activeProfileId, setActiveProfileId] = useState('');
+  const [isNaming, setIsNaming] = useState(false);
+  const [newName, setNewName] = useState('');
 
   // 1. Cấu hình Vay
   const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -105,13 +107,16 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
 
   const handleSaveProfile = (asNew = false) => {
     let targetName = '';
-    const currentProfile = profiles.find(x => x.id === activeProfileId);
-
     if (asNew || !activeProfileId) {
-      targetName = window.prompt('Nhập tên để lưu hồ sơ mô phỏng (VD: Vay mua nhà VCB):', '');
+      if (!isNaming) {
+        setIsNaming(true);
+        setNewName(activeProfileId ? `${profiles.find(x => x.id === activeProfileId)?.name} (Copy)` : '');
+        return;
+      }
+      targetName = newName.trim();
       if (!targetName) return;
     } else {
-      targetName = currentProfile.name;
+      targetName = profiles.find(x => x.id === activeProfileId)?.name;
     }
 
     const payload = {
@@ -130,6 +135,8 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
 
     setProfiles(newProfiles);
     localStorage.setItem(storageKey, JSON.stringify(newProfiles));
+    setIsNaming(false);
+    setNewName('');
     alert('Đã lưu hồ sơ thành công!');
   };
 
@@ -203,17 +210,51 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
             <option value="">-- Tạo hồ sơ mô phỏng mới --</option>
             {profiles.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
-          <div className="flex space-x-2 pt-1">
-            <button onClick={() => handleSaveProfile(false)} className="flex-1 bg-blue-600 dark:bg-indigo-600 hover:bg-blue-700 dark:hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg flex items-center justify-center space-x-2 transition-all active:scale-95 text-sm">
-              <Save size={16} />
-              <span>{activeProfileId ? 'Lưu cập nhật' : 'Lưu hồ sơ mới'}</span>
-            </button>
-            {activeProfileId && (
-              <button onClick={() => handleSaveProfile(true)} className="bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-800 dark:text-slate-200 font-semibold py-2.5 px-3 rounded-lg flex items-center justify-center transition-all active:scale-95">
-                <FilePlus2 size={16} />
+          {isNaming ? (
+            <div className="space-y-3 pt-1">
+              <input
+                type="text"
+                autoFocus
+                placeholder="Nhập tên hồ sơ..."
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                className="w-full bg-white dark:bg-slate-800 border border-blue-200 dark:border-indigo-500/50 rounded-lg px-3 py-2.5 outline-none font-semibold text-gray-900 dark:text-slate-100 text-sm focus:ring-2 focus:ring-blue-400"
+              />
+              <div className="flex space-x-2">
+                <button 
+                  onClick={() => { setIsNaming(false); setNewName(''); }}
+                  className="flex-1 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 font-bold py-2.5 rounded-lg text-sm active:scale-95 transition-all"
+                >
+                  Huỷ
+                </button>
+                <button 
+                  onClick={() => handleSaveProfile(true)}
+                  className="flex-[2] bg-blue-600 dark:bg-indigo-600 text-white font-bold py-2.5 rounded-lg text-sm active:scale-95 transition-all flex items-center justify-center space-x-2"
+                >
+                  <Check size={16} />
+                  <span>Xác nhận Lưu</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex space-x-2 pt-1">
+              <button 
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSaveProfile(false); }} 
+                className="flex-1 bg-blue-600 dark:bg-indigo-600 hover:bg-blue-700 dark:hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg flex items-center justify-center space-x-2 transition-all active:scale-95 text-sm"
+              >
+                <Save size={16} />
+                <span>{activeProfileId ? 'Lưu cập nhật' : 'Lưu hồ sơ mới'}</span>
               </button>
-            )}
-          </div>
+              {activeProfileId && (
+                <button 
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSaveProfile(true); }} 
+                  className="bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-800 dark:text-slate-200 font-semibold py-2.5 px-3 rounded-lg flex items-center justify-center transition-all active:scale-95"
+                >
+                  <FilePlus2 size={16} />
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="bg-blue-50 dark:bg-indigo-900/10 text-blue-800 dark:text-indigo-400 p-4 rounded-xl text-sm border border-blue-100 dark:border-indigo-900/20 flex items-start space-x-3 transition-colors">

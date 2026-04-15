@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { BottomSheet } from '../ui/BottomSheet';
-import { formatCurrency, toViDecimal, fromViDecimal } from '../../utils/format';
+import { formatCurrency, toViDecimal, fromViDecimal, parseCurrencyInput } from '../../utils/format';
 import { calculateLoanSchedule } from '../../utils/loanCalculator';
 import { useLoans } from '../../hooks/useLoans';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
@@ -297,6 +297,7 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                           <th className="px-3 py-3">Lãi</th>
                           <th className="px-3 py-3 text-blue-600 dark:text-indigo-400">Tổng</th>
                           <th className="px-3 py-3 text-red-600 dark:text-rose-400 bg-red-50/50 dark:bg-rose-900/10">Tất toán</th>
+                          <th className="px-3 py-3 text-emerald-600 dark:text-emerald-400">Ví tích lũy</th>
                           <th className="px-3 py-3 pr-4">Dư nợ</th>
                           <th className="px-3 py-3 text-center"></th>
                         </tr>
@@ -322,6 +323,9 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                             </td>
                             <td className="px-3 py-2.5 text-[10px] font-black text-red-600 dark:text-rose-400">
                               {row.prepay > 0 ? formatCurrency(row.prepay) : '-'}
+                            </td>
+                            <td className="px-3 py-2.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                              {row.accumulated > 0 ? formatCurrency(row.accumulated) : '-'}
                             </td>
                             <td className="px-3 py-2.5 pr-4 text-[10px] font-black text-gray-900 dark:text-slate-100 font-black">
                               {formatCurrency(row.remaining)}
@@ -498,8 +502,8 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                           <input
                             type="text"
                             inputMode="numeric"
-                            value={pd.budget}
-                            onChange={e => setPeriods(prev => prev.map((p, i) => i === idx ? {...p, budget: e.target.value} : p))}
+                            value={formatCurrency(pd.budget)}
+                            onChange={e => setPeriods(prev => prev.map((p, i) => i === idx ? {...p, budget: parseCurrencyInput(e.target.value)} : p))}
                             className="w-full bg-purple-50 dark:bg-slate-700 border border-purple-100 dark:border-white/5 rounded-lg px-3 py-2 pr-10 text-sm font-bold text-gray-900 dark:text-slate-100 outline-none focus:ring-1 focus:ring-purple-400 font-bold"
                             placeholder="Ngân sách"
                           />

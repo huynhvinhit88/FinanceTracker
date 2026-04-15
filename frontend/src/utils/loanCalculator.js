@@ -194,6 +194,7 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
     totalInterest += interestThisMonth;
     remaining -= (principalThisMonth + prepayThisMonth);
 
+    const currentBankPayment = principalThisMonth + interestThisMonth;
     let automatedPrepay = 0;
     let penaltyPaid = 0;
 
@@ -206,7 +207,6 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
       
       // Kiểm tra xem tích lũy (bao gồm cả thặng dư tháng này) có đủ để tất toán không
       // Tích lũy tạm tính = tích lũy cũ + (ngân sách tháng này - gốc/lãi định kỳ)
-      const currentBankPayment = principalThisMonth + interestThisMonth;
       const potentialAccumulated = accumulatedExtra + Math.max(0, currentMonthBudget - currentBankPayment);
 
       if (potentialAccumulated >= (targetPrepay + penaltyForTarget)) {

@@ -17,6 +17,7 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [settleLoading, setSettleLoading] = useState(false);
   const [error, setError] = useState('');
+  const [sourceAccountName, setSourceAccountName] = useState('');
 
   const { displayValue, value: principalAmount, handleInputChange, setExternalValue, suffix } = useCurrencyInput('');
 
@@ -28,6 +29,14 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
       setTermMonths(savings.term_months.toString());
       setStatus(savings.status);
       setError('');
+      
+      if (savings.account_id) {
+        db.accounts.get(savings.account_id).then(acc => {
+          if (acc) setSourceAccountName(acc.name);
+        }).catch(console.error);
+      } else {
+        setSourceAccountName('Không xác định');
+      }
     }
   }, [isOpen, savings]);
 
@@ -148,16 +157,22 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
           </div>
         </div>
 
-        <div className="flex items-center space-x-3 bg-gray-50 dark:bg-slate-800 p-4 rounded-2xl border border-transparent dark:border-white/5">
-          <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400">Trạng thái:</label>
-          <select 
-            value={status} 
-            onChange={e => setStatus(e.target.value)}
-            className="bg-transparent font-bold text-gray-900 dark:text-slate-100 outline-none transition-all"
-          >
-            <option value="active">Đang hoạt động</option>
-            <option value="settled">Đã tất toán</option>
-          </select>
+        <div className="flex items-center justify-between bg-gray-50 dark:bg-slate-800 p-4 rounded-2xl border border-transparent dark:border-white/5">
+          <div>
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Tài khoản nguồn</label>
+            <p className="font-bold text-gray-900 dark:text-slate-100">{sourceAccountName}</p>
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1 text-right">Trạng thái</label>
+            <select 
+              value={status} 
+              onChange={e => setStatus(e.target.value)}
+              className="bg-transparent font-bold text-gray-900 dark:text-slate-100 outline-none transition-all text-sm"
+            >
+              <option value="active">Đang hoạt động</option>
+              <option value="settled">Đã tất toán</option>
+            </select>
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-3 pt-4">

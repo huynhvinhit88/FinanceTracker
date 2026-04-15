@@ -134,15 +134,23 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
         return d.getMonth() === currentMonthNum && d.getFullYear() === currentYearNum;
     });
     const actualPrincipalPaid = eventsThisMonth.reduce((sum, e) => sum + (e.loan_principal_amount || 0), 0);
+    // Kiểm tra xem tháng này có giao dịch tất toán (payoff) không
+    const hasPayoffEvent = eventsThisMonth.some(e => e.loan_payment_type === 'payoff');
 
     let principalThisMonth = 0;
     let prepayThisMonth = 0;
 
     if (!isFuture && actualPrincipalPaid > 0) {
       // DỮ LIỆU THỰC TẾ TRONG QUÁ KHỨ
-      const targetNormal = isUnderFreePeriod ? 0 : basePrincipal;
-      principalThisMonth = Math.min(actualPrincipalPaid, targetNormal, remaining);
-      prepayThisMonth = Math.max(0, actualPrincipalPaid - principalThisMonth);
+      if (hasPayoffEvent) {
+        // Tất toán sớm: toàn bộ tiền gốc là khoản tất toán (prepay), không phải kỳ gốc định kỳ
+        principalThisMonth = 0;
+        prepayThisMonth = Math.min(actualPrincipalPaid, remaining);
+      } else {
+        const targetNormal = isUnderFreePeriod ? 0 : basePrincipal;
+        principalThisMonth = Math.min(actualPrincipalPaid, targetNormal, remaining);
+        prepayThisMonth = Math.max(0, actualPrincipalPaid - principalThisMonth);
+      }
       
       // Nếu có trả thêm (Tất toán), cộng vào số tháng được miễn gốc cho tương lai
       if (prepayThisMonth > 0) {
@@ -150,7 +158,7 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
       }
       
       // Nếu đang trong kỳ miễn gốc và thực tế tháng này không đóng gốc (hoặc đóng ít hơn mức dư), ta tiêu thụ 1 kỳ miễn
-      if (isUnderFreePeriod && actualPrincipalPaid < basePrincipal) {
+      if (!hasPayoffEvent && isUnderFreePeriod && actualPrincipalPaid < basePrincipal) {
         freePrincipalMonths = Math.max(0, freePrincipalMonths - 1);
       }
     } else {

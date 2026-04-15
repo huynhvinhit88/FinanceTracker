@@ -113,6 +113,13 @@ The `calculateLoanSchedule` utility employs a hybrid historical-simulation appro
 2. **Transition Point**: At the current month, if the simulated remaining balance diverges from `loan.remaining_principal` (e.g., due to missing historical entries before using the app), it forces a self-correction (`adjustment`) so the projection snaps back to real data.
 3. **Future Periods**: Continues the standard simulation cleanly using the exact updated `loan.remaining_principal`, including automated principal offsets if budget surplus exceeds the threshold.
 
+### Payoff vs. Periodic Distinction (Bug Fix)
+When processing historical transactions, the algorithm distinguishes between `loan_payment_type`:
+- **`'payoff'`**: The **entire `loan_principal_amount`** is classified as `prepayThisMonth` (shown in "Tất toán" column). `principalThisMonth = 0`.
+- **`'periodic'`** (default): Split between `principalThisMonth` (up to `basePrincipal`) and `prepayThisMonth` (excess).
+
+> **Without this check**, a payoff of 100M in a loan with basePrincipal=100M would be misclassified as a normal monthly principal, causing 0 to appear in the "Tất toán" column and incorrect future projections.
+
 ---
 
 ## Savings Interest Calculation (for Plan projection)

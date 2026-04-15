@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BottomSheet } from '../ui/BottomSheet';
 import { useAuth } from '../../contexts/AuthContext';
 import { db } from '../../lib/db';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
+import { Landmark, List } from 'lucide-react';
+import { formatCurrency } from '../../utils/format';
 
 export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
   const { user } = useAuth();
@@ -10,11 +12,37 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
   const [name, setName] = useState('');
   const [interestRate, setInterestRate] = useState('');
   const [termMonths, setTermMonths] = useState('');
+  const [accountId, setAccountId] = useState('');
+  const [categoryId, setCategoryId] = useState('');
+  const [accounts, setAccounts] = useState([]);
+  const [categories, setCategories] = useState([]);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const { displayValue, value: principalAmount, handleInputChange, reset: resetPrincipal, suffix } = useCurrencyInput('');
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchDependencies();
+    }
+  }, [isOpen]);
+
+  const fetchDependencies = async () => {
+    try {
+      const accs = await db.accounts.filter(a => a.sub_type !== 'debt').toArray();
+      setAccounts(accs);
+      if (accs.length > 0) setAccountId(accs[0].id);
+
+      const cats = await db.categories.filter(c => c.type === 'expense').toArray();
+      setCategories(cats);
+      const savingsCat = cats.find(c => c.name.toLowerCase().includes('tiết kiệm'));
+      if (savingsCat) setCategoryId(savingsCat.id);
+      else if (cats.length > 0) setCategoryId(cats[0].id);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,17 +50,44 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
     if (principalAmount <= 0) return setError('Số tiền gửi phải lớn hơn 0');
     if (!interestRate || parseFloat(interestRate) < 0) return setError('Lãi suất không hợp lệ');
     if (!termMonths || parseInt(termMonths) <= 0) return setError('Kỳ hạn phải lớn hơn 0 tháng');
+    if (!accountId) return setError('Vui lòng chọn tài khoản nguồn');
+    if (!categoryId) return setError('Vui lòng chọn hạng mục');
     
     setLoading(true);
     setError('');
 
     try {
+      // 1. Kiểm tra và trừ tiền từ tài khoản nguồn
+      const account = await db.accounts.get(accountId);
+      if (!account) throw new Error('Không tìm thấy tài khoản');
+      if (account.balance < principalAmount) {
+        throw new Error(`Số dư tài khoản không đủ (${formatCurrency(account.balance)}₫)`);
+      }
+
+      await db.accounts.update(accountId, {
+        balance: account.balance - principalAmount
+      });
+
+      // 2. Tạo giao dịch chi tiền để mở sổ
+      await db.transactions.add({
+        id: crypto.randomUUID(),
+        account_id: accountId,
+        category_id: categoryId,
+        amount: principalAmount,
+        date: new Date().toISOString(),
+        type: 'expense',
+        note: `Mở sổ tiết kiệm: ${name.trim()}`
+      });
+
+      // 3. Lưu sổ tiết kiệm
       await db.savings.add({
         id: crypto.randomUUID(),
+        account_id: accountId,
         name: name.trim(),
         principal_amount: principalAmount,
         interest_rate: parseFloat(interestRate),
         term_months: parseInt(termMonths),
+        start_date: new Date().toISOString().split('T')[0],
         status: 'active'
       });
       
@@ -106,6 +161,41 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
               placeholder="VD: 6"
               className="w-full bg-gray-50 dark:bg-slate-800 border border-transparent focus:border-blue-500 dark:focus:border-indigo-500 rounded-xl px-4 py-3 outline-none font-medium text-gray-900 dark:text-slate-100 transition-all"
             />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 flex items-center">
+              <Landmark size={14} className="mr-1.5 text-blue-500" /> Tài khoản nguồn
+            </label>
+            <select
+              value={accountId}
+              onChange={(e) => setAccountId(e.target.value)}
+              className="w-full bg-gray-50 dark:bg-slate-800 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            >
+              {accounts.map(acc => (
+                <option key={acc.id} value={acc.id}>
+                  {acc.name} ({formatCurrency(acc.balance)}₫)
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 flex items-center">
+              <List size={14} className="mr-1.5 text-indigo-500" /> Hạng mục
+            </label>
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="w-full bg-gray-50 dark:bg-slate-800 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            >
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.icon} {cat.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 

@@ -42,9 +42,9 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  // Flag giữ cho đến khi user thực sự chạm vào form (thay đổi loanId hoặc repaymentType)
-  // Khi true: bỏ qua TẤT CẢ auto-suggestion để giữ giá trị từ Quick Pay
-  const hasInitialData = useRef(false);
+  // Dùng ref để bảo vệ giá trị từ Quick Pay khỏi bị ghi đè bởi các async re-trigger
+  // Đếm số lần cần bỏ qua: 2 (1 cho loans, 1 cho loanTransactions)
+  const skipSuggestionCount = useRef(0);
   const [loanTransactions, setLoanTransactions] = useState([]);
 
   const { displayValue, value: rawAmount, handleInputChange, reset: resetAmount, suffix, setExternalValue } = useCurrencyInput(0, { useShortcut: type !== 'repayment' });
@@ -62,10 +62,10 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
         }
         if (initialData.note) setNote(initialData.note);
         setIsLoanMode(initialData.type === 'repayment' || !!initialData.loanId);
-        // Dữ liệu Quick Pay đã được điền sẵn — khóa suggestion cho đến khi user tương tác
-        hasInitialData.current = true;
+        // Bỏ qua 2 lần chạy effect tiếp theo (do loans & loanTransactions bất đồng bộ)
+        skipSuggestionCount.current = 2;
       } else {
-        hasInitialData.current = false;
+        skipSuggestionCount.current = 0;
       }
       fetchDependencies();
       fetchLoans();
@@ -153,9 +153,11 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
   // Khi chọn khoản vay, gợi ý tiền lãi và gốc từ bảng kế hoạch
   useEffect(() => {
     if (isLoanMode && loanId && loans.length > 0) {
-      // Nếu form được mở từ Quick Pay, bỏ qua auto-suggestion hoàn toàn
-      // cho đến khi user thực sự chạm vào (đổi loan hoặc loại trả nợ)
-      if (hasInitialData.current) return;
+      // Bảo vệ giá trị Quick Pay khỏi bị ghi đè bởi async re-triggers
+      if (skipSuggestionCount.current > 0) {
+        skipSuggestionCount.current -= 1;
+        return;
+      }
 
       const loan = loans.find(l => l.id === loanId);
       if (loan) {
@@ -393,7 +395,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
 
             <div className="space-y-1">
               <label className="block text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Chọn khoản vay</label>
-              <select value={loanId} onChange={(e) => { hasInitialData.current = false; setLoanId(e.target.value); }} className="w-full bg-white dark:bg-slate-800 dark:text-slate-100 border border-blue-100 dark:border-blue-900/30 rounded-xl px-4 py-3 text-sm font-bold">
+              <select value={loanId} onChange={(e) => setLoanId(e.target.value)} className="w-full bg-white dark:bg-slate-800 dark:text-slate-100 border border-blue-100 dark:border-blue-900/30 rounded-xl px-4 py-3 text-sm font-bold">
                 {loans.map(l => <option key={l.id} value={l.id}>{l.name} (Dư nợ: {formatCurrency(l.remaining_principal)}₫)</option>)}
               </select>
             </div>
@@ -401,7 +403,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
             <div className="grid grid-cols-2 gap-3">
                {['periodic', 'payoff'].map(mode => (
                  <button
-                   key={mode} type="button" onClick={() => { hasInitialData.current = false; setRepaymentType(mode); }}
+                   key={mode} type="button" onClick={() => setRepaymentType(mode)}
                    className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
                      repaymentType === mode ? 'bg-blue-600 dark:bg-blue-700 text-white border-blue-600 dark:border-blue-700 shadow-md' : 'bg-white dark:bg-slate-800 text-gray-400 dark:text-slate-500 border-gray-100 dark:border-white/5'
                    }`}

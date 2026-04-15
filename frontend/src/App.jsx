@@ -12,7 +12,13 @@ import Settings from './pages/Settings';
 import TransactionsList from './pages/TransactionsList';
 import Login from './pages/auth/Login';
 
+import { seedDefaultData } from './lib/db';
+
 function App() {
+  React.useEffect(() => {
+    seedDefaultData().catch(console.error);
+  }, []);
+
   return (
     <ThemeProvider>
       <AuthProvider>

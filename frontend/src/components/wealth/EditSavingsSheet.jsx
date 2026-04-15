@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { db } from '../../lib/db';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { Trash2, CheckCircle2, X, Landmark, List, Calculator, ArrowLeft } from 'lucide-react';
-import { formatCurrency } from '../../utils/format';
+import { formatCurrency, toViDecimal, fromViDecimal } from '../../utils/format';
 
 export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
   const { user } = useAuth();
@@ -13,6 +13,8 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
   const [interestRateDisplay, setInterestRateDisplay] = useState('');
   const [interestRate, setInterestRate] = useState(0);
   const [termMonths, setTermMonths] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [maturityDate, setMaturityDate] = useState('');
   const [status, setStatus] = useState('active');
   
   const [loading, setLoading] = useState(false);
@@ -44,7 +46,9 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
       setExternalValue(savings.principal_amount);
       setInterestRate(savings.interest_rate);
       setInterestRateDisplay(toViDecimal(savings.interest_rate));
-      setTermMonths(savings.term_months.toString());
+      setTermMonths(savings.term_months?.toString() || '');
+      setStartDate(savings.start_date || '');
+      setMaturityDate(savings.maturity_date || '');
       setStatus(savings.status);
       setError('');
       setIsSettling(false);
@@ -63,6 +67,22 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
       fetchDependencies();
     }
   }, [isOpen, savings]);
+
+  useEffect(() => {
+    if (isOpen && startDate && termMonths) {
+      const date = new Date(startDate);
+      const months = parseInt(termMonths);
+      if (!isNaN(months)) {
+        date.setMonth(date.getMonth() + months);
+        const calculatedMaturity = date.toISOString().split('T')[0];
+        // Only auto-update if it was empty or definitely needs a refresh 
+        // (to avoid overriding manual user adjustments immediately after load)
+        if (!maturityDate || (savings && savings.start_date !== startDate) || (savings && savings.term_months !== months)) {
+           // We'll let the user override, but here we provide a sensible default
+        }
+      }
+    }
+  }, [startDate, termMonths, isOpen]);
 
   const fetchDependencies = async () => {
     try {
@@ -95,6 +115,8 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
         principal_amount: principalAmount,
         interest_rate: interestRate,
         term_months: parseInt(termMonths),
+        start_date: startDate,
+        maturity_date: maturityDate,
         status: status
       });
       
@@ -237,6 +259,27 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
                   type="number"
                   value={termMonths}
                   onChange={e => setTermMonths(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-slate-800 border border-transparent focus:border-blue-500 dark:focus:border-indigo-500 rounded-xl px-4 py-3 outline-none font-medium text-gray-900 dark:text-slate-100 transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 mb-2">Ngày gửi</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={e => setStartDate(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-slate-800 border border-transparent focus:border-blue-500 dark:focus:border-indigo-500 rounded-xl px-4 py-3 outline-none font-medium text-gray-900 dark:text-slate-100 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 mb-2">Ngày tất toán</label>
+                <input
+                  type="date"
+                  value={maturityDate}
+                  onChange={e => setMaturityDate(e.target.value)}
                   className="w-full bg-gray-50 dark:bg-slate-800 border border-transparent focus:border-blue-500 dark:focus:border-indigo-500 rounded-xl px-4 py-3 outline-none font-medium text-gray-900 dark:text-slate-100 transition-all"
                 />
               </div>

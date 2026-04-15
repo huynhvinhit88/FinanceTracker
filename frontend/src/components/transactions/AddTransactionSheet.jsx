@@ -7,20 +7,6 @@ import { Landmark, Info, Calculator } from 'lucide-react';
 import { formatCurrency } from '../../utils/format';
 import { calculateLoanSchedule } from '../../utils/loanCalculator';
 
-const DEFAULT_CATEGORIES = [
-  { name: 'Ăn uống', type: 'expense', icon: '🍔', color_hex: '#EF4444' },
-  { name: 'Di chuyển', type: 'expense', icon: '🚗', color_hex: '#3B82F6' },
-  { name: 'Mua sắm', type: 'expense', icon: '🛍️', color_hex: '#ec4899' },
-  { name: 'Hóa đơn', type: 'expense', icon: '🧾', color_hex: '#8B5CF6' },
-  { name: 'Trả nợ vay', type: 'expense', icon: '🏦', color_hex: '#EF4444' },
-  { name: 'Chi hộ', type: 'expense', icon: '🤝', color_hex: '#EF4444' },
-  { name: 'Lương', type: 'income', icon: '💰', color_hex: '#10B981' },
-  { name: 'Thưởng', type: 'income', icon: '🎁', color_hex: '#F59E0B' },
-  { name: 'Thu hộ', type: 'income', icon: '🤝', color_hex: '#10B981' },
-  { name: 'Thu hồi nợ', type: 'income', icon: '💰', color_hex: '#10B981' },
-  { name: 'Khác', type: 'transfer', icon: '🔄', color_hex: '#6B7280' },
-];
-
 export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData }) {
   const { loans, fetchLoans, updateLoanBalance, suggestInterest, getLoanTransactions } = useLoans();
   
@@ -76,25 +62,8 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
       if (accData.length > 0) setAccountId(accData[0].id);
 
       const catData = await db.categories.toArray();
-      let localCats = catData;
-      
-      // Seed missing default categories
-      const missingDefaults = DEFAULT_CATEGORIES.filter(dc => 
-        !localCats.some(lc => lc.name === dc.name && lc.type === dc.type)
-      );
-
-      if (missingDefaults.length > 0) {
-        const seedCats = missingDefaults.map(c => ({ 
-            ...c, 
-            id: crypto.randomUUID(),
-            is_default: true 
-        }));
-        await db.categories.bulkAdd(seedCats);
-        localCats = await db.categories.toArray();
-      }
-      
-      setCategories(localCats);
-      const relevantCats = localCats.filter(c => c.type === type);
+      setCategories(catData);
+      const relevantCats = catData.filter(c => c.type === type);
       if (relevantCats.length > 0) {
         // Only reset categoryId if current selection is not relevant
         const isCurrentValid = relevantCats.some(c => c.id === categoryId);

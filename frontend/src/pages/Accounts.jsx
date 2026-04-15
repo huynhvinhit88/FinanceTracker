@@ -255,8 +255,18 @@ export default function Accounts() {
                 >
                   {isSettled && <div className="absolute top-0 right-0 bg-gray-200 dark:bg-slate-700 text-xs px-2 py-1 font-bold text-gray-600 dark:text-slate-400 rounded-bl-lg">Đã tất toán</div>}
                   <h4 className="font-bold text-gray-900 dark:text-slate-100 text-lg mb-1">{sav.name}</h4>
-                  <div className="flex space-x-2 text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded w-fit mb-4 border border-emerald-100 dark:border-emerald-900/50">
-                    <span>{toViDecimal(sav.interest_rate)}%/năm</span> • <span>Kỳ hạn {sav.term_months} tháng</span>
+                  <div className="flex flex-wrap gap-2 text-xs font-medium mb-4">
+                    <div className="text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded border border-emerald-100 dark:border-emerald-900/50">
+                      {toViDecimal(sav.interest_rate)}%/năm
+                    </div>
+                    <div className="text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded border border-blue-100 dark:border-blue-900/50">
+                      Kỳ hạn {sav.term_months} tháng
+                    </div>
+                    {sav.maturity_date && (
+                      <div className="text-gray-600 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded border border-gray-200 dark:border-white/5">
+                        Tất toán: {sav.maturity_date.split('-').reverse().join('/')}
+                      </div>
+                    )}
                   </div>
                   
                   <div className="flex justify-between items-end border-t border-gray-100 dark:border-white/5 pt-3">

@@ -13,6 +13,8 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
   const [interestRateDisplay, setInterestRateDisplay] = useState('');
   const [interestRate, setInterestRate] = useState(0);
   const [termMonths, setTermMonths] = useState('');
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [maturityDate, setMaturityDate] = useState('');
   const [accountId, setAccountId] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [accounts, setAccounts] = useState([]);
@@ -26,8 +28,20 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
   useEffect(() => {
     if (isOpen) {
       fetchDependencies();
+      setStartDate(new Date().toISOString().split('T')[0]);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (startDate && termMonths) {
+      const date = new Date(startDate);
+      const months = parseInt(termMonths);
+      if (!isNaN(months)) {
+        date.setMonth(date.getMonth() + months);
+        setMaturityDate(date.toISOString().split('T')[0]);
+      }
+    }
+  }, [startDate, termMonths]);
 
   const fetchDependencies = async () => {
     try {
@@ -91,7 +105,8 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
         principal_amount: principalAmount,
         interest_rate: interestRate,
         term_months: parseInt(termMonths),
-        start_date: new Date().toISOString().split('T')[0],
+        start_date: startDate,
+        maturity_date: maturityDate,
         status: 'active'
       });
       
@@ -171,6 +186,27 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
               value={termMonths}
               onChange={e => setTermMonths(e.target.value)}
               placeholder="VD: 6"
+              className="w-full bg-gray-50 dark:bg-slate-800 border border-transparent focus:border-blue-500 dark:focus:border-indigo-500 rounded-xl px-4 py-3 outline-none font-medium text-gray-900 dark:text-slate-100 transition-all"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 mb-2">Ngày gửi</label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={e => setStartDate(e.target.value)}
+              className="w-full bg-gray-50 dark:bg-slate-800 border border-transparent focus:border-blue-500 dark:focus:border-indigo-500 rounded-xl px-4 py-3 outline-none font-medium text-gray-900 dark:text-slate-100 transition-all"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 mb-2">Ngày tất toán</label>
+            <input
+              type="date"
+              value={maturityDate}
+              onChange={e => setMaturityDate(e.target.value)}
               className="w-full bg-gray-50 dark:bg-slate-800 border border-transparent focus:border-blue-500 dark:focus:border-indigo-500 rounded-xl px-4 py-3 outline-none font-medium text-gray-900 dark:text-slate-100 transition-all"
             />
           </div>

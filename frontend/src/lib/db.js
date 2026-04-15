@@ -22,7 +22,7 @@ db.version(1).stores({
   loans: 'id, account_id, name, total_amount, interest_rate, term_months, start_date, type, status, minimum_payment, payment_date, interest_type, next_payment_amount',
   budgets: 'id, category_id, amount, month, type',
   investments: 'id, account_id, symbol, name, type, buy_price, quantity, purchase_date, current_price, initial_amount, maturity_date, interest_rate, interest_type, auto_renew, status, return_rate, loan_amount',
-  savings: 'id, account_id, name, principal_amount, interest_rate, term_months, term_unit, start_date, interest_type, auto_renew, status',
+  savings: 'id, account_id, name, principal_amount, interest_rate, term_months, term_unit, start_date, maturity_date, interest_type, auto_renew, status',
   goals: 'id, name, target_amount, current_amount, deadline, icon, color_hex, status'
 });
 
@@ -32,3 +32,32 @@ db.version(2).stores({}).upgrade(async (tx) => {
     .filter(acc => acc.type === 'Phải thu' && acc.sub_type === 'debt')
     .modify({ sub_type: 'receivable' });
 });
+
+export const DEFAULT_CATEGORIES = [
+  { name: 'Ăn uống', type: 'expense', icon: '🍔', color_hex: '#EF4444' },
+  { name: 'Di chuyển', type: 'expense', icon: '🚗', color_hex: '#3B82F6' },
+  { name: 'Mua sắm', type: 'expense', icon: '🛍️', color_hex: '#ec4899' },
+  { name: 'Hóa đơn', type: 'expense', icon: '🧾', color_hex: '#8B5CF6' },
+  { name: 'Trả nợ vay', type: 'expense', icon: '🏦', color_hex: '#EF4444' },
+  { name: 'Chi hộ', type: 'expense', icon: '🤝', color_hex: '#EF4444' },
+  { name: 'Lương', type: 'income', icon: '💰', color_hex: '#10B981' },
+  { name: 'Thưởng', type: 'income', icon: '🎁', color_hex: '#F59E0B' },
+  { name: 'Thu hộ', type: 'income', icon: '🤝', color_hex: '#10B981' },
+  { name: 'Thu hồi nợ', type: 'income', icon: '💰', color_hex: '#10B981' },
+  { name: 'Khác', type: 'transfer', icon: '🔄', color_hex: '#6B7280' },
+];
+
+export async function seedDefaultData() {
+  const seeded = await db.settings.get('has_seeded_categories');
+  if (seeded && seeded.value) return;
+
+  const count = await db.categories.count();
+  if (count === 0) {
+    await db.categories.bulkAdd(DEFAULT_CATEGORIES.map(c => ({
+      ...c,
+      id: crypto.randomUUID(),
+      is_default: true
+    })));
+  }
+  await db.settings.put({ key: 'has_seeded_categories', value: true });
+}

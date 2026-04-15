@@ -127,7 +127,7 @@ When processing historical transactions, the algorithm distinguishes between `lo
 ### 1. Opening a Savings Book (`AddSavingsSheet.jsx`)
 When a new savings book is created, the system performs an atomic-like operation:
 1. **Source Account Selection**: User must select a source account (non-debt types).
-2. **Category Selection**: User selects an expense category for the transaction (defaults to a "Tiết kiệm" category if found).
+2. **Category Assignment**: System automatically assigns an expense category for the transaction (defaults to a "Tiết kiệm" category if found).
 3. **Balance Validation**: System blocks the creation if `account.balance < principal_amount`.
 4. **Account Update**: `account.balance -= principal_amount`.
 5. **Transaction Creation**: A new transaction of type `'expense'` is created with the chosen `account_id` and `category_id` to log the withdrawal.

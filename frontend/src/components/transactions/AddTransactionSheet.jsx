@@ -3,7 +3,7 @@ import { BottomSheet } from '../ui/BottomSheet';
 import { db } from '../../lib/db';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { useLoans } from '../../hooks/useLoans';
-import { Landmark, Info, Calculator, AlertCircle } from 'lucide-react';
+import { Landmark, Info, Calculator } from 'lucide-react';
 import { formatCurrency } from '../../utils/format';
 import { calculateLoanSchedule } from '../../utils/loanCalculator';
 
@@ -256,20 +256,11 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
         return;
       }
     }
-
-    // Validation: Tiền gốc không được vượt quá tổng số tiền thực hiện
-    if (isLoanMode && principalRaw > rawAmount) {
-      setError(`Số tiền gốc trả (${formatCurrency(principalRaw)}₫) không thể lớn hơn tổng số tiền (${formatCurrency(rawAmount)}₫). Hãy điều chỉnh lại.`);
-      return;
-    }
     
     setLoading(true);
     setError('');
 
     try {
-      // Dùng effectivePrincipal để đảm bảo tiền gốc không vượt quá tổng số tiền
-      const effectivePrincipal = isLoanMode ? Math.min(principalRaw, rawAmount) : 0;
-
       const payload = {
         id: crypto.randomUUID(),
         account_id: accountId,
@@ -281,7 +272,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
         note: note.trim() || (type === 'repayment' ? `Trả nợ ${loans.find(l=>l.id===loanId)?.name}` : ''),
         loan_id: isLoanMode ? loanId : null,
         loan_payment_type: isLoanMode ? repaymentType : null,
-        loan_principal_amount: effectivePrincipal
+        loan_principal_amount: isLoanMode ? principalRaw : 0
       };
 
       await db.transactions.add(payload);
@@ -291,7 +282,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
 
       // Nếu là trả nợ vay, cập nhật số dư nợ
       if (isLoanMode && loanId) {
-        await updateLoanBalance(loanId, effectivePrincipal);
+        await updateLoanBalance(loanId, principalRaw);
       }
 
       resetForm();
@@ -443,15 +434,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
                 )}
               </div>
 
-              {principalRaw > rawAmount && rawAmount > 0 && (
-                <div className="p-3 rounded-2xl flex items-center space-x-2 bg-red-500 text-white animate-pulse">
-                  <AlertCircle size={14} className="flex-shrink-0" />
-                  <p className="text-[10px] font-black leading-relaxed">
-                    ⚠️ Số tiền gốc ({formatCurrency(principalRaw)}₫) đang lớn hơn tổng tiền ({formatCurrency(rawAmount)}₫)! Hãy giảm số tiền gốc xuống.
-                  </p>
-                </div>
-              )}
-              {rawAmount - principalRaw !== 0 && principalRaw <= rawAmount && (
+              {rawAmount - principalRaw !== 0 && (
                 <div className={`p-3 rounded-2xl flex items-center justify-between ${rawAmount - principalRaw > 0 ? 'bg-blue-600 text-white' : 'bg-amber-500 text-white'}`}>
                   <div className="flex items-center space-x-2">
                     <Calculator size={14} />

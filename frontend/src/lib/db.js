@@ -33,6 +33,10 @@ db.version(2).stores({}).upgrade(async (tx) => {
     .modify({ sub_type: 'receivable' });
 });
 
+db.version(3).stores({
+  savings: 'id, account_id, category_id, name, principal_amount, interest_rate, term_months, term_unit, start_date, maturity_date, interest_type, auto_renew, status',
+});
+
 export const DEFAULT_CATEGORIES = [
   { name: 'Ăn uống', type: 'expense', icon: '🍔', color_hex: '#EF4444' },
   { name: 'Di chuyển', type: 'expense', icon: '🚗', color_hex: '#3B82F6' },

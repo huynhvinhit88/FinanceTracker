@@ -87,12 +87,16 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
       });
 
       // 2. Tạo giao dịch chi tiền để mở sổ
+      const txDate = new Date(startDate);
+      const now = new Date();
+      txDate.setUTCHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+
       await db.transactions.add({
         id: crypto.randomUUID(),
         account_id: accountId,
         category_id: categoryId,
         amount: principalAmount,
-        date: new Date().toISOString(),
+        date: txDate.toISOString(),
         type: 'expense',
         note: `Mở sổ tiết kiệm: ${name.trim()}`
       });
@@ -101,6 +105,7 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
       await db.savings.add({
         id: crypto.randomUUID(),
         account_id: accountId,
+        category_id: categoryId,
         name: name.trim(),
         principal_amount: principalAmount,
         interest_rate: interestRate,

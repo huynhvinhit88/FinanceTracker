@@ -10,7 +10,8 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
   const { user } = useAuth();
   
   const [name, setName] = useState('');
-  const [interestRate, setInterestRate] = useState('');
+  const [interestRateDisplay, setInterestRateDisplay] = useState('');
+  const [interestRate, setInterestRate] = useState(0);
   const [termMonths, setTermMonths] = useState('');
   const [status, setStatus] = useState('active');
   
@@ -41,7 +42,8 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
     if (isOpen && savings) {
       setName(savings.name);
       setExternalValue(savings.principal_amount);
-      setInterestRate(savings.interest_rate.toString());
+      setInterestRate(savings.interest_rate);
+      setInterestRateDisplay(toViDecimal(savings.interest_rate));
       setTermMonths(savings.term_months.toString());
       setStatus(savings.status);
       setError('');
@@ -81,7 +83,7 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
     e.preventDefault();
     if (!name.trim()) return setError('Vui lòng nhập tên sổ');
     if (principalAmount <= 0) return setError('Số tiền gửi phải lớn hơn 0');
-    if (!interestRate || parseFloat(interestRate) < 0) return setError('Lãi suất không hợp lệ');
+    if (interestRate < 0) return setError('Lãi suất không hợp lệ');
     if (!termMonths || parseInt(termMonths) <= 0) return setError('Kỳ hạn phải lớn hơn 0 tháng');
     
     setLoading(true);
@@ -91,7 +93,7 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
       await db.savings.update(savings.id, {
         name: name.trim(),
         principal_amount: principalAmount,
-        interest_rate: parseFloat(interestRate),
+        interest_rate: interestRate,
         term_months: parseInt(termMonths),
         status: status
       });
@@ -105,7 +107,7 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
     }
   };
 
-  const projectedInterest = Math.round(principalAmount * (parseFloat(interestRate) / 100) * (parseInt(termMonths) / 12));
+  const projectedInterest = Math.round(principalAmount * (interestRate / 100) * (parseInt(termMonths) / 12));
 
   const handleSettleToggle = () => {
     if (!isSettling) {
@@ -215,10 +217,17 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 mb-2">Lãi suất (%/năm)</label>
                 <input
-                  type="number"
-                  step="0.01"
-                  value={interestRate}
-                  onChange={e => setInterestRate(e.target.value)}
+                  type="text"
+                  inputMode="decimal"
+                  value={interestRateDisplay}
+                  onChange={e => {
+                    const raw = e.target.value;
+                    if (!/^[\d,.]*$/.test(raw)) return;
+                    setInterestRateDisplay(raw);
+                    const parsed = fromViDecimal(raw);
+                    if (!isNaN(parsed)) setInterestRate(parsed);
+                  }}
+                  onBlur={() => setInterestRateDisplay(toViDecimal(interestRate))}
                   className="w-full bg-gray-50 dark:bg-slate-800 border border-transparent focus:border-blue-500 dark:focus:border-indigo-500 rounded-xl px-4 py-3 outline-none font-medium text-gray-900 dark:text-slate-100 transition-all"
                 />
               </div>

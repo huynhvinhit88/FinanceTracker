@@ -121,10 +121,10 @@ export function AddLoanSheet({ isOpen, onClose, onSuccess, initialProfile = null
     setExternalPrincipal(Number(profile.principal || profile.principal_amount) || 0);
     setExternalExtra(Number(profile.extraPayment || profile.extra_payment) || 0);
     setExternalThreshold(Number(profile.offsetThreshold || profile.offset_threshold) || 0);
-    setPromoRate(Number(profile.promoRate || profile.promo_rate) || 0);
+    setPromoRate(fromViDecimal(profile.promoRate || profile.promo_rate));
     setPromoMonths(Number(profile.promoMonths || profile.promo_months) || 0);
-    setBaseRate(Number(profile.baseRate || profile.base_rate) || 8.5);
-    setMarginRate(Number(profile.marginRate || profile.margin_rate) || 0);
+    setBaseRate(fromViDecimal(profile.baseRate || profile.base_rate) || 8.5);
+    setMarginRate(fromViDecimal(profile.marginRate || profile.margin_rate));
     setPeriods(profile.periods || []);
     if ((profile.periods || []).length > 0) setShowPeriods(true);
     setProfileApplied(true);
@@ -250,7 +250,7 @@ export function AddLoanSheet({ isOpen, onClose, onSuccess, initialProfile = null
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-[1.6fr_1fr] gap-4">
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1 block">Số tiền vay</label>
               <div className="relative">

@@ -107,17 +107,17 @@ export function AddBudgetSheet({ isOpen, onClose, onSuccess, initialMonth }) {
       <form onSubmit={handleSubmit} className="space-y-6">
         
         {error && (
-          <div className="p-3 bg-red-50 text-red-600 rounded-xl text-sm font-medium">
+          <div className="p-3 bg-red-50 dark:bg-rose-900/20 text-red-600 dark:text-rose-400 rounded-xl text-sm font-medium border border-red-100 dark:border-rose-900/30">
             {error}
           </div>
         )}
 
-        <div className="flex bg-gray-100 p-1 rounded-xl">
+        <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-xl">
           <button
             type="button"
             onClick={() => setPlanType('expense')}
             className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
-              planType === 'expense' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'
+              planType === 'expense' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-slate-500'
             }`}
           >
             Dự chi
@@ -126,7 +126,7 @@ export function AddBudgetSheet({ isOpen, onClose, onSuccess, initialMonth }) {
             type="button"
             onClick={() => setPlanType('income')}
             className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
-              planType === 'income' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500'
+              planType === 'income' ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-gray-500 dark:text-slate-500'
             }`}
           >
             Dự thu
@@ -135,7 +135,7 @@ export function AddBudgetSheet({ isOpen, onClose, onSuccess, initialMonth }) {
 
         <div className="space-y-4 pt-1">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
               {planType === 'expense' ? 'Hạn mức hàng tháng' : 'Mục tiêu thu về hàng tháng'}
             </label>
             <div className="relative">
@@ -145,23 +145,23 @@ export function AddBudgetSheet({ isOpen, onClose, onSuccess, initialMonth }) {
                 value={displayValue}
                 onChange={handleInputChange}
                 placeholder="0"
-                className={`w-full bg-gray-50 text-gray-900 text-3xl font-bold py-4 pr-24 pl-4 rounded-2xl border-none focus:ring-2 transition-all outline-none ${
+                className={`w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 text-3xl font-bold py-4 pr-24 pl-4 rounded-2xl border-none focus:ring-2 transition-all outline-none ${
                   planType === 'expense' ? 'focus:ring-blue-500' : 'focus:ring-emerald-500'
                 }`}
               />
               <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
-                <span className="text-xl font-bold text-gray-400">{suffix}</span>
+                <span className="text-xl font-bold text-gray-400 dark:text-slate-600">{suffix}</span>
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
              <div className="space-y-1">
-               <label className="block text-xs font-semibold text-gray-500 ml-1">Áp dụng cho</label>
+               <label className="block text-xs font-semibold text-gray-500 dark:text-slate-500 ml-1">Áp dụng cho</label>
                <select 
                  value={applyType} 
                  onChange={(e) => setApplyType(e.target.value)}
-                 className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm font-bold"
+                 className="w-full bg-gray-50 dark:bg-slate-800 dark:text-slate-200 border-none rounded-xl px-4 py-3 text-sm font-bold"
                >
                  <option value="default">Mặc định (Tất cả các tháng)</option>
                  <option value="monthly">Tháng cụ thể</option>
@@ -169,12 +169,12 @@ export function AddBudgetSheet({ isOpen, onClose, onSuccess, initialMonth }) {
              </div>
              {applyType === 'monthly' && (
                <div className="space-y-1">
-                 <label className="block text-xs font-semibold text-gray-500 ml-1">Chọn tháng</label>
+                 <label className="block text-xs font-semibold text-gray-500 dark:text-slate-500 ml-1">Chọn tháng</label>
                  <input 
                    type="month" 
                    value={selectedMonth} 
                    onChange={(e) => setSelectedMonth(e.target.value)}
-                   className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm font-bold outline-none"
+                   className="w-full bg-gray-50 dark:bg-slate-800 dark:text-slate-200 border-none rounded-xl px-4 py-3 text-sm font-bold outline-none"
                  />
                </div>
              )}
@@ -182,18 +182,18 @@ export function AddBudgetSheet({ isOpen, onClose, onSuccess, initialMonth }) {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Hạng mục</label>
+          <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">Hạng mục</label>
           <select
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
-            className="w-full bg-gray-50 border border-transparent focus:border-blue-500 rounded-xl px-4 py-3 outline-none"
+            className="w-full bg-gray-50 dark:bg-slate-800 dark:text-slate-200 border border-transparent dark:border-white/5 focus:border-blue-500 rounded-xl px-4 py-3 outline-none"
           >
             {categories.length === 0 && <option value="">Không có danh mục nào</option>}
             {categories.map(cat => (
               <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
             ))}
           </select>
-          <p className="text-[10px] text-gray-400 mt-2 px-1">
+          <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-2 px-1">
             {applyType === 'default' 
               ? 'Kế hoạch mặc định sẽ được áp dụng cho mọi tháng nếu tháng đó chưa có kế hoạch riêng.' 
               : `Kế hoạch này sẽ chỉ áp dụng duy nhất cho tháng ${selectedMonth.split('-').reverse().join('/')}.`}

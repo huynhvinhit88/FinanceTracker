@@ -12,6 +12,7 @@ export default function Home() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [transactions, setTransactions] = useState([]);
+  const [thisMonthTransactions, setThisMonthTransactions] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [savings, setSavings] = useState([]);
   const [investments, setInvestments] = useState([]);
@@ -29,6 +30,9 @@ export default function Home() {
 
   const fetchDashboardData = async () => {
     try {
+      const now = new Date();
+      const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+
       const accData = await db.accounts.toArray();
       setAccounts(accData);
 
@@ -46,7 +50,7 @@ export default function Home() {
 
       const catData = await db.categories.toArray();
 
-      // Fetch Transactions
+      // Fetch Recent Transactions for List (Limit 20)
       const txRaw = await db.transactions
         .orderBy('date')
         .reverse()
@@ -61,6 +65,18 @@ export default function Home() {
       }));
 
       setTransactions(txData);
+
+      // Fetch ALL transactions for the current month for summary/chart
+      const monthTxRaw = await db.transactions
+        .filter(tx => tx.date.startsWith(currentMonthStr))
+        .toArray();
+      
+      const monthTxData = monthTxRaw.map(tx => ({
+        ...tx,
+        category: catData.find(c => c.id === tx.category_id)
+      }));
+      
+      setThisMonthTransactions(monthTxData);
     } catch (error) {
       console.error('Error fetching dashboard data:', error.message);
     } finally {
@@ -114,14 +130,8 @@ export default function Home() {
   const globalNetWorth = totalAssetsGross - totalAllLiabilities;
 
   // Chart Data: Expense breakdown for current month
-  const currentMonthDateStr = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
-  const currentMonthExpenses = transactions.filter(tx =>
-    tx.type === 'expense' && tx.date.startsWith(currentMonthDateStr)
-  );
-
-  const currentMonthIncome = transactions.filter(tx =>
-    tx.type === 'income' && tx.date.startsWith(currentMonthDateStr)
-  );
+  const currentMonthExpenses = thisMonthTransactions.filter(tx => tx.type === 'expense');
+  const currentMonthIncome = thisMonthTransactions.filter(tx => tx.type === 'income');
 
   const totalExpenseAmount = currentMonthExpenses.reduce((sum, tx) => sum + tx.amount, 0);
   const totalIncomeAmount = currentMonthIncome.reduce((sum, tx) => sum + tx.amount, 0);

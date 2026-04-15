@@ -77,8 +77,9 @@ export default function Plan() {
       // If planViewMode is 'default', we only care about budgets with month = null
       // If planViewMode is 'monthly', we prefer budgets with month = selectedMonth, then fallback to month = null
       
-      const startOfMonth = `${selectedMonth}-01T00:00:00.000Z`;
-      const endOfMonth = `${selectedMonth}-31T23:59:59.999Z`;
+      const allTxRaw = await db.transactions
+        .filter(tx => tx.date.startsWith(selectedMonth))
+        .toArray();
 
       const allCategories = await db.categories.toArray();
       const allBudgetsRaw = await db.budgets.toArray();
@@ -87,10 +88,6 @@ export default function Plan() {
         ...b,
         category: allCategories.find(c => c.id === b.category_id)
       }));
-
-      const allTxRaw = await db.transactions
-        .filter(tx => tx.date >= startOfMonth && tx.date <= endOfMonth)
-        .toArray();
 
       const allAccounts = await db.accounts.toArray();
       const activeSavings = await db.savings.filter(s => s.status === 'active').toArray();

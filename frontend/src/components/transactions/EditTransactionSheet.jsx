@@ -220,8 +220,8 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
     try {
       const transactionDate = new Date(date);
       const now = new Date();
-      // Nếu là ngày hiện tại thì lấy giờ phút giây hiện tại, nếu ngày khác thì cũng nên gắn giờ hiện tại để giữ thứ tự nhập
-      transactionDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+      // Sử dụng setUTCHours với giờ địa phương để giữ nguyên ngày YYYY-MM-DD trong chuỗi ISO
+      transactionDate.setUTCHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
 
       const payload = {
         account_id: accountId,

@@ -230,9 +230,9 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
     try {
       const transactionDate = new Date(date);
       const now = new Date();
-      // Sử dụng setUTCHours với các thành phần của giờ địa phương 
-      // để đảm bảo chuỗi ISO luôn bắt đầu bằng YYYY-MM-DD bạn đã chọn.
-      transactionDate.setUTCHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+      // Sử dụng setHours với các thành phần của giờ địa phương 
+      // để đảm bảo ngày bạn chọn luôn được giữ đúng theo múi giờ địa phương.
+      transactionDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
 
       const payload = {
         id: crypto.randomUUID(),

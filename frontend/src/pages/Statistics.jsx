@@ -240,11 +240,25 @@ export default function Statistics() {
     };
   }, [savingsBooks, categories, accounts]);
 
-  const handleOpenDetail = (title, items) => {
+  const handleOpenDetail = (title, data) => {
+    let normalizedItems = data;
+    
+    // If it's the new object structure with books, sort them
+    if (data && data.type === 'savings_books' && Array.isArray(data.books)) {
+      normalizedItems = {
+        ...data,
+        books: [...data.books].sort((a, b) => new Date(a.maturity_date) - new Date(b.maturity_date))
+      };
+    } 
+    // Fallback for direct array (if any legacy calls exist)
+    else if (Array.isArray(data)) {
+      normalizedItems = [...data].sort((a, b) => new Date(a.maturity_date) - new Date(b.maturity_date));
+    }
+
     setDetailSheet({
       isOpen: true,
       title,
-      items: items.sort((a, b) => new Date(a.maturity_date) - new Date(b.maturity_date))
+      items: normalizedItems
     });
   };
 

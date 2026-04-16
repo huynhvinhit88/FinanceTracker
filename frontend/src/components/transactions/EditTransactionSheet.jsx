@@ -480,14 +480,14 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-5">
           <div className="space-y-1">
             <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Ngày thực hiện</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none"
+              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all"
             />
           </div>
           <div className="space-y-1">
@@ -496,7 +496,8 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
               type="text"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none"
+              placeholder="Tùy chọn..."
+              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all"
             />
           </div>
         </div>

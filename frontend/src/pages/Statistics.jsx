@@ -119,6 +119,38 @@ export default function Statistics() {
     };
   }, [transactions, accounts, savingsBooks]);
 
+  const monthlyCategoryData = useMemo(() => {
+    const data = Array.from({ length: 12 }, (_, i) => ({
+      month: `T${i + 1}`,
+      income: [],
+      expense: []
+    }));
+
+    transactions.forEach(tx => {
+      const month = new Date(tx.date).getMonth();
+      const cat = categories.find(c => c.id === tx.category_id);
+      const categoryName = cat ? cat.name : 'Chưa phân loại';
+      const categoryIcon = cat ? cat.icon : '📌';
+      
+      const targetList = tx.type === 'income' ? data[month].income : data[month].expense;
+      
+      let catEntry = targetList.find(c => c.name === categoryName);
+      if (!catEntry) {
+        catEntry = { name: categoryName, icon: categoryIcon, amount: 0 };
+        targetList.push(catEntry);
+      }
+      catEntry.amount += tx.amount;
+    });
+
+    // Sort categories by amount within each month
+    data.forEach(m => {
+      m.income.sort((a, b) => b.amount - a.amount);
+      m.expense.sort((a, b) => b.amount - a.amount);
+    });
+
+    return data;
+  }, [transactions, categories]);
+
   // --- SAVINGS SPECIFIC AGGREGATION ---
 
   const activeSavingsAnalysis = useMemo(() => {
@@ -227,377 +259,466 @@ export default function Statistics() {
   return (
     <div className="p-4 safe-top pb-24 min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
       {/* Header & Year Selector */}
-      <div className="flex justify-between items-center mb-6 mt-4 px-1">
+      <div className="flex justify-between items-center mb-8 mt-4 px-1">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100 tracking-tight">Thống kê</h1>
-          <p className="text-xs text-gray-400 dark:text-slate-500 font-medium">Báo cáo tài chính năm {selectedYear}</p>
+          <h1 className="text-2xl font-black text-gray-900 dark:text-slate-100 tracking-tight">Thống kê</h1>
+          <p className="text-xs text-gray-400 dark:text-slate-500 font-bold uppercase tracking-widest">Báo cáo tài chính {selectedYear}</p>
         </div>
-        <div className="flex items-center bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl p-1 shadow-sm transition-colors">
-          <button onClick={() => setSelectedYear(v => v - 1)} className="p-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-lg text-gray-400 dark:text-slate-500">
+        <div className="flex items-center bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-2xl p-1 shadow-sm shadow-blue-500/5">
+          <button onClick={() => setSelectedYear(v => v - 1)} className="p-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-xl text-gray-400 dark:text-slate-500 transition-colors">
             <ChevronLeft size={18} />
           </button>
-          <span className="px-4 font-bold text-gray-700 dark:text-slate-200 text-sm">{selectedYear}</span>
-          <button onClick={() => setSelectedYear(v => v + 1)} className="p-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-lg text-gray-400 dark:text-slate-500">
+          <span className="px-4 font-black text-gray-700 dark:text-slate-200 text-sm">{selectedYear}</span>
+          <button onClick={() => setSelectedYear(v => v + 1)} className="p-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-xl text-gray-400 dark:text-slate-500 transition-colors">
             <ChevronRight size={18} />
           </button>
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-gray-100 dark:border-white/5 shadow-sm relative overflow-hidden transition-colors">
-          <div className="absolute -right-4 -top-4 w-12 h-12 bg-emerald-50 dark:bg-emerald-950/30 rounded-full flex items-center justify-center text-emerald-500">
-            <TrendingUp size={20} />
-          </div>
-          <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Tổng Thu</p>
-          <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(totalSummary.income)}<span className="text-[10px] ml-0.5">₫</span></p>
+      {/* --- SECTION 1: THU NHẬP & CHI TIÊU --- */}
+      <div className="mb-12">
+        <div className="flex items-center mb-6 px-1">
+          <div className="w-1.5 h-6 bg-emerald-500 rounded-full mr-3 shadow-sm shadow-emerald-500/40" />
+          <h2 className="text-lg font-black text-gray-900 dark:text-slate-100 tracking-tight">Thu nhập & Chi tiêu</h2>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-gray-100 dark:border-white/5 shadow-sm relative overflow-hidden transition-colors">
-          <div className="absolute -right-4 -top-4 w-12 h-12 bg-red-50 dark:bg-rose-950/30 rounded-full flex items-center justify-center text-red-500 dark:text-rose-400">
-            <TrendingDown size={20} />
+        {/* Summary Cards */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-gray-100 dark:border-white/5 shadow-sm relative overflow-hidden group transition-all">
+            <div className="absolute -right-4 -top-4 w-12 h-12 bg-emerald-50 dark:bg-emerald-950/30 rounded-full flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
+              <TrendingUp size={20} />
+            </div>
+            <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Tổng Thu</p>
+            <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(totalSummary.income)}<span className="text-[10px] ml-0.5 opacity-70">₫</span></p>
           </div>
-          <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Tổng Chi</p>
-          <p className="text-lg font-black text-red-600 dark:text-rose-400">{formatCurrency(totalSummary.expense)}<span className="text-[10px] ml-0.5">₫</span></p>
+
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-gray-100 dark:border-white/5 shadow-sm relative overflow-hidden group transition-all">
+            <div className="absolute -right-4 -top-4 w-12 h-12 bg-rose-50 dark:bg-rose-950/30 rounded-full flex items-center justify-center text-rose-500 group-hover:scale-110 transition-transform">
+              <TrendingDown size={20} />
+            </div>
+            <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Tổng Chi</p>
+            <p className="text-lg font-black text-rose-600 dark:text-rose-400">{formatCurrency(totalSummary.expense)}<span className="text-[10px] ml-0.5 opacity-70">₫</span></p>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-gray-100 dark:border-white/5 shadow-sm relative overflow-hidden group transition-all col-span-2">
+            <div className="absolute -right-4 -top-4 w-12 h-12 bg-blue-50 dark:bg-indigo-950/30 rounded-full flex items-center justify-center text-blue-500 dark:text-indigo-400 group-hover:scale-110 transition-transform">
+              <PiggyBank size={20} />
+            </div>
+            <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Tích lũy ròng (năm)</p>
+            <p className={`text-xl font-black ${totalSummary.net >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-orange-600 dark:text-orange-400'}`}>
+              {formatCurrency(totalSummary.net)}<span className="text-xs ml-0.5 opacity-70">₫</span>
+            </p>
+          </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-gray-100 dark:border-white/5 shadow-sm relative overflow-hidden transition-colors">
-          <div className="absolute -right-4 -top-4 w-12 h-12 bg-blue-50 dark:bg-indigo-950/30 rounded-full flex items-center justify-center text-blue-500 dark:text-indigo-400">
-            <PiggyBank size={20} />
+        {/* Cash Flow Charts */}
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-sm transition-colors">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-bold text-gray-900 dark:text-slate-100 text-sm flex items-center">
+                <BarChart size={16} className="mr-2 text-blue-500" /> Dòng tiền hàng tháng
+              </h3>
+              <div className="flex space-x-2">
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="text-[9px] font-bold text-gray-400">Thu</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 rounded-full bg-rose-400" />
+                  <span className="text-[9px] font-bold text-gray-400">Chi</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="h-48 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthlyData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="currentColor" className="text-gray-100 dark:text-slate-800" />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 600 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b' }} 
+                    tickFormatter={(val) => val >= 1000000 ? `${(val/1000000).toFixed(1)}M` : val >= 1000 ? `${(val/1000).toFixed(0)}K` : val}
+                  />
+                  <Tooltip 
+                    cursor={{ fill: 'currentColor', className: 'text-gray-50 dark:text-slate-800/20' }}
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '11px' }}
+                    formatter={(val) => [`${formatCurrency(val)} ₫`]}
+                  />
+                  <Bar dataKey="income" fill="#10B981" radius={[3, 3, 0, 0]} barSize={10}/>
+                  <Bar dataKey="expense" fill="#FB7185" radius={[3, 3, 0, 0]} barSize={10}/>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-          <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Tích lũy năm</p>
-          <p className={`text-lg font-black ${totalSummary.net >= 0 ? 'text-blue-600 dark:text-indigo-400' : 'text-orange-600 dark:text-orange-400'}`}>
-            {formatCurrency(totalSummary.net)}<span className="text-[10px] ml-0.5">₫</span>
-          </p>
+
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-sm transition-colors">
+            <h3 className="font-bold text-gray-900 dark:text-slate-100 text-sm flex items-center mb-6">
+              <TrendingUp size={16} className="mr-2 text-indigo-500" /> Hiệu quả tích lũy
+            </h3>
+            <div className="h-48 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={monthlyData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorNet" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366F1" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#6366F1" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="currentColor" className="text-gray-100 dark:text-slate-800" />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 600 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b' }} />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '11px' }}
+                    formatter={(val) => [`${formatCurrency(val)} ₫`]}
+                  />
+                  <Area type="monotone" dataKey="net" stroke="#6366F1" strokeWidth={3} fillOpacity={1} fill="url(#colorNet)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-sm transition-colors">
+            <h3 className="font-bold text-gray-900 dark:text-slate-100 text-sm flex items-center mb-6">
+              <PieChartIcon size={16} className="mr-2 text-rose-500" /> Cơ cấu chi tiêu năm
+            </h3>
+            <div className="flex flex-col items-center">
+              <div className="h-44 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={categoryData} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value">
+                      {categoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', fontSize: '11px' }} formatter={(val) => [`${formatCurrency(val)} ₫`]} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-2 w-full mt-4">
+                {categoryData.slice(0, 6).map((cat, index) => (
+                  <div key={cat.name} className="flex items-center space-x-2">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                    <span className="text-[10px] font-bold text-gray-600 dark:text-slate-400 truncate flex-1">{cat.name}</span>
+                    <span className="text-[9px] text-gray-400 dark:text-slate-500 font-medium ml-auto">
+                      {Math.round((cat.value / (totalSummary.expense || 1)) * 100)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-gray-100 dark:border-white/5 shadow-sm relative overflow-hidden transition-colors">
-          <div className="absolute -right-4 -top-4 w-12 h-12 bg-indigo-50 dark:bg-indigo-950/30 rounded-full flex items-center justify-center text-indigo-500 dark:text-indigo-400">
-            <Calendar size={20} />
+        {/* Detailed Monthly Table */}
+        <div className="mt-8">
+          <h3 className="text-sm font-black text-gray-900 dark:text-slate-100 mb-4 px-2 tracking-tight">Báo cáo chi tiết từng tháng</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden transition-all">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-gray-50/50 dark:bg-slate-800/50 text-gray-500 dark:text-slate-500 font-bold uppercase tracking-widest text-[9px]">
+                  <tr>
+                    <th className="px-5 py-4">Tháng</th>
+                    <th className="px-5 py-4 text-emerald-600">Thu nhập</th>
+                    <th className="px-5 py-4 text-rose-500">Chi tiêu</th>
+                    <th className="px-5 py-4 text-blue-600">Tích lũy</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50 dark:divide-white/5 text-gray-700 dark:text-slate-300 font-bold">
+                  {monthlyData.filter(m => m.income > 0 || m.expense > 0).map((row, idx) => (
+                    <tr 
+                      key={row.month} 
+                      onClick={() => handleOpenDetail(`Chi tiết ${row.month}`, { 
+                        type: 'monthly_category', 
+                        income: monthlyCategoryData[idx].income, 
+                        expense: monthlyCategoryData[idx].expense 
+                      })}
+                      className="hover:bg-blue-50/50 dark:hover:bg-indigo-950/20 transition-all cursor-pointer active:scale-[0.98]"
+                    >
+                      <td className="px-5 py-5 font-black dark:text-slate-100 flex items-center">
+                        {row.month}
+                        <ChevronRightIcon size={12} className="ml-1 opacity-20" />
+                      </td>
+                      <td className="px-5 py-5 text-emerald-600 dark:text-emerald-400">{formatCurrency(row.income)}</td>
+                      <td className="px-5 py-5 text-rose-500 dark:text-rose-400">{formatCurrency(row.expense)}</td>
+                      <td className={`px-5 py-5 ${row.net >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-orange-500 dark:text-orange-400'}`}>
+                        {row.net > 0 ? '+' : ''}{formatCurrency(row.net)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-          <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Tổng Tiết kiệm</p>
-          <p className="text-lg font-black text-indigo-600 dark:text-indigo-400">{formatCurrency(totalSummary.totalSavingsBalance)}<span className="text-[10px] ml-0.5">₫</span></p>
         </div>
       </div>
 
-      {/* Main Bar Chart: Income vs Expense */}
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-sm mb-6 transition-colors">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="font-bold text-gray-900 dark:text-slate-100 border-l-4 border-blue-500 pl-3">Dòng tiền hàng tháng</h3>
-          <div className="flex space-x-2">
-            <div className="flex items-center space-x-1">
-              <div className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500">Thu</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <div className="w-2 h-2 rounded-full bg-red-400" />
-              <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500">Chi</span>
-            </div>
-          </div>
+      {/* --- SECTION 2: TÀI SẢN & TIẾT KIỆM --- */}
+      <div className="mb-12">
+        <div className="flex items-center mb-6 px-1">
+          <div className="w-1.5 h-6 bg-indigo-500 rounded-full mr-3 shadow-sm shadow-indigo-500/40" />
+          <h2 className="text-lg font-black text-gray-900 dark:text-slate-100 tracking-tight">Tài sản & Tiết kiệm</h2>
         </div>
-        
-        <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={monthlyData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="currentColor" className="text-gray-100 dark:text-slate-800" />
-              <XAxis 
-                dataKey="month" 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }}
-              />
-              <YAxis 
-                axisLine={false} 
-                tickLine={false}
-                tick={{ fontSize: 10, fill: '#64748b' }}
-                tickFormatter={(val) => val >= 1000000 ? `${(val/1000000).toFixed(1)}M` : val >= 1000 ? `${(val/1000).toFixed(0)}K` : val}
-              />
-              <Tooltip 
-                cursor={{ fill: 'currentColor', className: 'text-gray-50 dark:text-slate-800/50' }}
-                contentStyle={{ 
-                  borderRadius: '16px', 
-                  border: 'none', 
-                  boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', 
-                  fontSize: '12px',
-                  backgroundColor: 'var(--tw-bg-opacity, #ffffff)',
-                  color: 'var(--tw-text-opacity, #1e293b)'
-                }}
-                className="dark:!bg-slate-800 dark:!text-slate-100"
-                itemStyle={{ fontWeight: 'bold' }}
-                formatter={(val) => [`${formatCurrency(val)} ₫`]}
-              />
-              <Bar 
-                dataKey="income" 
-                fill="#10B981" 
-                radius={[4, 4, 0, 0]} 
-                barSize={12}
-                activeBar={<Cell fill="#059669" />}
-              />
-              <Bar 
-                dataKey="expense" 
-                fill="#F87171" 
-                radius={[4, 4, 0, 0]} 
-                barSize={12}
-                activeBar={<Cell fill="#EF4444" />}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
 
-      {/* --- NEW SAVINGS ANALYSIS SECTION --- */}
-      <div className="space-y-6">
-        <h2 className="text-lg font-black text-gray-900 dark:text-slate-100 px-2 flex items-center">
-          <PiggyBank className="mr-2 text-indigo-500" size={24} />
-          Chi tiết Sổ tiết kiệm hiện có
-        </h2>
-
-        {/* Savings Summary Cards */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-sm">
+        {/* Wealth Summary Cards */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-sm shadow-indigo-500/5">
             <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1 flex items-center">
-              <Wallet size={12} className="mr-1" /> Tổng vốn gửi
+              <Wallet size={12} className="mr-1 text-indigo-500" /> Tổng vốn gửi
             </p>
-            <p className="text-xl font-black text-gray-900 dark:text-slate-100">
-              {formatCurrency(activeSavingsAnalysis.totalPrincipal)}<span className="text-xs ml-0.5">₫</span>
+            <p className="text-xl font-black text-gray-900 dark:text-slate-100 tracking-tight">
+              {formatCurrency(activeSavingsAnalysis.totalPrincipal)}<span className="text-xs ml-0.5 opacity-50">₫</span>
             </p>
           </div>
-          <div className="bg-indigo-600 dark:bg-indigo-600/20 p-5 rounded-[2rem] border border-transparent dark:border-indigo-500/30 shadow-sm">
-            <p className="text-[10px] font-bold text-white/70 dark:text-indigo-400 uppercase tracking-widest mb-1 flex items-center">
+          <div className="bg-gradient-to-br from-indigo-600 to-blue-700 p-5 rounded-[2rem] border border-transparent shadow-lg shadow-indigo-500/20">
+            <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest mb-1 flex items-center">
               <TrendingUp size={12} className="mr-1" /> Lãi dự kiến (Tất cả)
             </p>
-            <p className="text-xl font-black text-white dark:text-indigo-400">
-              +{formatCurrency(activeSavingsAnalysis.totalInterest)}<span className="text-xs ml-0.5">₫</span>
+            <p className="text-xl font-black text-white tracking-tight">
+              +{formatCurrency(activeSavingsAnalysis.totalInterest)}<span className="text-xs ml-0.5 opacity-50">₫</span>
             </p>
           </div>
         </div>
 
-        {/* Analysis Tables & Mini Charts */}
-        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden transition-colors">
-          <div className="p-6">
-            <h3 className="font-bold text-gray-900 dark:text-slate-100 flex items-center mb-6">
-              <PieChartIcon size={18} className="mr-2 text-indigo-500" />
-              Cơ cấu theo Hạng mục
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+        {/* Savings Components */}
+        <div className="space-y-6">
+          {/* Category Distribution */}
+          <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden transition-colors">
+            <div className="p-6">
+              <h3 className="font-bold text-gray-900 dark:text-slate-100 flex items-center mb-6 text-sm">
+                <PieChartIcon size={16} className="mr-2 text-indigo-500" /> Cơ cấu theo Hạng mục
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <div className="space-y-4">
+                  {activeSavingsAnalysis.byCategory.map((cat, idx) => (
+                    <div 
+                      key={cat.name} 
+                      onClick={() => handleOpenDetail(`Sổ tiết kiệm: ${cat.name}`, { type: 'savings_books', books: cat.books })}
+                      className="group flex items-center justify-between p-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-white/5"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-slate-800 flex items-center justify-center text-lg">{cat.icon}</div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-900 dark:text-slate-100">{cat.name}</p>
+                          <p className="text-[10px] font-medium text-gray-400 dark:text-slate-500">{Math.round((cat.amount / activeSavingsAnalysis.totalPrincipal) * 100)}% tổng vốn</p>
+                        </div>
+                      </div>
+                      <div className="text-right flex items-center">
+                        <div className="mr-3">
+                          <p className="text-sm font-black text-gray-900 dark:text-slate-100">{formatCurrency(cat.amount)}₫</p>
+                          <p className="text-[10px] font-bold text-emerald-500">+{formatCurrency(cat.interest)}₫ lãi</p>
+                        </div>
+                        <ChevronRightIcon size={16} className="text-gray-300 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="h-48 hidden md:block">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={activeSavingsAnalysis.byCategory}
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="amount"
+                      >
+                        {activeSavingsAnalysis.byCategory.map((_, idx) => (
+                          <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Account Distribution */}
+          <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden transition-colors">
+            <div className="p-6">
+              <h3 className="font-bold text-gray-900 dark:text-slate-100 flex items-center mb-6 text-sm">
+                <Landmark size={16} className="mr-2 text-blue-500" /> Cơ cấu theo Tài khoản
+              </h3>
               <div className="space-y-4">
-                {activeSavingsAnalysis.byCategory.map((cat, idx) => (
+                {activeSavingsAnalysis.byAccount.map((acc, idx) => (
                   <div 
-                    key={cat.name} 
-                    onClick={() => handleOpenDetail(`Sổ tiết kiệm: ${cat.name}`, cat.books)}
+                    key={acc.name} 
+                    onClick={() => handleOpenDetail(`Tài khoản: ${acc.name}`, { type: 'savings_books', books: acc.books })}
                     className="group flex items-center justify-between p-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-white/5"
                   >
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-slate-800 flex items-center justify-center text-lg">{cat.icon}</div>
+                      <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+                        <Landmark size={20} className="text-blue-500" />
+                      </div>
                       <div>
-                        <p className="text-sm font-bold text-gray-900 dark:text-slate-100">{cat.name}</p>
-                        <p className="text-[10px] font-medium text-gray-400 dark:text-slate-500">{Math.round((cat.amount / activeSavingsAnalysis.totalPrincipal) * 100)}% tổng vốn</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-slate-100">{acc.name}</p>
+                        <p className="text-[10px] font-medium text-gray-400 dark:text-slate-500">{Math.round((acc.amount / activeSavingsAnalysis.totalPrincipal) * 100)}% tổng vốn</p>
                       </div>
                     </div>
                     <div className="text-right flex items-center">
                       <div className="mr-3">
-                        <p className="text-sm font-black text-gray-900 dark:text-slate-100">{formatCurrency(cat.amount)}₫</p>
-                        <p className="text-[10px] font-bold text-emerald-500">+{formatCurrency(cat.interest)}₫ lãi</p>
+                        <p className="text-sm font-black text-gray-900 dark:text-slate-100">{formatCurrency(acc.amount)}₫</p>
+                        <p className="text-[10px] font-bold text-emerald-500">+{formatCurrency(acc.interest)}₫ lãi</p>
                       </div>
                       <ChevronRightIcon size={16} className="text-gray-300 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="h-48 hidden md:block">
+            </div>
+          </div>
+
+          {/* Maturity Schedule Timeline */}
+          <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden transition-colors">
+            <div className="p-6">
+              <h3 className="font-bold text-gray-900 dark:text-slate-100 flex items-center mb-6 text-sm">
+                <Clock size={16} className="mr-2 text-orange-500" /> Lịch trình nhận tiền (Gốc + Lãi)
+              </h3>
+              
+              {/* Timeline Chart */}
+              <div className="h-40 w-full mb-8">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={activeSavingsAnalysis.byCategory}
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="amount"
-                    >
-                      {activeSavingsAnalysis.byCategory.map((_, idx) => (
-                        <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
-                      ))}
-                    </Pie>
-                  </PieChart>
+                  <BarChart data={activeSavingsAnalysis.timeline} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
+                    <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b' }} />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '11px' }}
+                      formatter={(val) => [`${formatCurrency(val)} ₫`]}
+                    />
+                    <Bar dataKey="principal" fill="#6366F1" radius={[4, 4, 0, 0]} barSize={15} stackId="a" />
+                    <Bar dataKey="interest" fill="#10B981" radius={[4, 4, 0, 0]} barSize={15} stackId="a" />
+                  </BarChart>
                 </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden transition-colors">
-          <div className="p-6">
-            <h3 className="font-bold text-gray-900 dark:text-slate-100 flex items-center mb-6">
-              <Landmark size={18} className="mr-2 text-blue-500" />
-              Cơ cấu theo Tài khoản
-            </h3>
-            <div className="space-y-4">
-              {activeSavingsAnalysis.byAccount.map((acc, idx) => (
-                <div 
-                  key={acc.name} 
-                  onClick={() => handleOpenDetail(`Tài khoản: ${acc.name}`, acc.books)}
-                  className="group flex items-center justify-between p-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-white/5"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
-                      <Landmark size={20} className="text-blue-500" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-gray-900 dark:text-slate-100">{acc.name}</p>
-                      <p className="text-[10px] font-medium text-gray-400 dark:text-slate-500">{Math.round((acc.amount / activeSavingsAnalysis.totalPrincipal) * 100)}% tổng vốn</p>
-                    </div>
+                <div className="flex justify-center space-x-6 mt-2">
+                  <div className="flex items-center space-x-1.5">
+                    <div className="w-2 h-2 rounded-full bg-indigo-500" />
+                    <span className="text-[9px] font-bold text-gray-400">Gốc</span>
                   </div>
-                  <div className="text-right flex items-center">
-                    <div className="mr-3">
-                      <p className="text-sm font-black text-gray-900 dark:text-slate-100">{formatCurrency(acc.amount)}₫</p>
-                      <p className="text-[10px] font-bold text-emerald-500">+{formatCurrency(acc.interest)}₫ lãi</p>
-                    </div>
-                    <ChevronRightIcon size={16} className="text-gray-300 group-hover:translate-x-1 transition-transform" />
+                  <div className="flex items-center space-x-1.5">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span className="text-[9px] font-bold text-gray-400">Lãi dự kiến</span>
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Maturity Schedule Timeline */}
-        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden transition-colors">
-          <div className="p-6">
-            <h3 className="font-bold text-gray-900 dark:text-slate-100 flex items-center mb-6">
-              <Clock size={18} className="mr-2 text-orange-500" />
-              Lịch trình nhận tiền (Gốc + Lãi)
-            </h3>
-            
-            {/* Timeline Chart */}
-            <div className="h-40 w-full mb-8">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={activeSavingsAnalysis.timeline} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b' }} />
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '11px' }}
-                    formatter={(val) => [`${formatCurrency(val)} ₫`]}
-                  />
-                  <Bar dataKey="principal" fill="#6366F1" radius={[4, 4, 0, 0]} barSize={15} stackId="a" />
-                  <Bar dataKey="interest" fill="#10B981" radius={[4, 4, 0, 0]} barSize={15} stackId="a" />
-                </BarChart>
-              </ResponsiveContainer>
-              <div className="flex justify-center space-x-6 mt-2">
-                <div className="flex items-center space-x-1.5">
-                  <div className="w-2 h-2 rounded-full bg-indigo-500" />
-                  <span className="text-[9px] font-bold text-gray-400">Gốc</span>
-                </div>
-                <div className="flex items-center space-x-1.5">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span className="text-[9px] font-bold text-gray-400">Lãi dự kiến</span>
                 </div>
               </div>
-            </div>
 
-            {/* Timeline List */}
-            <div className="space-y-4">
-              {activeSavingsAnalysis.timeline.map((item, idx) => (
-                <div 
-                  key={item.label} 
-                  onClick={() => handleOpenDetail(`Đáo hạn: ${item.label}`, item.books)}
-                  className="flex items-center p-3 rounded-2xl bg-gray-50 dark:bg-slate-800/50 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
-                >
-                  <div className="w-12 text-center border-r border-gray-200 dark:border-white/5 mr-4">
-                    <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase">Tháng</p>
-                    <p className="text-sm font-black text-indigo-600 dark:text-indigo-400">{item.label}</p>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-center">
-                      <p className="text-sm font-black text-gray-900 dark:text-slate-100">{formatCurrency(item.principal + item.interest)}₫</p>
-                      <ChevronRightIcon size={14} className="text-gray-300" />
+              {/* Timeline List */}
+              <div className="space-y-3">
+                {activeSavingsAnalysis.timeline.map((item, idx) => (
+                  <div 
+                    key={item.label} 
+                    onClick={() => handleOpenDetail(`Đáo hạn: ${item.label}`, { type: 'savings_books', books: item.books })}
+                    className="flex items-center p-4 rounded-3xl bg-gray-50 dark:bg-slate-800/50 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all cursor-pointer border border-transparent hover:border-indigo-100 dark:hover:border-indigo-900/30"
+                  >
+                    <div className="w-12 text-center border-r border-gray-200 dark:border-white/5 mr-4">
+                      <p className="text-[8px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-tighter">Tháng</p>
+                      <p className="text-sm font-black text-indigo-600 dark:text-indigo-400">{item.label}</p>
                     </div>
-                    <div className="flex justify-between mt-1">
-                      <p className="text-[10px] text-gray-500">Gốc: {formatCurrency(item.principal)}</p>
-                      <p className="text-[10px] text-emerald-600 font-bold">Lãi: +{formatCurrency(item.interest)}</p>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-center">
+                        <p className="text-sm font-black text-gray-900 dark:text-slate-100">{formatCurrency(item.principal + item.interest)}₫</p>
+                        <ChevronRightIcon size={14} className="text-gray-300 opacity-50" />
+                      </div>
+                      <div className="flex justify-between mt-1">
+                        <p className="text-[9px] font-medium text-gray-500">Gốc: {formatCurrency(item.principal)}</p>
+                        <p className="text-[9px] text-emerald-600 font-bold">Lãi: +{formatCurrency(item.interest)}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Detail BottomSheet */}
+      {/* Detail BottomSheet Component */}
       <BottomSheet 
         isOpen={detailSheet.isOpen} 
         onClose={() => setDetailSheet({ ...detailSheet, isOpen: false })}
         title={detailSheet.title}
       >
-        <div className="space-y-4 pb-8">
-          {detailSheet.items.map((book, idx) => (
-            <div key={book.id || idx} className="p-4 bg-gray-50 dark:bg-slate-800 rounded-2xl border border-transparent dark:border-white/5">
-              <div className="flex justify-between items-start mb-3">
-                <h4 className="font-bold text-gray-900 dark:text-slate-100">{book.name}</h4>
-                <div className="bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded text-[10px] font-black text-blue-600 dark:text-blue-400">
-                  {book.interest_rate}% / năm
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4 text-xs">
+        <div className="pb-10">
+          {/* Monthly Category Detail View */}
+          {detailSheet.items.type === 'monthly_category' && (
+            <div className="space-y-6">
+              {/* Income Section */}
+              {detailSheet.items.income.length > 0 && (
                 <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tiền gốc</p>
-                  <p className="font-black text-gray-900 dark:text-slate-100">{formatCurrency(book.principal_amount)}₫</p>
+                  <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-3 px-1">Thu nhập</h4>
+                  <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-100 dark:border-white/5 divide-y divide-gray-50 dark:divide-white/5 shadow-sm">
+                    {detailSheet.items.income.map((cat, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-lg">{cat.icon}</div>
+                          <span className="text-sm font-bold text-gray-800 dark:text-slate-200">{cat.name}</span>
+                        </div>
+                        <span className="text-sm font-black text-emerald-600">+{formatCurrency(cat.amount)}₫</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
+              )}
+
+              {/* Expense Section */}
+              {detailSheet.items.expense.length > 0 && (
                 <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Lãi nhận được</p>
-                  <p className="font-black text-emerald-600">+{formatCurrency(book.expected_interest)}₫</p>
+                  <h4 className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-3 px-1">Chi tiêu</h4>
+                  <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-100 dark:border-white/5 divide-y divide-gray-50 dark:divide-white/5 shadow-sm">
+                    {detailSheet.items.expense.map((cat, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center text-lg">{cat.icon}</div>
+                          <span className="text-sm font-bold text-gray-800 dark:text-slate-200">{cat.name}</span>
+                        </div>
+                        <span className="text-sm font-black text-rose-500">{formatCurrency(cat.amount)}₫</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Ngày gửi</p>
-                  <p className="font-bold text-gray-700 dark:text-slate-300">{new Date(book.start_date).toLocaleDateString('vi-VN')}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Ngày đáo hạn</p>
-                  <p className="font-bold text-indigo-600 dark:text-indigo-400">{new Date(book.maturity_date).toLocaleDateString('vi-VN')}</p>
-                </div>
-              </div>
+              )}
+              
+              {detailSheet.items.income.length === 0 && detailSheet.items.expense.length === 0 && (
+                <div className="text-center py-10 text-gray-400 italic">Không có giao dịch nào trong tháng này</div>
+              )}
             </div>
-          ))}
-          {detailSheet.items.length === 0 && (
-            <div className="text-center py-8 text-gray-400 italic">Không có dữ liệu sổ tiết kiệm</div>
+          )}
+
+          {/* Savings Books Detail View */}
+          {detailSheet.items.type === 'savings_books' && (
+            <div className="space-y-4">
+              {detailSheet.items.books.map((book, idx) => (
+                <div key={book.id || idx} className="p-4 bg-gray-50 dark:bg-slate-800 rounded-2xl border border-transparent dark:border-white/5">
+                  <div className="flex justify-between items-start mb-3">
+                    <h4 className="font-bold text-gray-900 dark:text-slate-100 text-sm">{book.name}</h4>
+                    <div className="bg-blue-50 dark:bg-blue-900/40 px-2 py-1 rounded-lg text-[9px] font-black text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800">
+                      {book.interest_rate}% / năm
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-[11px]">
+                    <div>
+                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Tiền gốc</p>
+                      <p className="font-black text-gray-900 dark:text-slate-100">{formatCurrency(book.principal_amount)}₫</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Lãi nhận được</p>
+                      <p className="font-black text-emerald-600">+{formatCurrency(book.expected_interest)}₫</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Ngày gửi</p>
+                      <p className="font-bold text-gray-600 dark:text-slate-400">{new Date(book.start_date).toLocaleDateString('vi-VN')}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Ngày đáo hạn</p>
+                      <p className="font-bold text-indigo-600 dark:text-indigo-400">{new Date(book.maturity_date).toLocaleDateString('vi-VN')}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {detailSheet.items.books.length === 0 && (
+                <div className="text-center py-10 text-gray-400 italic">Không có dữ liệu sổ tiết kiệm</div>
+              )}
+            </div>
           )}
         </div>
       </BottomSheet>
-
-      {/* Bonus Table: Detailed Monthly Breakdown */}
-      <div className="mt-8">
-        <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100 mb-4 px-2">Báo cáo chi tiết từng tháng</h3>
-        <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden transition-colors">
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-slate-500 font-bold uppercase tracking-widest text-[9px]">
-                <tr>
-                  <th className="px-4 py-4">Tháng</th>
-                  <th className="px-4 py-4 text-emerald-600">Thu nhập</th>
-                  <th className="px-4 py-4 text-red-500">Chi tiêu</th>
-                  <th className="px-4 py-4 text-blue-600">Tích lũy</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50 dark:divide-white/5 text-gray-700 dark:text-slate-300 font-bold">
-                {monthlyData.filter(m => m.income > 0 || m.expense > 0).map((row) => (
-                  <tr key={row.month} className="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
-                    <td className="px-4 py-4 font-black dark:text-slate-100">{row.month}</td>
-                    <td className="px-4 py-4 text-emerald-600 dark:text-emerald-400">{formatCurrency(row.income)}</td>
-                    <td className="px-4 py-4 text-red-500 dark:text-rose-400">{formatCurrency(row.expense)}</td>
-                    <td className={`px-4 py-4 ${row.net >= 0 ? 'text-blue-600 dark:text-indigo-400' : 'text-orange-500 dark:text-orange-400'}`}>
-                      {row.net > 0 ? '+' : ''}{formatCurrency(row.net)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {monthlyData.filter(m => m.income > 0 || m.expense > 0).length === 0 && (
-            <div className="p-8 text-center text-gray-400 dark:text-slate-600 italic">
-              Không có dữ liệu giao dịch trong năm {selectedYear}
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

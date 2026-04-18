@@ -46,6 +46,7 @@ export default function Plan() {
   const { displayValue: displayManualSaving, value: manualSaving, handleInputChange: handleManualSavingChange, setExternalValue: setManualSaving } = useCurrencyInput('');
 
   useEffect(() => {
+    if (!targetProjectionMonth) return;
     const [tYear, tMonth] = targetProjectionMonth.split('-').map(Number);
     const now = new Date();
     const cYear = now.getFullYear();
@@ -53,11 +54,26 @@ export default function Plan() {
     
     const diff = (tYear - cYear) * 12 + (tMonth - cMonth);
     setProjectionMonths(Math.max(1, diff));
-  }, [targetProjectionMonth]);
+    
+    // Persist to DB
+    if (user) {
+      db.settings.put({ key: 'targetProjectionMonth', value: targetProjectionMonth });
+    }
+  }, [targetProjectionMonth, user]);
 
   useEffect(() => {
-    fetchAllData();
+    if (user) {
+      fetchAllData();
+      loadSettings();
+    }
   }, [user, planViewMode, selectedMonth]);
+
+  const loadSettings = async () => {
+    const record = await db.settings.get('targetProjectionMonth');
+    if (record && record.value) {
+      setTargetProjectionMonth(record.value);
+    }
+  };
 
   // Load monthly savings plan from localStorage
   useEffect(() => {

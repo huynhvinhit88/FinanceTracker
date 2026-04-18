@@ -5,14 +5,11 @@ import { db } from '../lib/db';
 import { 
   exportDatabaseToJSON, 
   importDatabaseFromJSON,
-  initGoogleDriveSync,
-  uploadToDrive,
-  downloadFromDrive,
-  checkRemoteBackup,
-  getGoogleUserInfo,
-  disconnectGoogleDrive
+  selectDirectoryHandle,
+  verifyDirectoryPermission,
+  writeBlobToFolder
 } from '../lib/syncService';
-import { Cloud, RefreshCw, CloudDownload, CloudUpload, FolderTree, LogOut, Trash2, ChevronRight, Download, ShieldCheck } from 'lucide-react';
+import { RefreshCw, CloudDownload, CloudUpload, FolderTree, LogOut, Trash2, ChevronRight, Download, ShieldCheck, Lock, FolderOpen } from 'lucide-react';
 import { CategoryManagementSheet } from '../components/settings/CategoryManagementSheet';
 import { ChangePinSheet } from '../components/settings/ChangePinSheet';
 import { LoanCalculatorSheet } from '../components/tools/LoanCalculatorSheet';
@@ -30,9 +27,10 @@ export default function Settings() {
   const [exportLoading, setExportLoading] = useState(false);
   const [wipeLoading, setWipeLoading] = useState(false);
   const [showExportPanel, setShowExportPanel] = useState(false);
-  const [syncLoading, setSyncLoading] = useState(false);
-  const [lastSync, setLastSync] = useState(null);
-  const [googleUser, setGoogleUser] = useState(null);
+  const [showBackupPanel, setShowBackupPanel] = useState(false);
+  const [folderHandle, setFolderHandle] = useState(null);
+  const [hasFolderPermission, setHasFolderPermission] = useState(false);
+  const [selectedExportYear, setSelectedExportYear] = useState(new Date().getFullYear());
   const [exportSelections, setExportSelections] = useState({
     transactions: true,
     accounts: true,
@@ -43,19 +41,40 @@ export default function Settings() {
 
   useEffect(() => {
     if (user) {
-      fetchLastSync();
-      initGoogleDriveSync();
+      loadDirectoryHandle();
     }
   }, [user]);
 
-  const fetchLastSync = async () => {
-    const record = await db.settings.get('lastDriveSync');
-    if (record) setLastSync(record.value);
+  const loadDirectoryHandle = async () => {
+    const record = await db.settings.get('localDirectoryHandle');
+    if (record && record.value) {
+      setFolderHandle(record.value);
+      // Check permission but don't prompt immediately
+      const granted = await verifyDirectoryPermission(record.value, false);
+      setHasFolderPermission(granted);
+    }
   };
 
-  const fetchGoogleUser = async () => {
-    const info = await getGoogleUserInfo();
-    if (info) setGoogleUser(info);
+  const handleSelectFolder = async () => {
+    try {
+      const handle = await selectDirectoryHandle();
+      setFolderHandle(handle);
+      setHasFolderPermission(true);
+      alert(`Đã chọn thư mục: ${handle.name}`);
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        alert(err.message);
+      }
+    }
+  };
+
+  const handleVerifyFolder = async () => {
+    if (!folderHandle) return;
+    const granted = await verifyDirectoryPermission(folderHandle, true);
+    setHasFolderPermission(granted);
+    if (granted) {
+      alert('Đã khôi phục quyền truy cập thư mục.');
+    }
   };
 
   const handleSignOut = async () => {
@@ -79,8 +98,18 @@ export default function Settings() {
     return [headerLine, ...dataLines].join('\n');
   };
 
-  const downloadCSV = (content, filename) => {
+  const downloadCSV = async (content, filename) => {
     const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' });
+    
+    if (folderHandle && hasFolderPermission) {
+      try {
+        await writeBlobToFolder(folderHandle, filename, blob);
+        return true;
+      } catch (err) {
+        console.warn("Folder save failed, falling back to download", err);
+      }
+    }
+
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -89,17 +118,38 @@ export default function Settings() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    return true;
   };
 
   const handleExportData = async () => {
     setExportLoading(true);
     try {
-      if (exportSelections.transactions) {
-        // Fallback or handle CSV logic here using Dexie if needed.
-        // Or simply export entire JSON backup:
-        await exportDatabaseToJSON();
-        alert('Đã xuất file dự phòng định dạng JSON.');
+      // 1. JSON Backup
+      if (exportSelections.transactions && !exportSelections.accounts && !exportSelections.goals) {
+         // Special case: if ONLY transactions is checked, maybe they want JSON? 
+         // Actually, let's keep it simple: The "Confirm" button is inside the CSV panel.
       }
+
+      const results = [];
+      
+      if (exportSelections.transactions) {
+        results.push(fetchAndExportTransactions(selectedExportYear));
+      }
+      if (exportSelections.accounts) {
+        results.push(fetchAndExportAccounts());
+      }
+      if (exportSelections.goals) {
+        results.push(fetchAndExportGoals());
+      }
+      if (exportSelections.loanProfiles) {
+        results.push(fetchAndExportLoans());
+      }
+      if (exportSelections.projection) {
+        results.push(generateAndExportProjection());
+      }
+
+      await Promise.all(results);
+      alert(hasFolderPermission ? `Đã xuất toàn bộ báo cáo vào thư mục ${folderHandle.name}` : 'Đã tải xuống các tệp báo cáo.');
     } catch (err) {
       alert('Lỗi khi xuất dữ liệu: ' + err.message);
     } finally {
@@ -107,8 +157,132 @@ export default function Settings() {
     }
   };
 
+  const fetchAndExportTransactions = async (year) => {
+    const isAll = year === 'all';
+    const start = isAll ? '1970-01-01T00:00:00.000Z' : `${year}-01-01T00:00:00.000Z`;
+    const end = isAll ? '2099-12-31T23:59:59.999Z' : `${year}-12-31T23:59:59.999Z`;
+    
+    const txs = await db.transactions
+      .filter(t => t.date >= start && t.date <= end)
+      .toArray();
+    
+    const cats = await db.categories.toArray();
+    const accs = await db.accounts.toArray();
+    
+    const rows = txs.map(t => ({
+      'Ngày': new Date(t.date).toLocaleDateString('vi-VN'),
+      'Loại': t.type === 'income' ? 'Thu' : (t.type === 'expense' ? 'Chi' : 'Chuyển'),
+      'Hạng mục': cats.find(c => c.id === t.category_id)?.name || 'Khác',
+      'Tài khoản': accs.find(a => a.id === t.account_id)?.name || 'N/A',
+      'Số tiền': t.amount,
+      'Ghi chú': t.note || '',
+      'Tags': (t.tags || []).join(', ')
+    }));
+    
+    return downloadCSV(toCSV(['Ngày', 'Loại', 'Hạng mục', 'Tài khoản', 'Số tiền', 'Ghi chú', 'Tags'], rows), isAll ? 'Giao_dich_Tat_ca.csv' : `Giao_dich_${year}.csv`);
+  };
+
+  const fetchAndExportAccounts = async () => {
+    const accs = await db.accounts.toArray();
+    const rows = accs.map(a => ({
+      'Tên tài khoản': a.name,
+      'Loại': a.type,
+      'Phân loại': a.sub_type,
+      'Số dư': a.balance,
+      'Tiền tệ': a.currency,
+      'Trạng thái': a.status === 'active' ? 'Đang dùng' : 'Ẩn'
+    }));
+    return downloadCSV(toCSV(['Tên tài khoản', 'Loại', 'Phân loại', 'Số dư', 'Tiền tệ', 'Trạng thái'], rows), 'Danh_sach_tai_khoan.csv');
+  };
+
+  const fetchAndExportGoals = async () => {
+    const goals = await db.goals.toArray();
+    const rows = goals.map(g => ({
+      'Mục tiêu': g.name,
+      'Mục tiêu (đ)': g.target_amount,
+      'Hiện có (đ)': g.current_amount,
+      'Hạn chót': g.deadline ? new Date(g.deadline).toLocaleDateString('vi-VN') : '',
+      'Trạng thái': g.status
+    }));
+    return downloadCSV(toCSV(['Mục tiêu', 'Mục tiêu (đ)', 'Hiện có (đ)', 'Hạn chót', 'Trạng thái'], rows), 'Muc_tieu_tiet_kiem.csv');
+  };
+
+  const fetchAndExportLoans = async () => {
+    const loans = await db.loans.toArray();
+    const rows = loans.map(l => ({
+      'Tên': l.name,
+      'Tổng nợ': l.total_amount,
+      'Lãi suất (%)': l.interest_rate,
+      'Kỳ hạn (tháng)': l.term_months,
+      'Ngày bắt đầu': l.start_date ? new Date(l.start_date).toLocaleDateString('vi-VN') : '',
+      'Trạng thái': l.status
+    }));
+    return downloadCSV(toCSV(['Tên', 'Tổng nợ', 'Lãi suất (%)', 'Kỳ hạn (tháng)', 'Ngày bắt đầu', 'Trạng thái'], rows), 'Khoan_vay.csv');
+  };
+
+  const generateAndExportProjection = async () => {
+    // Logic from Plan.jsx
+    const settingsMonth = await db.settings.get('targetProjectionMonth');
+    const targetMonth = settingsMonth?.value || `${new Date().getFullYear() + 1}-12`;
+    
+    const planKey = `savings_plan_${user.id}`;
+    const savingsPlan = JSON.parse(localStorage.getItem(planKey) || '{}');
+    
+    // Initial Data
+    const allAccs = await db.accounts.toArray();
+    const allSav = await db.savings.filter(s => s.status === 'active').toArray();
+    const allInv = await db.investments.toArray();
+    const allBudgets = await db.budgets.toArray();
+    
+    const accNW = allAccs.reduce((s, a) => s + (a.sub_type === 'debt' ? -a.balance : a.balance), 0);
+    const savNW = allSav.reduce((s, x) => s + x.principal_amount, 0);
+    const invNW = allInv.reduce((s, i) => s + (i.type === 'real_estate' ? (i.current_price - i.loan_amount) : (i.current_price * i.quantity)), 0);
+    let currentNWVal = accNW + savNW + invNW;
+
+    // Monthly Surplus Helper
+    const getSurplus = (mKey) => {
+      const inc = allBudgets.filter(b => b.type === 'income' && (b.month === mKey || !b.month)).reduce((s, b) => s + b.amount, 0);
+      const exp = allBudgets.filter(b => b.type === 'expense' && (b.month === mKey || !b.month)).reduce((s, b) => s + b.amount, 0);
+      return Math.max(0, inc - exp);
+    };
+
+    const [tY, tM] = targetMonth.split('-').map(Number);
+    const now = new Date();
+    const monthsDiff = (tY - now.getFullYear()) * 12 + (tM - (now.getMonth() + 1));
+    
+    const rows = [];
+    const monthlyRate = 0.08 / 12; // Static 8% as per UI
+
+    for (let i = 0; i <= Math.max(1, monthsDiff); i++) {
+       const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+       const mKey = d.toISOString().slice(0, 7);
+       const override = savingsPlan[mKey];
+       const surplus = override !== undefined ? override : getSurplus(mKey);
+       
+       if (i > 0) {
+         currentNWVal = currentNWVal * (1 + monthlyRate) + surplus;
+       }
+       
+       rows.push({
+         'Tháng': `${d.getMonth() + 1}/${d.getFullYear()}`,
+         'Dự thu': allBudgets.filter(b => b.type === 'income' && (b.month === mKey || !b.month)).reduce((s, b) => s + b.amount, 0),
+         'Dự chi': allBudgets.filter(b => b.type === 'expense' && (b.month === mKey || !b.month)).reduce((s, b) => s + b.amount, 0),
+         'Tiết kiệm': surplus,
+         'Tài sản ròng dự tính': Math.round(currentNWVal)
+       });
+    }
+
+    return downloadCSV(toCSV(['Tháng', 'Dự thu', 'Dự chi', 'Tiết kiệm', 'Tài sản ròng dự tính'], rows), 'Du_bao_tai_chinh.csv');
+  };
+
   const handleImportJson = async (e) => {
-    const file = e.target.files[0];
+    let file;
+    if (e.target && e.target.files) {
+      file = e.target.files[0];
+    } else {
+      file = e; // file handle or direct file
+    }
+
     if (!file) return;
     if (window.confirm('Cảnh báo: Nhập file sao lưu sẽ ĐÈ lên toàn bộ dữ liệu hiện tại. Tiếp tục?')) {
       try {
@@ -118,6 +292,27 @@ export default function Settings() {
       } catch (err) {
          alert('Lỗi khôi phục: ' + err.message);
       }
+    }
+  };
+
+  const handleImportFromFolder = async () => {
+    if (!folderHandle || !hasFolderPermission) return;
+    try {
+      if (window.showOpenFilePicker) {
+        const [fileHandle] = await window.showOpenFilePicker({
+          startIn: folderHandle,
+          types: [{
+            description: 'JSON Backup Files',
+            accept: { 'application/json': ['.json'] },
+          }],
+        });
+        const file = await fileHandle.getFile();
+        handleImportJson(file);
+      } else {
+        alert('Trình duyệt không hỗ trợ chọn file từ thư mục. Vui lòng chọn thủ công.');
+      }
+    } catch (err) {
+       if (err.name !== 'AbortError') console.error(err);
     }
   };
 
@@ -152,55 +347,20 @@ export default function Settings() {
     }
   };
 
-  const handleCloudBackup = async () => {
-    setSyncLoading(true);
-    try {
-      await uploadToDrive();
-      await fetchLastSync();
-      await fetchGoogleUser();
-      alert('✅ Đã sao lưu dữ liệu lên Google Drive thành công!');
-    } catch (err) {
-      alert('❌ Lỗi sao lưu: ' + err.message);
-    } finally {
-      setSyncLoading(false);
-    }
-  };
-
-  const handleCloudRestore = async () => {
-    if (!window.confirm('⚠️ CẢNH BÁO: Khôi phục từ Cloud sẽ XÓA TOÀN BỘ dữ liệu hiện tại trên máy này và thay thế bằng bản trên Drive. Bạn có chắc chắn?')) return;
-    
-    setSyncLoading(true);
-    try {
-      await downloadFromDrive();
-      await fetchGoogleUser();
-      alert('✅ Khôi phục thành công! Ứng dụng sẽ tải lại.');
-      window.location.reload();
-    } catch (err) {
-      alert('❌ Lỗi khôi phục: ' + err.message);
-    } finally {
-      setSyncLoading(false);
-    }
-  };
-
-  const handleSwitchGoogleAccount = () => {
-    if (window.confirm('Bạn muốn đổi tài khoản Google Drive khác?')) {
-      disconnectGoogleDrive();
-      setGoogleUser(null);
-      alert('Đã ngắt kết nối tài khoản cũ. Vui lòng chọn tài khoản mới trong lần sao lưu tới.');
-    }
-  };
-
   return (
-    <div className="pb-24 animate-in fade-in">
-      {/* Header - Left Aligned to Icon Axis */}
-      <div className="bg-gradient-to-br from-blue-600 to-indigo-700 pt-16 pb-8 rounded-b-[2.5rem] shadow-lg">
-        <h1 className="text-3xl font-extrabold text-white text-left tracking-tighter pl-11">Cài đặt</h1>
+    <div className="pb-24 p-4 safe-top animate-in fade-in transition-colors duration-300 dark:bg-slate-950">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-10 mt-4 px-1">
+        <div>
+          <h1 className="text-3xl font-black text-gray-900 dark:text-slate-100 tracking-tight">Cài đặt</h1>
+          <p className="text-[11px] text-gray-400 dark:text-slate-500 font-bold uppercase tracking-widest mt-1">Cấu hình & Quản lý dữ liệu</p>
+        </div>
       </div>
 
-      <div className="px-6 mt-10 space-y-9">
+      <div className="space-y-10">
 
         <div>
-          <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 pl-11">Công cụ & Phân tích</p>
+          <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 px-1">Công cụ & Phân tích</p>
           <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden divide-y divide-gray-50 dark:divide-white/5">
             <button
               onClick={() => setShowLoanSheet(true)}
@@ -237,7 +397,7 @@ export default function Settings() {
 
 
         <div>
-          <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 pl-11">Tuỳ chỉnh Ứng dụng</p>
+          <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 px-1">Tuỳ chỉnh Ứng dụng</p>
           <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden">
             <button
               onClick={() => setShowCategorySheet(true)}
@@ -259,8 +419,43 @@ export default function Settings() {
 
         {/* Section: Dữ liệu */}
         <div>
-          <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 pl-11">Quản lý Dữ liệu</p>
+          <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 px-1">Quản lý Dữ liệu</p>
           <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden divide-y divide-gray-50 dark:divide-white/5">
+            <div>
+              <button
+                onClick={folderHandle ? handleVerifyFolder : handleSelectFolder}
+                className="w-full flex items-center justify-between p-5 hover:bg-gray-50 dark:hover:bg-slate-800/20 active:bg-gray-100 dark:active:bg-slate-800/40 transition-colors group text-left"
+              >
+                <div className="flex items-center space-x-4 flex-1">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 shadow-sm border border-indigo-100/50 dark:border-indigo-900/50">
+                    <FolderOpen size={20} />
+                  </div>
+                  <div>
+                    <p className="font-black text-gray-900 dark:text-slate-100 group-active:text-indigo-600 transition-colors">
+                      {folderHandle ? 'Thư mục: ' + folderHandle.name : 'Chọn thư mục lưu trữ'}
+                    </p>
+                    <div className="flex items-center space-x-2 mt-0.5">
+                      <span className={`w-2 h-2 rounded-full ${folderHandle ? (hasFolderPermission ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500') : 'bg-gray-300'}`} />
+                      <p className="text-[11px] text-gray-500 dark:text-slate-500 font-medium leading-relaxed italic opacity-70">
+                        {folderHandle 
+                          ? (hasFolderPermission ? 'Đang hoạt động - Tự động lưu file' : 'Nhấp để cấp lại quyền truy cập')
+                          : 'Sử dụng File System API để tự động hóa'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                {folderHandle && (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleSelectFolder(); }}
+                    className="text-[10px] font-black text-indigo-600 hover:underline uppercase px-2"
+                  >
+                    Thay đổi
+                  </button>
+                )}
+                <ChevronRight className="text-gray-300 group-hover:text-gray-400 shrink-0 ml-4" size={18} />
+              </button>
+            </div>
+
             <div>
               <button
                 onClick={() => setShowExportPanel(v => !v)}
@@ -280,7 +475,21 @@ export default function Settings() {
 
               {showExportPanel && (
                 <div className="px-5 pb-5 bg-sky-50/30 dark:bg-sky-900/10 border-t border-sky-100/50 dark:border-white/5 space-y-3">
-                  <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] pt-4 mb-2 pl-5">Cấu hình báo cáo:</p>
+                  <div className="flex items-center justify-between pt-4 mb-2 px-5">
+                    <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Năm báo cáo:</p>
+                    <select 
+                      value={selectedExportYear}
+                      onChange={e => setSelectedExportYear(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
+                      className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-white/10 rounded-xl px-4 py-1.5 text-xs font-black text-sky-600 outline-none"
+                    >
+                      <option value="all">Tất cả các năm</option>
+                      {[0, 1, 2, 3].map(offset => {
+                        const y = new Date().getFullYear() - offset;
+                        return <option key={y} value={y}>{y}</option>;
+                      })}
+                    </select>
+                  </div>
+                  <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 pl-5">Cấu hình báo cáo:</p>
                   {[
                     { key: 'transactions', label: 'Lịch sử Giao dịch', desc: 'Tất cả thu/chi/chuyển khoản', icon: '📋' },
                     { key: 'accounts',     label: 'Tài khoản & Số dư',  desc: 'Danh sách ví và số dư hiện tại', icon: '🏦' },
@@ -312,13 +521,55 @@ export default function Settings() {
                     {exportLoading
                       ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       : <Download size={18} />}
-                    <span>{exportLoading ? 'ĐANG TẠO FILE...' : 'TẢI MÃ NGUỒN DỰ PHÒNG JSON'}</span>
+                    <span>XÁC NHẬN TẢI CSV</span>
                   </button>
-                  <label className="w-full mt-2 bg-emerald-600 dark:bg-emerald-700 hover:bg-emerald-700 dark:hover:bg-emerald-600 text-white font-black py-4 rounded-2xl flex items-center justify-center space-x-2 disabled:opacity-60 active:scale-95 transition-all shadow-lg shadow-emerald-100 dark:shadow-none cursor-pointer">
-                    <Download size={18} className="rotate-180" />
-                    <span>NHẬP FILE DỰ PHÒNG CHUẨN JSON</span>
-                    <input type="file" accept=".json" onChange={handleImportJson} className="hidden" />
-                  </label>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <button
+                onClick={() => setShowBackupPanel(v => !v)}
+                className="w-full flex items-center justify-between p-5 hover:bg-gray-50 dark:hover:bg-slate-800/20 active:bg-gray-100 dark:active:bg-slate-800/40 transition-colors group text-left"
+              >
+                <div className="flex items-center space-x-4 flex-1">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-sm border border-emerald-100/50 dark:border-emerald-900/50">
+                    <RefreshCw size={20} />
+                  </div>
+                  <div>
+                    <p className="font-black text-gray-900 dark:text-slate-100 group-active:text-emerald-600 transition-colors">Sao lưu & Khôi phục</p>
+                    <p className="text-[11px] text-gray-500 dark:text-slate-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Tải về hoặc nhập liệu file dự phòng JSON</p>
+                  </div>
+                </div>
+                <ChevronRight className={`text-gray-300 group-hover:text-gray-400 shrink-0 transition-transform ml-4 ${showBackupPanel ? 'rotate-90' : ''}`} size={18} />
+              </button>
+
+              {showBackupPanel && (
+                <div className="px-5 pb-5 bg-emerald-50/30 dark:bg-emerald-900/10 border-t border-emerald-100/50 dark:border-white/5 space-y-3">
+                  <div className="pt-4 grid grid-cols-2 gap-3">
+                    <button
+                      onClick={handleExportData}
+                      disabled={exportLoading}
+                      className="flex flex-col items-center justify-center p-4 rounded-3xl bg-emerald-600 dark:bg-emerald-700 text-white space-y-2 active:scale-95 transition-all disabled:opacity-60 shadow-lg shadow-emerald-100 dark:shadow-none"
+                    >
+                      {exportLoading
+                        ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        : <CloudUpload size={18} />}
+                      <span className="text-[11px] font-black uppercase tracking-wider">Sao lưu</span>
+                    </button>
+                    
+                    <label 
+                      onClick={hasFolderPermission ? handleImportFromFolder : undefined}
+                      className="flex flex-col items-center justify-center p-4 rounded-3xl bg-white dark:bg-slate-800 border-2 border-emerald-100 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 space-y-2 active:scale-95 transition-all disabled:opacity-60 cursor-pointer"
+                    >
+                      <CloudDownload size={18} />
+                      <span className="text-[11px] font-black uppercase tracking-wider">Khôi phục</span>
+                      {!hasFolderPermission && <input type="file" accept=".json" onChange={handleImportJson} className="hidden" />}
+                    </label>
+                  </div>
+                  <p className="text-[10px] text-gray-400 dark:text-slate-500 font-medium text-center leading-relaxed px-4">
+                    Tệp JSON chứa toàn bộ dữ liệu ứng dụng bao gồm tài khoản, giao dịch và cài đặt.
+                  </p>
                 </div>
               )}
             </div>
@@ -340,7 +591,7 @@ export default function Settings() {
         </div>
 
         <div>
-          <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 pl-11">Giao diện</p>
+          <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 px-1">Giao diện</p>
           <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden">
             <div className="w-full flex items-center justify-between p-5 transition-colors group text-left">
               <div className="flex items-center space-x-4 flex-1">
@@ -362,71 +613,26 @@ export default function Settings() {
           </div>
         </div>
 
+
         <div>
-          <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 pl-11">Lưu trữ Đám mây</p>
-          <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden p-6 transition-colors">
-            <div className="flex items-center space-x-4 mb-6">
-              <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-100/50 dark:border-indigo-900/50 shadow-sm">
-                <Cloud size={24} />
-              </div>
-              <div>
-                <p className="font-black text-gray-900 dark:text-slate-100 leading-tight">Google Drive Sync</p>
-                <div className="flex flex-col mt-1">
-                  <p className="text-[11px] text-gray-500 dark:text-slate-500 font-medium italic">
-                    {lastSync 
-                      ? `Đồng bộ lần cuối: ${new Date(lastSync).toLocaleString('vi-VN')}` 
-                      : 'Chưa bao giờ đồng bộ'}
-                  </p>
-                  {googleUser ? (
-                    <div className="flex items-center space-x-2 mt-1">
-                      <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded-full border border-indigo-100 dark:border-indigo-900/50">
-                        {googleUser.email}
-                      </p>
-                      <button 
-                        onClick={handleSwitchGoogleAccount}
-                        className="text-[9px] font-black text-gray-400 dark:text-slate-500 hover:text-red-500 uppercase tracking-tighter underline"
-                      >
-                        Đổi tài khoản
-                      </button>
-                    </div>
-                  ) : (
-                    <p className="text-[10px] text-gray-400 dark:text-slate-500 font-bold mt-1 uppercase tracking-tighter italic">
-                      Tài khoản: Chưa liên kết
-                    </p>
-                  )}
+          <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 px-1">Bảo mật & Quyền riêng tư</p>
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden divide-y divide-gray-50 dark:divide-white/5 transition-colors">
+            <button
+              onClick={() => signOut()}
+              className="w-full flex items-center justify-between p-5 hover:bg-gray-50 dark:hover:bg-slate-800/20 active:bg-gray-100 dark:active:bg-slate-800/40 transition-colors group text-left"
+            >
+              <div className="flex items-center space-x-4 flex-1">
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 shadow-sm border border-amber-100/50 dark:border-amber-900/50">
+                  <Lock size={20} />
+                </div>
+                <div>
+                  <p className="font-black text-gray-900 dark:text-slate-100 group-active:text-amber-600 transition-colors">Khoá ứng dụng</p>
+                  <p className="text-[11px] text-gray-500 dark:text-slate-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Yêu cầu mã PIN ngay lập tức</p>
                 </div>
               </div>
-            </div>
+              <ChevronRight className="text-gray-300 group-hover:text-gray-400 shrink-0 ml-4" size={18} />
+            </button>
 
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={handleCloudBackup}
-                disabled={syncLoading}
-                className="flex flex-col items-center justify-center p-4 rounded-3xl bg-indigo-600 dark:bg-indigo-700 text-white space-y-2 active:scale-95 transition-all disabled:opacity-50 shadow-lg shadow-indigo-100 dark:shadow-none"
-              >
-                {syncLoading ? <RefreshCw className="animate-spin" size={20} /> : <CloudUpload size={20} />}
-                <span className="text-[11px] font-black uppercase tracking-wider">Sao lưu</span>
-              </button>
-              
-              <button
-                onClick={handleCloudRestore}
-                disabled={syncLoading}
-                className="flex flex-col items-center justify-center p-4 rounded-3xl bg-white dark:bg-slate-800 border-2 border-indigo-100 dark:border-indigo-900/50 text-indigo-600 dark:text-indigo-400 space-y-2 active:scale-95 transition-all disabled:opacity-50"
-              >
-                <CloudDownload size={20} />
-                <span className="text-[11px] font-black uppercase tracking-wider">Khôi phục</span>
-              </button>
-            </div>
-
-            <p className="text-[10px] text-gray-400 dark:text-slate-500 font-medium mt-4 text-center leading-relaxed">
-              Dữ liệu được lưu an toàn trong thư mục ẩn của ứng dụng trên Google Drive của bạn.
-            </p>
-          </div>
-        </div>
-
-        <div>
-          <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 pl-11">Bảo mật & Quyền riêng tư</p>
-          <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden divide-y divide-gray-50 dark:divide-white/5 transition-colors">
             <button
               onClick={() => setShowChangePinSheet(true)}
               className="w-full flex items-center justify-between p-5 hover:bg-gray-50 dark:hover:bg-slate-800/20 active:bg-gray-100 dark:active:bg-slate-800/40 transition-colors group text-left"

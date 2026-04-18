@@ -364,13 +364,13 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
           </div>
         </div>
 
-        <div className={type === 'transfer' ? 'grid grid-cols-2 gap-3' : ''}>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 mb-2">Từ tài khoản</label>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Nguồn tiền</label>
             <select
               value={accountId}
               onChange={(e) => setAccountId(e.target.value)}
-              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-transparent dark:border-white/5 focus:border-blue-500 dark:focus:border-indigo-500 rounded-xl px-4 py-3 outline-none truncate"
+              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all truncate"
             >
               {accounts.map(acc => (
                 <option key={acc.id} value={acc.id}>{acc.name}</option>
@@ -378,13 +378,13 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
             </select>
           </div>
           
-          {type === 'transfer' && (
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 mb-2">Đến tài khoản</label>
+          {type === 'transfer' ? (
+            <div className="space-y-1">
+              <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Đến tài khoản</label>
               <select
                 value={toAccountId}
                 onChange={(e) => setToAccountId(e.target.value)}
-                className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-transparent dark:border-white/5 focus:border-blue-500 dark:focus:border-indigo-500 rounded-xl px-4 py-3 outline-none truncate"
+                className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all truncate"
               >
                 <option value="">Chọn...</option>
                 {accounts.filter(a => a.id !== accountId).map(acc => (
@@ -392,23 +392,21 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
                 ))}
               </select>
             </div>
+          ) : (
+            <div className="space-y-1">
+              <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Hạng mục</label>
+              <select
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              >
+                {categories.filter(c => c.type === (type === 'repayment' ? 'expense' : type)).map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+                ))}
+              </select>
+            </div>
           )}
         </div>
-
-        {type !== 'transfer' && (
-          <div className="space-y-1">
-            <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Danh mục</label>
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none"
-            >
-              {categories.filter(c => c.type === (type === 'repayment' ? 'expense' : type)).map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
-              ))}
-            </select>
-          </div>
-        )}
 
         {/* LOAN SPECIFIC FIELDS */}
         {isLoanMode && (
@@ -480,14 +478,14 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
           </div>
         )}
 
-        <div className="space-y-5">
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Ngày thực hiện</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
             />
           </div>
           <div className="space-y-1">
@@ -497,7 +495,7 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Tùy chọn..."
-              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
             />
           </div>
         </div>

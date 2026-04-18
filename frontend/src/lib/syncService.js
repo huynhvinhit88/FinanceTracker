@@ -235,13 +235,20 @@ export async function checkRemoteBackup() {
 }
 
 // Giữ lại các hàm export/import JSON nội bộ
-export async function exportDatabaseToJSON() {
+export async function exportDatabaseToJSON(targetFolderHandle = null) {
   try {
     const blob = await exportDB(db);
+    const filename = `finance_tracker_backup_${new Date().toISOString().split('T')[0]}.json`;
+
+    if (targetFolderHandle) {
+      await writeBlobToFolder(targetFolderHandle, filename, blob);
+      return true;
+    }
+
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `finance_tracker_backup_${new Date().toISOString().split('T')[0]}.json`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -250,6 +257,55 @@ export async function exportDatabaseToJSON() {
   } catch (error) {
     console.error('Export error: ', error);
     throw error;
+  }
+}
+
+/**
+ * File System Access API Helpers
+ */
+
+export async function selectDirectoryHandle() {
+  if (!window.showDirectoryPicker) {
+    throw new Error('Trình duyệt của bạn không hỗ trợ công cụ chọn thư mục. Vui lòng sử dụng Chrome hoặc Edge.');
+  }
+  const handle = await window.showDirectoryPicker({
+    mode: 'readwrite'
+  });
+  // Lưu handle vào database để tái sử dụng
+  await db.settings.put({ key: 'localDirectoryHandle', value: handle });
+  return handle;
+}
+
+export async function verifyDirectoryPermission(handle, withRequest = false) {
+  if (!handle) return false;
+  
+  const options = { mode: 'readwrite' };
+  
+  // Kiểm tra quyền hiện tại
+  if ((await handle.queryPermission(options)) === 'granted') {
+    return true;
+  }
+  
+  // Nếu yêu cầu xác thực mới
+  if (withRequest) {
+    if ((await handle.requestPermission(options)) === 'granted') {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+export async function writeBlobToFolder(dirHandle, filename, blob) {
+  try {
+    const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+    return true;
+  } catch (error) {
+    console.error('Error writing to local folder:', error);
+    throw new Error('Không thể ghi file vào thư mục đã chọn. Vui lòng kiểm tra quyền truy cập.');
   }
 }
 

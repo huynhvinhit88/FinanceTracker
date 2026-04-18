@@ -37,11 +37,14 @@ db.version(3).stores({
   savings: 'id, account_id, category_id, name, principal_amount, interest_rate, term_months, term_unit, start_date, maturity_date, interest_type, auto_renew, status',
 });
 
+db.version(4).stores({}).upgrade(async (tx) => {
+  const categoriesToRemove = ['Ăn uống', 'Di chuyển', 'Mua sắm', 'Hóa đơn'];
+  await tx.table('categories')
+    .filter(cat => categoriesToRemove.includes(cat.name) && cat.is_default === true)
+    .delete();
+});
+
 export const DEFAULT_CATEGORIES = [
-  { name: 'Ăn uống', type: 'expense', icon: '🍔', color_hex: '#EF4444' },
-  { name: 'Di chuyển', type: 'expense', icon: '🚗', color_hex: '#3B82F6' },
-  { name: 'Mua sắm', type: 'expense', icon: '🛍️', color_hex: '#ec4899' },
-  { name: 'Hóa đơn', type: 'expense', icon: '🧾', color_hex: '#8B5CF6' },
   { name: 'Trả nợ vay', type: 'expense', icon: '🏦', color_hex: '#EF4444' },
   { name: 'Chi hộ', type: 'expense', icon: '🤝', color_hex: '#EF4444' },
   { name: 'Lương', type: 'income', icon: '💰', color_hex: '#10B981' },

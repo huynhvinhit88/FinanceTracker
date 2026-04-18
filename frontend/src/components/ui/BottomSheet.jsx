@@ -2,8 +2,13 @@ import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
-export function BottomSheet({ isOpen, onClose, title, children }) {
-  // Prevent body scrolling when sheet is open
+export function BottomSheet({ isOpen, onClose, title, children, size = 'md' }) {
+  const sizeClasses = {
+    md: 'max-w-md',
+    lg: 'max-w-md lg:max-w-2xl',
+    xl: 'max-w-md lg:max-w-5xl' 
+  };
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -29,13 +34,12 @@ export function BottomSheet({ isOpen, onClose, title, children }) {
             onClick={onClose}
           />
           
-          {/* Sheet */}
           <motion.div
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300, mass: 0.8 }}
-            className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-t-3xl max-h-[82vh] flex flex-col shadow-2xl pointer-events-auto pb-safe px-1 transition-colors duration-300"
+            className={`relative w-full ${sizeClasses[size] || sizeClasses.md} bg-white dark:bg-slate-900 rounded-t-3xl max-h-[92vh] flex flex-col shadow-2xl pointer-events-auto pb-safe px-1 transition-colors duration-300`}
           >
             {/* Handle/Grabber */}
             <div className="flex justify-center pt-3 pb-2 w-full" onClick={onClose}>

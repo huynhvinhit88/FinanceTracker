@@ -207,7 +207,7 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
   if (!loan) return null;
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={onClose} title={mode === 'edit' ? 'Chỉnh sửa Khoản Vay' : 'Chi Tiết Khoản Vay'}>
+    <BottomSheet isOpen={isOpen} onClose={onClose} title={mode === 'edit' ? 'Chỉnh sửa Khoản Vay' : 'Chi Tiết Khoản Vay'} size="xl">
       <div className="space-y-5 pt-2 pb-10">
 
         {/* === VIEW MODE === */}

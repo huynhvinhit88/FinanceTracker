@@ -187,7 +187,7 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
   };
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={onClose} title="Tính khoản vay nâng cao">
+    <BottomSheet isOpen={isOpen} onClose={onClose} title="Tính khoản vay nâng cao" size="xl">
       <div className="space-y-6">
         <div className="bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-white/5 rounded-xl p-3 flex flex-col space-y-3 shadow-sm transition-colors">
           <div className="flex items-center justify-between">

@@ -9,7 +9,7 @@ import {
   verifyDirectoryPermission,
   writeBlobToFolder
 } from '../lib/syncService';
-import { RefreshCw, CloudDownload, CloudUpload, FolderTree, LogOut, Trash2, ChevronRight, Download, ShieldCheck, Lock, FolderOpen } from 'lucide-react';
+import { RefreshCw, CloudDownload, CloudUpload, FolderTree, Trash2, ChevronRight, Download, ShieldCheck, Lock, FolderOpen } from 'lucide-react';
 import { CategoryManagementSheet } from '../components/settings/CategoryManagementSheet';
 import { ChangePinSheet } from '../components/settings/ChangePinSheet';
 import { LoanCalculatorSheet } from '../components/tools/LoanCalculatorSheet';
@@ -77,15 +77,6 @@ export default function Settings() {
     }
   };
 
-  const handleSignOut = async () => {
-    if (window.confirm('Bạn có chắc muốn đăng xuất?')) {
-      try {
-        await signOut();
-      } catch (error) {
-        console.error('Error signing out', error);
-      }
-    }
-  };
 
   // Helper: convert array to CSV
   const toCSV = (headers, rows) => {
@@ -651,16 +642,6 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Footer: Đăng xuất */}
-        <div className="pt-6 px-6">
-          <button
-            onClick={handleSignOut}
-            className="w-full bg-gray-100 dark:bg-slate-900 hover:bg-gray-200 dark:hover:bg-slate-800 text-gray-700 dark:text-slate-100 font-bold py-5 rounded-[2rem] flex items-center justify-center space-x-2 active:scale-95 transition-all shadow-sm border border-transparent dark:border-white/5"
-          >
-            <LogOut size={18} />
-            <span className="tracking-tight">Đăng xuất Tài khoản</span>
-          </button>
-        </div>
 
         {/* App version info */}
         <div className="text-center pt-4 pb-8">

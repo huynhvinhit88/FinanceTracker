@@ -185,115 +185,141 @@ export default function Home() {
 
   return (
     <>
-      <div className="p-4 safe-top pb-24 transition-colors duration-300 dark:bg-slate-950">
+      <div className="p-4 lg:p-8 safe-top pb-24 transition-colors duration-300 dark:bg-slate-950 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6 mt-4">
+        <div className="flex justify-between items-center mb-8 mt-4 px-1">
           <div>
             <p className="text-sm text-gray-400 dark:text-slate-500 font-bold uppercase tracking-widest">Hôm nay, {new Date().toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
-            <h1 className="text-3xl font-black text-gray-900 dark:text-slate-100 tracking-tight mt-1">Tổng quan</h1>
+            <h1 className="text-3xl lg:text-4xl font-black text-gray-900 dark:text-slate-100 tracking-tight mt-1">Tổng quan</h1>
           </div>
         </div>
 
-        {/* Global Net Worth Card */}
-        <div className="bg-gradient-to-tr from-gray-900 to-gray-800 dark:from-indigo-950 dark:to-slate-900 rounded-2xl p-6 text-white shadow-xl mb-6 relative overflow-hidden transition-all duration-500 border border-white/5">
-          <div className="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-          <p className="text-gray-300 dark:text-slate-400 text-sm mb-1 font-medium">Tổng tài sản ròng</p>
-          <h2 className="text-3xl font-bold tracking-tight mb-4">{formatCurrency(globalNetWorth)} ₫</h2>
-          
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            <div className="bg-white/5 dark:bg-indigo-900/20 p-3 rounded-2xl border border-white/5 backdrop-blur-sm">
-              <p className="text-[10px] text-emerald-300 dark:text-emerald-400 font-bold uppercase tracking-wider mb-1">Tổng tài sản</p>
-              <p className="text-sm font-black text-emerald-400">+{formatCurrency(totalAssetsGross)} đ</p>
-            </div>
-            <div className="bg-white/5 dark:bg-rose-900/20 p-3 rounded-2xl border border-white/5 backdrop-blur-sm">
-              <p className="text-[10px] text-red-300 dark:text-rose-400 font-bold uppercase tracking-wider mb-1">Tổng nợ vay</p>
-              <p className="text-sm font-black text-red-400 dark:text-rose-400">-{formatCurrency(totalAllLiabilities)} đ</p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-white/40 text-[9px] sm:text-[10px] font-bold uppercase tracking-tight">
-            <p>Tiền mặt: {formatCurrency(totalCashAndReceivable)}</p>
-            <p>Tiết kiệm: {formatCurrency(totalSavings)}</p>
-            <p>Đầu tư (Ròng): {formatCurrency(totalInvestmentsNet)}</p>
-          </div>
-          
-          <div className={`flex space-x-6 border-t border-gray-700 dark:border-white/10 pt-4 mt-4`}>
-            <div>
-              <div className="flex items-center text-xs text-gray-400 dark:text-slate-500 mb-1">
-                <TrendingUp size={12} className="text-green-400 dark:text-emerald-400 mr-1" /> Tháng này thu
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
+          <div className="space-y-6">
+            {/* Global Net Worth Card */}
+            <div className="bg-gradient-to-tr from-gray-900 to-gray-800 dark:from-indigo-950 dark:to-slate-900 rounded-2xl lg:rounded-[2.5rem] p-6 lg:p-10 text-white shadow-xl lg:shadow-2xl relative overflow-hidden transition-all duration-500 border border-white/5 h-full flex flex-col justify-center">
+              <div className="absolute -right-8 -top-8 w-48 h-48 bg-white/5 rounded-full blur-3xl"></div>
+              <p className="text-gray-300 dark:text-slate-400 text-sm lg:text-base mb-1 font-medium">Tổng tài sản ròng</p>
+              <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-6">{formatCurrency(globalNetWorth)} ₫</h2>
+              
+              <div className="grid grid-cols-2 gap-4 mb-8">
+                <div className="bg-white/5 dark:bg-indigo-900/20 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
+                  <p className="text-[10px] lg:text-xs text-emerald-300 dark:text-emerald-400 font-bold uppercase tracking-wider mb-1">Tổng tài sản (+)</p>
+                  <p className="text-sm lg:text-lg font-black text-emerald-400">+{formatCurrency(totalAssetsGross)} đ</p>
+                </div>
+                <div className="bg-white/5 dark:bg-rose-900/20 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
+                  <p className="text-[10px] lg:text-xs text-red-300 dark:text-rose-400 font-bold uppercase tracking-wider mb-1">Tổng nợ vay (-)</p>
+                  <p className="text-sm lg:text-lg font-black text-red-400 dark:text-rose-400">-{formatCurrency(totalAllLiabilities)} đ</p>
+                </div>
               </div>
-              <p className="font-medium text-sm text-gray-200 dark:text-emerald-400">+{formatCurrency(totalIncomeAmount)}</p>
-            </div>
-            <div>
-              <div className="flex items-center text-xs text-gray-400 dark:text-slate-500 mb-1">
-                <TrendingDown size={12} className="text-red-400 dark:text-rose-400 mr-1" /> Tháng này chi
-              </div>
-              <p className="font-medium text-sm text-gray-200 dark:text-rose-400">-{formatCurrency(totalExpenseAmount)}</p>
-            </div>
-          </div>
-        </div>
 
-        {/* Expense Chart Mini */}
-        {chartData.length > 0 && (
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-white/5 mb-8 flex items-center transition-colors">
-            <div className="w-24 h-24 mr-4 shrink-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={chartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={30}
-                    outerRadius={45}
-                    paddingAngle={2}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => formatCurrency(value) + ' đ'} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-2">Chi tiêu Top đầu</h3>
-              <div className="space-y-2">
-                {chartData.slice(0, 3).map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-center text-xs">
-                    <div className="flex items-center truncate">
-                      <div className="w-2 h-2 rounded-full mr-2 shrink-0" style={{ backgroundColor: item.color }}></div>
-                      <span className="text-gray-600 dark:text-slate-400 truncate">{item.name}</span>
-                    </div>
-                    <span className="font-medium dark:text-slate-300 shrink-0 ml-2">{Math.round((item.value / totalExpenseAmount) * 100)}%</span>
+              <div className="flex flex-wrap gap-x-6 gap-y-2 text-white/40 text-[10px] font-bold uppercase tracking-tight mb-8">
+                <p>Tiền mặt: {formatCurrency(totalCashAndReceivable)}</p>
+                <p>Tiết kiệm: {formatCurrency(totalSavings)}</p>
+                <p>Đầu tư (Ròng): {formatCurrency(totalInvestmentsNet)}</p>
+              </div>
+              
+              <div className={`flex space-x-8 border-t border-gray-700 dark:border-white/10 pt-6 mt-2`}>
+                <div>
+                  <div className="flex items-center text-xs text-gray-400 dark:text-slate-500 mb-1 font-bold uppercase tracking-widest">
+                    <TrendingUp size={14} className="text-green-400 dark:text-emerald-400 mr-2" /> Tháng này thu
                   </div>
-                ))}
+                  <p className="font-bold text-lg text-white dark:text-emerald-400">+{formatCurrency(totalIncomeAmount)}</p>
+                </div>
+                <div>
+                  <div className="flex items-center text-xs text-gray-400 dark:text-slate-500 mb-1 font-bold uppercase tracking-widest">
+                    <TrendingDown size={14} className="text-red-400 dark:text-rose-400 mr-2" /> Tháng này chi
+                  </div>
+                  <p className="font-bold text-lg text-white dark:text-rose-400">-{formatCurrency(totalExpenseAmount)}</p>
+                </div>
               </div>
             </div>
           </div>
-        )}
 
-        {/* Recent Transactions */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-gray-900 dark:text-slate-100 text-lg">Giao dịch gần đây</h3>
-            <button onClick={() => navigate('/transactions')} className="text-blue-600 dark:text-blue-400 text-sm font-semibold">Xem tất cả</button>
+          <div className="space-y-6">
+            {/* Expense Chart Mini */}
+            {chartData.length > 0 ? (
+              <div className="bg-white dark:bg-slate-900 p-8 lg:p-10 rounded-2xl lg:rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-white/5 h-full flex flex-col transition-colors">
+                <h3 className="text-sm lg:text-base font-black text-gray-900 dark:text-slate-100 uppercase tracking-widest mb-8 text-center lg:text-left pt-2">Cơ cấu chi tiêu</h3>
+                <div className="flex-1 flex flex-col lg:flex-row items-center justify-center">
+                  <div className="w-48 h-48 lg:w-56 lg:h-56 shrink-0 mb-6 lg:mb-0 lg:mr-10">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={chartData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={50}
+                          outerRadius={80}
+                          paddingAngle={4}
+                          dataKey="value"
+                          stroke="none"
+                        >
+                          {chartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
+                          formatter={(value) => formatCurrency(value) + ' đ'} 
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex-1 w-full space-y-4">
+                    {chartData.slice(0, 5).map((item, idx) => (
+                      <div key={idx} className="space-y-1.5">
+                        <div className="flex justify-between items-center text-xs lg:text-sm font-bold">
+                          <div className="flex items-center truncate">
+                            <div className="w-2.5 h-2.5 rounded-full mr-3 shrink-0" style={{ backgroundColor: item.color }}></div>
+                            <span className="text-gray-600 dark:text-slate-400 truncate">{item.name}</span>
+                          </div>
+                          <span className="text-gray-900 dark:text-slate-200 ml-4 font-black">{Math.round((item.value / totalExpenseAmount) * 100)}%</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-gray-50 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${(item.value / totalExpenseAmount) * 100}%`, backgroundColor: item.color }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-white/5 h-full flex flex-col items-center justify-center text-center">
+                 <div className="w-16 h-16 bg-gray-50 dark:bg-slate-800 rounded-3xl flex items-center justify-center mb-4">
+                   <TrendingUp size={32} className="text-gray-300" />
+                 </div>
+                 <p className="text-sm font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest pr-2 pt-2">Chưa có dữ liệu chi tiêu</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Recent Transactions Section */}
+        <div className="mt-12 lg:mt-16">
+          <div className="flex items-center justify-between mb-8 px-1">
+            <h3 className="font-black text-gray-900 dark:text-slate-100 text-xl lg:text-2xl tracking-tight">Giao dịch gần đây</h3>
+            <button 
+              onClick={() => navigate('/transactions')} 
+              className="px-6 py-2.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-indigo-600 hover:text-white transition-all active:scale-95"
+            >
+              Xem tất cả
+            </button>
           </div>
 
           {loading ? (
-            <div className="flex justify-center p-8">
-              <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+            <div className="flex justify-center p-12">
+              <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
             </div>
           ) : transactions.length === 0 ? (
-            <div className="text-center py-10 bg-white dark:bg-slate-900 rounded-3xl border border-gray-100 dark:border-white/5 shadow-sm mt-4">
-              <div className="w-16 h-16 bg-gray-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                <ArrowDownRight className="text-gray-400 dark:text-slate-500" size={32} />
+            <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-sm mt-4">
+              <div className="w-20 h-20 bg-gray-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
+                <ArrowDownRight className="text-gray-300 dark:text-slate-600" size={40} />
               </div>
-              <p className="text-gray-500 dark:text-slate-400 text-sm mt-2 mb-2 px-8">Chưa có giao dịch hoạt động.</p>
+              <p className="text-gray-400 dark:text-slate-500 text-sm font-bold uppercase tracking-widest">Chưa có giao dịch hoạt động</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
               {transactions.map((tx) => {
                 const isIncome = tx.type === 'income';
                 const isTransfer = tx.type === 'transfer';
@@ -302,19 +328,19 @@ export default function Home() {
                   <div
                     key={tx.id}
                     onClick={() => handleTransactionClick(tx)}
-                    className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-white/5 flex items-center justify-between active:scale-[0.98] transition-all cursor-pointer"
+                    className="bg-white dark:bg-slate-900 p-5 rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 dark:border-white/5 flex items-center justify-between active:scale-[0.98] lg:hover:shadow-md lg:hover:border-indigo-100 dark:lg:hover:border-indigo-900 transition-all cursor-pointer group"
                   >
-                    <div className="flex items-center space-x-4 pointer-events-none truncate pr-4">
+                    <div className="flex items-center space-x-5 pointer-events-none truncate pr-4">
                       {renderTransactionIcon(tx)}
                       <div className="min-w-0">
                         {renderTransactionDetails(tx)}
                       </div>
                     </div>
                     <div className="text-right shrink-0 min-w-fit">
-                      <p className={`font-bold ${isIncome ? 'text-green-600 dark:text-emerald-400' : isTransfer ? 'text-gray-900 dark:text-slate-100' : 'text-red-500 dark:text-rose-400'}`}>
+                      <p className={`font-black text-base lg:text-lg ${isIncome ? 'text-green-600 dark:text-emerald-400' : isTransfer ? 'text-gray-900 dark:text-slate-100' : 'text-red-500 dark:text-rose-400'}`}>
                         {isIncome ? '+' : isTransfer ? '' : '-'}{formatCurrency(tx.amount)} đ
                       </p>
-                      <p className="text-[10px] text-gray-400 dark:text-slate-500">
+                      <p className="text-[10px] lg:text-xs text-gray-400 dark:text-slate-500 font-medium">
                         {new Date(tx.date).toLocaleDateString('vi-VN')} • {new Date(tx.date).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>

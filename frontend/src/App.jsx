@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
-import { MobileLayout } from './components/layout/MobileLayout';
+import { AppLayout } from './components/layout/AppLayout';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import Home from './pages/Home';
 import Accounts from './pages/Accounts';
@@ -29,7 +29,7 @@ function App() {
 
           {/* Protected Routes Guard */}
           <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<MobileLayout />}>
+            <Route path="/" element={<AppLayout />}>
               <Route index element={<Home />} />
               <Route path="accounts" element={<Accounts />} />
               <Route path="plan" element={<Plan />} />

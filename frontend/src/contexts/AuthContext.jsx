@@ -12,10 +12,14 @@ export const AuthProvider = ({ children }) => {
     const checkPin = async () => {
       try {
         const pinRecord = await db.settings.get('appLockPin');
-        if (pinRecord && pinRecord.value) {
-          setHasPin(true);
-        } else {
-          setHasPin(false);
+        const pinExists = !!(pinRecord && pinRecord.value);
+        setHasPin(pinExists);
+
+        // Check if user has unlocked in this browser session
+        const isUnlocked = sessionStorage.getItem('isUnlocked') === 'true';
+
+        if (!pinExists || isUnlocked) {
+          setUser({ id: 'local' });
         }
       } catch (err) {
         console.error("Failed to check PIN in DB", err);
@@ -33,6 +37,7 @@ export const AuthProvider = ({ children }) => {
     unlock: async (enteredPin) => {
       const pinRecord = await db.settings.get('appLockPin');
       if (pinRecord && pinRecord.value === enteredPin) {
+        sessionStorage.setItem('isUnlocked', 'true');
         setUser({ id: 'local' });
         return { error: null };
       }
@@ -40,6 +45,7 @@ export const AuthProvider = ({ children }) => {
     },
     setupPin: async (newPin) => {
       await db.settings.put({ key: 'appLockPin', value: newPin });
+      sessionStorage.setItem('isUnlocked', 'true');
       setHasPin(true);
       setUser({ id: 'local' });
     },
@@ -52,6 +58,7 @@ export const AuthProvider = ({ children }) => {
       return { error: 'Mã PIN hiện tại không chính xác' };
     },
     signOut: async () => {
+      sessionStorage.removeItem('isUnlocked');
       setUser(null);
     }
   };

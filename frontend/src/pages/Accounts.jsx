@@ -187,9 +187,9 @@ export default function Accounts() {
     const renderGroup = (title, items) => {
       if (items.length === 0) return null;
       return (
-        <div className="mb-6">
-          <h3 className="font-bold text-gray-900 dark:text-slate-100 text-lg mb-3 px-1">{title}</h3>
-          <div className="grid grid-cols-1 gap-3">
+        <div className="mb-8">
+          <h3 className="font-black text-gray-900 dark:text-slate-100 text-lg lg:text-xl mb-4 px-1">{title}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 lg:gap-6">
             {items.map(acc => {
               // Calculate linked active savings
               const linkedSavings = savings.filter(s => s.account_id === acc.id && s.status === 'active');
@@ -237,15 +237,15 @@ export default function Accounts() {
     };
 
     return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-2 gap-3 mb-2">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-white/5">
-            <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Tiền mặt & Thu</p>
-            <p className="text-lg font-black text-gray-900 dark:text-slate-100">{formatCurrency(totalCashAndReceivable)} ₫</p>
+      <div className="space-y-8">
+        <div className="grid grid-cols-2 lg:grid-cols-2 gap-4 lg:gap-8 mb-2">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl lg:rounded-3xl p-5 lg:p-8 shadow-sm border border-gray-100 dark:border-white/5">
+            <p className="text-[10px] lg:text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2">Tiền mặt & Thu</p>
+            <p className="text-xl lg:text-3xl font-black text-gray-900 dark:text-slate-100">{formatCurrency(totalCashAndReceivable)} ₫</p>
           </div>
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-white/5">
-            <p className="text-[10px] font-bold text-red-400 dark:text-rose-400 uppercase tracking-widest mb-1">Nợ thẻ (Thanh toán)</p>
-            <p className="text-lg font-black text-red-500 dark:text-rose-400">-{formatCurrency(totalDebtAccounts)} ₫</p>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl lg:rounded-3xl p-5 lg:p-8 shadow-sm border border-gray-100 dark:border-white/5">
+            <p className="text-[10px] lg:text-xs font-bold text-red-400 dark:text-rose-400 uppercase tracking-widest mb-2">Nợ thẻ (Thanh toán)</p>
+            <p className="text-xl lg:text-3xl font-black text-red-500 dark:text-rose-400">-{formatCurrency(totalDebtAccounts)} ₫</p>
           </div>
         </div>
         
@@ -265,10 +265,10 @@ export default function Accounts() {
   };
 
   const renderSavingsTab = () => (
-    <div className="space-y-6">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-emerald-50 dark:border-emerald-900/30">
-        <p className="text-[10px] font-bold text-emerald-500 dark:text-emerald-400 uppercase tracking-widest mb-1">Khối lượng Tiết kiệm</p>
-        <p className="text-2xl font-black text-gray-900 dark:text-slate-100">{formatCurrency(totalSavingsValue)} ₫</p>
+    <div className="space-y-8">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl lg:rounded-[2.5rem] p-6 lg:p-10 shadow-sm border border-emerald-50 dark:border-emerald-900/30">
+        <p className="text-[10px] lg:text-xs font-bold text-emerald-500 dark:text-emerald-400 uppercase tracking-widest mb-2">Khối lượng Tiết kiệm</p>
+        <p className="text-3xl lg:text-5xl font-black text-gray-900 dark:text-slate-100">{formatCurrency(totalSavingsValue)} ₫</p>
       </div>
 
       <div>
@@ -279,7 +279,7 @@ export default function Accounts() {
         
         {savings.length === 0 && <p className="text-gray-500 dark:text-slate-500 text-sm text-center py-6">Chưa có sổ tiết kiệm nào.</p>}
         {savings.length > 0 && (
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 lg:gap-8">
             {savings.map(sav => {
               const { expectedTotalInterest } = computeSavingsMath(sav);
               const isSettled = sav.status !== 'active';
@@ -325,15 +325,15 @@ export default function Accounts() {
   );
 
   const renderInvestTab = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-3 mb-2">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-purple-100 dark:border-indigo-900/30">
-        <p className="text-[10px] font-bold text-purple-500 dark:text-indigo-400 uppercase tracking-widest mb-1">Tài sản ròng (Equity)</p>
-        <p className="text-lg font-black text-gray-900 dark:text-slate-100">{formatCurrency(totalInvestmentNet)} ₫</p>
+    <div className="space-y-8">
+      <div className="grid grid-cols-2 lg:grid-cols-2 gap-4 lg:gap-8 mb-2">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl lg:rounded-3xl p-5 lg:p-8 shadow-sm border border-purple-100 dark:border-indigo-900/30">
+        <p className="text-[10px] lg:text-xs font-bold text-purple-500 dark:text-indigo-400 uppercase tracking-widest mb-2">Tài sản ròng (Equity)</p>
+        <p className="text-xl lg:text-3xl font-black text-gray-900 dark:text-slate-100">{formatCurrency(totalInvestmentNet)} ₫</p>
         </div>
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-purple-50 dark:border-white/5">
-          <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Tổng thị trường</p>
-          <p className="text-lg font-black text-gray-600 dark:text-slate-400">{formatCurrency(totalInvestmentMarketValue)} ₫</p>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl lg:rounded-3xl p-5 lg:p-8 shadow-sm border border-purple-50 dark:border-white/5">
+          <p className="text-[10px] lg:text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2">Tổng thị trường</p>
+          <p className="text-xl lg:text-3xl font-black text-gray-600 dark:text-slate-400">{formatCurrency(totalInvestmentMarketValue)} ₫</p>
         </div>
       </div>
 
@@ -345,7 +345,7 @@ export default function Accounts() {
         
         {investments.length === 0 && <p className="text-gray-500 text-sm text-center py-6">Chưa có tài sản đầu tư nào.</p>}
         {investments.length > 0 && (
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 lg:gap-8">
             {investments.map(inv => {
               const isRE = inv.type === 'real_estate';
               const marketValue = inv.current_price * (isRE ? 1 : inv.quantity);
@@ -486,14 +486,17 @@ export default function Accounts() {
             <p className="text-xs mt-1 dark:text-slate-500">Nhấn + để thêm khoản vay mới</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 lg:gap-8">
             {activeLoans.map(renderLoanCard)}
-            {paidOffLoans.length > 0 && (
-              <>
-                <h4 className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] pt-2 px-1">Đã tất toán</h4>
-                {paidOffLoans.map(renderLoanCard)}
-              </>
-            )}
+          </div>
+        )}
+        
+        {paidOffLoans.length > 0 && (
+          <div className="mt-8">
+            <h4 className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-4 px-1">Đã tất toán</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 lg:gap-8">
+              {paidOffLoans.map(renderLoanCard)}
+            </div>
           </div>
         )}
       </div>
@@ -503,8 +506,8 @@ export default function Accounts() {
 
   return (
     <>
-      <div className="p-4 safe-top pb-24 min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-6 mt-4">Danh mục Tài sản</h1>
+      <div className="p-4 lg:p-8 safe-top pb-24 min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300 max-w-7xl mx-auto">
+        <h1 className="text-3xl lg:text-4xl font-black text-gray-900 dark:text-slate-100 mb-8 mt-4 px-1 tracking-tight">Tài sản & Tài khoản</h1>
         
         {/* Custom Tabs - 3 tabs only */}
         <div className="flex bg-gray-200/60 dark:bg-slate-900 p-1 rounded-xl mb-6">

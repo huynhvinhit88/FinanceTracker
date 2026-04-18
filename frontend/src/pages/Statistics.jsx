@@ -271,20 +271,20 @@ export default function Statistics() {
   }
 
   return (
-    <div className="p-4 safe-top pb-24 min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
+    <div className="p-4 lg:p-8 safe-top pb-24 min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300 max-w-7xl mx-auto">
       {/* Header & Year Selector */}
-      <div className="flex justify-between items-center mb-8 mt-4 px-1">
+      <div className="flex justify-between items-center mb-10 mt-4 px-1">
         <div>
-          <h1 className="text-2xl font-black text-gray-900 dark:text-slate-100 tracking-tight">Thống kê</h1>
-          <p className="text-xs text-gray-400 dark:text-slate-500 font-bold uppercase tracking-widest">Báo cáo tài chính {selectedYear}</p>
+          <h1 className="text-3xl lg:text-4xl font-black text-gray-900 dark:text-slate-100 tracking-tight">Thống kê</h1>
+          <p className="text-xs lg:text-sm text-gray-400 dark:text-slate-500 font-bold uppercase tracking-widest mt-1">Báo cáo tài chính {selectedYear}</p>
         </div>
-        <div className="flex items-center bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-2xl p-1 shadow-sm shadow-blue-500/5">
-          <button onClick={() => setSelectedYear(v => v - 1)} className="p-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-xl text-gray-400 dark:text-slate-500 transition-colors">
-            <ChevronLeft size={18} />
+        <div className="flex items-center bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-2xl p-1.5 shadow-sm">
+          <button onClick={() => setSelectedYear(v => v - 1)} className="p-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-xl text-gray-400 dark:text-slate-500 transition-colors active:scale-90">
+            <ChevronLeft size={20} />
           </button>
-          <span className="px-4 font-black text-gray-700 dark:text-slate-200 text-sm">{selectedYear}</span>
-          <button onClick={() => setSelectedYear(v => v + 1)} className="p-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-xl text-gray-400 dark:text-slate-500 transition-colors">
-            <ChevronRight size={18} />
+          <span className="px-6 font-black text-gray-700 dark:text-slate-200 text-base">{selectedYear}</span>
+          <button onClick={() => setSelectedYear(v => v + 1)} className="p-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-xl text-gray-400 dark:text-slate-500 transition-colors active:scale-90">
+            <ChevronRight size={20} />
           </button>
         </div>
       </div>
@@ -297,36 +297,36 @@ export default function Statistics() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-gray-100 dark:border-white/5 shadow-sm relative overflow-hidden group transition-all">
-            <div className="absolute -right-4 -top-4 w-12 h-12 bg-emerald-50 dark:bg-emerald-950/30 rounded-full flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
-              <TrendingUp size={20} />
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-8 mb-10">
+          <div className="bg-white dark:bg-slate-900 p-6 lg:p-10 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-sm relative overflow-hidden group transition-all">
+            <div className="absolute -right-6 -top-6 w-20 h-20 bg-emerald-50 dark:bg-emerald-950/30 rounded-full flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform blur-sm lg:blur-none opacity-40 lg:opacity-100">
+              <TrendingUp size={32} />
             </div>
-            <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Tổng Thu</p>
-            <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(totalSummary.income)}<span className="text-[10px] ml-0.5 opacity-70">₫</span></p>
+            <p className="text-[10px] lg:text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2">Tổng Thu (YTD)</p>
+            <p className="text-xl lg:text-4xl font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(totalSummary.income)}<span className="text-xs ml-0.5 opacity-70">₫</span></p>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-gray-100 dark:border-white/5 shadow-sm relative overflow-hidden group transition-all">
-            <div className="absolute -right-4 -top-4 w-12 h-12 bg-rose-50 dark:bg-rose-950/30 rounded-full flex items-center justify-center text-rose-500 group-hover:scale-110 transition-transform">
-              <TrendingDown size={20} />
+          <div className="bg-white dark:bg-slate-900 p-6 lg:p-10 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-sm relative overflow-hidden group transition-all">
+            <div className="absolute -right-6 -top-6 w-20 h-20 bg-rose-50 dark:bg-rose-950/30 rounded-full flex items-center justify-center text-rose-500 group-hover:scale-110 transition-transform blur-sm lg:blur-none opacity-40 lg:opacity-100">
+              <TrendingDown size={32} />
             </div>
-            <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Tổng Chi</p>
-            <p className="text-lg font-black text-rose-600 dark:text-rose-400">{formatCurrency(totalSummary.expense)}<span className="text-[10px] ml-0.5 opacity-70">₫</span></p>
+            <p className="text-[10px] lg:text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2">Tổng Chi (YTD)</p>
+            <p className="text-xl lg:text-4xl font-black text-rose-600 dark:text-rose-400">{formatCurrency(totalSummary.expense)}<span className="text-xs ml-0.5 opacity-70">₫</span></p>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-gray-100 dark:border-white/5 shadow-sm relative overflow-hidden group transition-all col-span-2">
-            <div className="absolute -right-4 -top-4 w-12 h-12 bg-blue-50 dark:bg-indigo-950/30 rounded-full flex items-center justify-center text-blue-500 dark:text-indigo-400 group-hover:scale-110 transition-transform">
-              <PiggyBank size={20} />
+          <div className="bg-white dark:bg-slate-900 p-6 lg:p-10 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-sm relative overflow-hidden group transition-all col-span-2 lg:col-span-1">
+            <div className="absolute -right-6 -top-6 w-20 h-20 bg-indigo-50 dark:bg-indigo-950/30 rounded-full flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform blur-sm lg:blur-none opacity-40 lg:opacity-100">
+              <PiggyBank size={32} />
             </div>
-            <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Tích lũy ròng (năm)</p>
-            <p className={`text-xl font-black ${totalSummary.net >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-orange-600 dark:text-orange-400'}`}>
+            <p className="text-[10px] lg:text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2">Tích lũy ròng (YTD)</p>
+            <p className={`text-xl lg:text-4xl font-black ${totalSummary.net >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-orange-600 dark:text-orange-400'}`}>
               {formatCurrency(totalSummary.net)}<span className="text-xs ml-0.5 opacity-70">₫</span>
             </p>
           </div>
         </div>
 
         {/* Cash Flow Charts */}
-        <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
           <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-sm transition-colors">
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-bold text-gray-900 dark:text-slate-100 text-sm flex items-center">
@@ -469,31 +469,31 @@ export default function Statistics() {
       <div className="mb-12">
         <div className="flex items-center mb-6 px-1">
           <div className="w-1.5 h-6 bg-indigo-500 rounded-full mr-3 shadow-sm shadow-indigo-500/40" />
-          <h2 className="text-lg font-black text-gray-900 dark:text-slate-100 tracking-tight">Tài sản & Tiết kiệm</h2>
+          <h2 className="text-xl font-black text-gray-900 dark:text-slate-100 tracking-tight">Tài sản & Tiết kiệm</h2>
         </div>
 
         {/* Wealth Summary Cards */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-sm shadow-indigo-500/5">
-            <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1 flex items-center">
-              <Wallet size={12} className="mr-1 text-indigo-500" /> Tổng vốn gửi
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 lg:gap-8 mb-10">
+          <div className="bg-white dark:bg-slate-900 p-8 lg:p-12 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-sm shadow-indigo-500/5 flex flex-col justify-center">
+            <p className="text-[10px] lg:text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-3 flex items-center">
+              <Wallet size={16} className="mr-2 text-indigo-500" /> Tổng vốn gửi tiết kiệm
             </p>
-            <p className="text-xl font-black text-gray-900 dark:text-slate-100 tracking-tight">
-              {formatCurrency(activeSavingsAnalysis.totalPrincipal)}<span className="text-xs ml-0.5 opacity-50">₫</span>
+            <p className="text-3xl lg:text-5xl font-black text-gray-900 dark:text-slate-100 tracking-tight">
+              {formatCurrency(activeSavingsAnalysis.totalPrincipal)}<span className="text-base lg:text-lg ml-1 opacity-50">₫</span>
             </p>
           </div>
-          <div className="bg-gradient-to-br from-indigo-600 to-blue-700 p-5 rounded-[2rem] border border-transparent shadow-lg shadow-indigo-500/20">
-            <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest mb-1 flex items-center">
-              <TrendingUp size={12} className="mr-1" /> Lãi dự kiến (Tất cả)
+          <div className="bg-gradient-to-br from-indigo-600 to-blue-700 p-8 lg:p-12 rounded-[2.5rem] border border-transparent shadow-xl shadow-indigo-500/20 flex flex-col justify-center">
+            <p className="text-[10px] lg:text-xs font-bold text-white/70 uppercase tracking-widest mb-3 flex items-center">
+              <TrendingUp size={16} className="mr-2" /> Tổng lãi dự kiến (Tất cả sổ)
             </p>
-            <p className="text-xl font-black text-white tracking-tight">
-              +{formatCurrency(activeSavingsAnalysis.totalInterest)}<span className="text-xs ml-0.5 opacity-50">₫</span>
+            <p className="text-3xl lg:text-5xl font-black text-white tracking-tight">
+              +{formatCurrency(activeSavingsAnalysis.totalInterest)}<span className="text-base lg:text-lg ml-1 opacity-50">₫</span>
             </p>
           </div>
         </div>
 
-        {/* Savings Components */}
-        <div className="space-y-6">
+        {/* Savings Components Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
           {/* Category Distribution */}
           <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden transition-colors">
             <div className="p-6">

@@ -2,7 +2,7 @@ import { exportDB, importInto } from 'dexie-export-import';
 import { db } from './db';
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-const SCOPES = 'https://www.googleapis.com/auth/drive.appdata email';
+const SCOPES = 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.metadata.readonly email';
 const BACKUP_FILE_NAME = 'finance_tracker_backup.json';
 
 let tokenClient = null;
@@ -41,7 +41,6 @@ async function getValidToken() {
       if (!tokenClient) initGoogleDriveSync();
       
       // Nếu đã có token và chưa hết hạn (đơn giản hóa bằng cách check biến)
-      // Trong thực tế GIS quản lý token expires, nhưng để đơn giản ta xin token mới nếu chưa có
       if (accessToken) {
         resolve(accessToken);
         return;
@@ -93,11 +92,64 @@ export function disconnectGoogleDrive() {
 }
 
 /**
- * Tìm file backup trong appDataFolder
+ * Liệt kê các thư mục trên Drive
  */
-async function findBackupFile(token) {
+export async function listDriveFolders(parentId = 'root') {
+  try {
+    const token = await getValidToken();
+    const query = `mimeType = 'application/vnd.google-apps.folder' and '${parentId}' in parents and trashed = false`;
+    const response = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,iconLink)&orderBy=name`,
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+    
+    if (!response.ok) throw new Error('Không thể lấy danh sách thư mục');
+    const data = await response.json();
+    return data.files || [];
+  } catch (error) {
+    console.error('List folders error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Tạo thư mục mới trên Drive
+ */
+export async function createDriveFolder(name, parentId = 'root') {
+  try {
+    const token = await getValidToken();
+    const metadata = {
+      name,
+      mimeType: 'application/vnd.google-apps.folder',
+      parents: parentId === 'root' ? [] : [parentId]
+    };
+
+    const response = await fetch('https://www.googleapis.com/drive/v3/files', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(metadata)
+    });
+
+    if (!response.ok) throw new Error('Không thể tạo thư mục');
+    return await response.json();
+  } catch (error) {
+    console.error('Create folder error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Tìm file backup trong folder cụ thể hoặc appDataFolder
+ */
+async function findBackupFile(token, folderId = 'appDataFolder') {
+  const query = `name='${BACKUP_FILE_NAME}' and '${folderId}' in parents and trashed = false`;
   const response = await fetch(
-    `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='${BACKUP_FILE_NAME}'&fields=files(id,name,modifiedTime)`,
+    `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,modifiedTime)`,
     {
       headers: { Authorization: `Bearer ${token}` }
     }
@@ -109,25 +161,23 @@ async function findBackupFile(token) {
 /**
  * Đẩy dữ liệu lên Google Drive
  */
-export async function uploadToDrive() {
+export async function uploadToDrive(targetFolderId = 'appDataFolder') {
   try {
     const token = await getValidToken();
     const blob = await exportDB(db);
-    const existingFile = await findBackupFile(token);
+    const existingFile = await findBackupFile(token, targetFolderId);
 
     const metadata = {
       name: BACKUP_FILE_NAME,
-      parents: ['appDataFolder']
+      parents: targetFolderId === 'appDataFolder' ? ['appDataFolder'] : [targetFolderId]
     };
 
     let url = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
     let method = 'POST';
 
     if (existingFile) {
-      // Cập nhật file cũ (PATCH)
       url = `https://www.googleapis.com/upload/drive/v3/files/${existingFile.id}?uploadType=multipart`;
       method = 'PATCH';
-      // Field 'parents' is not writable in update requests
       delete metadata.parents;
     }
 
@@ -143,17 +193,13 @@ export async function uploadToDrive() {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('Google Drive Upload Error:', errorData);
-      
       if (response.status === 401) {
-        accessToken = null; // Clear token if unauthorized
+        accessToken = null;
         throw new Error('Phiên đăng nhập hết hạn. Vui lòng thử lại.');
       }
-      
       throw new Error(errorData.error?.message || 'Không thể tải dữ liệu lên Google Drive');
     }
     
-    // Lưu lại thời điểm đồng bộ vào Settings local
     const now = new Date().toISOString();
     await db.settings.put({ key: 'lastDriveSync', value: now });
     

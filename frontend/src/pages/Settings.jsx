@@ -12,6 +12,7 @@ import {
 import { RefreshCw, CloudDownload, CloudUpload, FolderTree, Trash2, ChevronRight, Download, ShieldCheck, Lock, FolderOpen } from 'lucide-react';
 import { CategoryManagementSheet } from '../components/settings/CategoryManagementSheet';
 import { ChangePinSheet } from '../components/settings/ChangePinSheet';
+import { DriveFolderPicker } from '../components/settings/DriveFolderPicker';
 import { LoanCalculatorSheet } from '../components/tools/LoanCalculatorSheet';
 import { CompoundInterestSheet } from '../components/tools/CompoundInterestSheet';
 import { calculateLoanSchedule } from '../utils/loanCalculator';
@@ -38,12 +39,25 @@ export default function Settings() {
     loanProfiles: false,
     projection: false,
   });
+  const [isMobileDevice, setIsMobileDevice] = useState(!window.showDirectoryPicker);
+  const [showDrivePicker, setShowDrivePicker] = useState(false);
+  const [driveFolder, setDriveFolder] = useState(null);
 
   useEffect(() => {
     if (user) {
       loadDirectoryHandle();
+      loadDriveFolder();
     }
+    // Update mobile detection in case it changes (unlikely but good for testing)
+    setIsMobileDevice(!window.showDirectoryPicker);
   }, [user]);
+
+  const loadDriveFolder = async () => {
+    const record = await db.settings.get('googleDriveFolder');
+    if (record && record.value) {
+      setDriveFolder(record.value);
+    }
+  };
 
   const loadDirectoryHandle = async () => {
     const record = await db.settings.get('localDirectoryHandle');
@@ -56,6 +70,11 @@ export default function Settings() {
   };
 
   const handleSelectFolder = async () => {
+    if (isMobileDevice) {
+      setShowDrivePicker(true);
+      return;
+    }
+
     try {
       const handle = await selectDirectoryHandle();
       setFolderHandle(handle);
@@ -66,6 +85,12 @@ export default function Settings() {
         alert(err.message);
       }
     }
+  };
+
+  const handleDriveFolderSelect = async (folder) => {
+    setDriveFolder(folder);
+    await db.settings.put({ key: 'googleDriveFolder', value: folder });
+    alert(`Đã chọn thư mục Drive: ${folder.name}`);
   };
 
   const handleVerifyFolder = async () => {
@@ -145,8 +170,14 @@ export default function Settings() {
   const handleBackupToJSON = async () => {
     setExportLoading(true);
     try {
-      await exportDatabaseToJSON(hasFolderPermission ? folderHandle : null);
-      alert(hasFolderPermission ? `Đã lưu bản sao lưu JSON vào thư mục ${folderHandle.name}` : 'Đã tải xuống bản sao lưu JSON.');
+      if (isMobileDevice && driveFolder) {
+        const { uploadToDrive } = await import('../lib/syncService');
+        await uploadToDrive(driveFolder.id);
+        alert(`Đã sao lưu lên Google Drive: ${driveFolder.name}`);
+      } else {
+        await exportDatabaseToJSON(hasFolderPermission ? folderHandle : null);
+        alert(hasFolderPermission ? `Đã lưu bản sao lưu JSON vào thư mục ${folderHandle.name}` : 'Đã tải xuống bản sao lưu JSON.');
+      }
     } catch (err) {
       alert('Lỗi khi sao lưu dữ liệu: ' + err.message);
     } finally {
@@ -429,19 +460,27 @@ export default function Settings() {
                   </div>
                   <div>
                     <p className="font-black text-gray-900 dark:text-slate-100 group-active:text-indigo-600 transition-colors">
-                      {folderHandle ? 'Thư mục: ' + folderHandle.name : 'Chọn thư mục lưu trữ'}
+                      {isMobileDevice 
+                        ? (driveFolder ? 'Drive: ' + driveFolder.name : 'Chọn thư mục Google Drive')
+                        : (folderHandle ? 'Thư mục: ' + folderHandle.name : 'Chọn thư mục lưu trữ')}
                     </p>
                     <div className="flex items-center space-x-2 mt-0.5">
-                      <span className={`w-2 h-2 rounded-full ${folderHandle ? (hasFolderPermission ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500') : 'bg-gray-300'}`} />
+                      <span className={`w-2 h-2 rounded-full ${
+                        isMobileDevice 
+                          ? (driveFolder ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300')
+                          : (folderHandle ? (hasFolderPermission ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500') : 'bg-gray-300')
+                      }`} />
                       <p className="text-[11px] text-gray-500 dark:text-slate-500 font-medium leading-relaxed italic opacity-70">
-                        {folderHandle 
-                          ? (hasFolderPermission ? 'Đang hoạt động - Tự động lưu file' : 'Nhấp để cấp lại quyền truy cập')
-                          : 'Sử dụng File System API để tự động hóa'}
+                        {isMobileDevice
+                          ? (driveFolder ? 'Sẵn sàng sao lưu lên đám mây' : 'Chọn một thư mục Drive để lưu trữ')
+                          : (folderHandle 
+                            ? (hasFolderPermission ? 'Đang hoạt động - Tự động lưu file' : 'Nhấp để cấp lại quyền truy cập')
+                            : 'Sử dụng File System API để tự động hóa')}
                       </p>
                     </div>
                   </div>
                 </div>
-                {folderHandle && (
+                {(folderHandle || (isMobileDevice && driveFolder)) && (
                   <button 
                     onClick={(e) => { e.stopPropagation(); handleSelectFolder(); }}
                     className="text-[10px] font-black text-indigo-600 hover:underline uppercase px-2"
@@ -671,6 +710,11 @@ export default function Settings() {
       <CompoundInterestSheet
         isOpen={showCompoundSheet}
         onClose={() => setShowCompoundSheet(false)}
+      />
+      <DriveFolderPicker
+        isOpen={showDrivePicker}
+        onClose={() => setShowDrivePicker(false)}
+        onSelect={handleDriveFolderSelect}
       />
     </div>
   );

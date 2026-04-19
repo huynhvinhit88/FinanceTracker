@@ -21,7 +21,8 @@ const TABS = [
 ];
 
 export function SidebarNav() {
-  const { user, signOut } = useAuth();
+  const { googleUser, signOut } = useAuth();
+  const userName = googleUser?.email?.split('@')[0] || 'Guest';
 
   return (
     <aside className="hidden lg:flex flex-col w-[280px] h-screen sticky top-0 bg-white dark:bg-slate-950 border-r border-gray-100 dark:border-white/5 z-50 transition-colors duration-300">
@@ -75,14 +76,9 @@ export function SidebarNav() {
 
       {/* User / Profile Section */}
       <div className="p-6 border-t border-gray-50 dark:border-white/5">
-        <div className="flex items-center space-x-3 mb-6 p-2">
-          <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-black">
-            {user?.email?.charAt(0).toUpperCase()}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-gray-900 dark:text-slate-100 truncate">{user?.email}</p>
-            <p className="text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase">Người dùng</p>
-          </div>
+        <div className="mb-6 p-2">
+          <p className="text-[10px] text-gray-400 dark:text-slate-500 font-black uppercase tracking-[0.2em] mb-1">Xác thực bởi</p>
+          <p className="text-sm font-black text-gray-900 dark:text-slate-100 truncate">{userName}</p>
         </div>
 
         <button 

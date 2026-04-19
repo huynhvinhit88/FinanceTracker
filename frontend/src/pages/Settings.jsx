@@ -115,12 +115,6 @@ export default function Settings() {
   const handleExportData = async () => {
     setExportLoading(true);
     try {
-      // 1. JSON Backup
-      if (exportSelections.transactions && !exportSelections.accounts && !exportSelections.goals) {
-         // Special case: if ONLY transactions is checked, maybe they want JSON? 
-         // Actually, let's keep it simple: The "Confirm" button is inside the CSV panel.
-      }
-
       const results = [];
       
       if (exportSelections.transactions) {
@@ -143,6 +137,18 @@ export default function Settings() {
       alert(hasFolderPermission ? `Đã xuất toàn bộ báo cáo vào thư mục ${folderHandle.name}` : 'Đã tải xuống các tệp báo cáo.');
     } catch (err) {
       alert('Lỗi khi xuất dữ liệu: ' + err.message);
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+  const handleBackupToJSON = async () => {
+    setExportLoading(true);
+    try {
+      await exportDatabaseToJSON(hasFolderPermission ? folderHandle : null);
+      alert(hasFolderPermission ? `Đã lưu bản sao lưu JSON vào thư mục ${folderHandle.name}` : 'Đã tải xuống bản sao lưu JSON.');
+    } catch (err) {
+      alert('Lỗi khi sao lưu dữ liệu: ' + err.message);
     } finally {
       setExportLoading(false);
     }
@@ -539,7 +545,7 @@ export default function Settings() {
                 <div className="px-5 pb-5 bg-emerald-50/30 dark:bg-emerald-900/10 border-t border-emerald-100/50 dark:border-white/5 space-y-3">
                   <div className="pt-4 grid grid-cols-2 gap-3">
                     <button
-                      onClick={handleExportData}
+                      onClick={handleBackupToJSON}
                       disabled={exportLoading}
                       className="flex flex-col items-center justify-center p-4 rounded-3xl bg-emerald-600 dark:bg-emerald-700 text-white space-y-2 active:scale-95 transition-all disabled:opacity-60 shadow-lg shadow-emerald-100 dark:shadow-none"
                     >

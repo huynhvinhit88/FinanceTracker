@@ -35,7 +35,7 @@ export function initGoogleDriveSync() {
 /**
  * Request Access Token using a Promise wrapper
  */
-async function getValidToken() {
+export async function getValidToken() {
   return new Promise((resolve, reject) => {
     try {
       if (!tokenClient) initGoogleDriveSync();
@@ -105,7 +105,19 @@ export async function listDriveFolders(parentId = 'root') {
       }
     );
     
-    if (!response.ok) throw new Error('Không thể lấy danh sách thư mục');
+    if (!response.ok) {
+      if (response.status === 401) {
+        accessToken = null; // Clear expired token
+        throw new Error('Phiên đăng nhập hết hạn. Vui lòng thử lại.');
+      }
+      if (response.status === 403) {
+        accessToken = null; // Force re-consent next time
+        throw new Error('Thiếu quyền truy cập. Vui lòng cấp quyền xem thư mục Drive khi đăng nhập.');
+      }
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error?.message || 'Không thể lấy danh sách thư mục');
+    }
+    
     const data = await response.json();
     return data.files || [];
   } catch (error) {

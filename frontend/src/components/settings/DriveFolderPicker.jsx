@@ -29,7 +29,7 @@ export function DriveFolderPicker({ isOpen, onClose, onSelect, initialFolderId =
       const data = await listDriveFolders(id);
       setFolders(data);
     } catch (err) {
-      setError('Không thể tải danh sách thư mục. Vui lòng kiểm tra kết nối.');
+      setError(err.message || 'Không thể tải danh sách thư mục. Vui lòng kiểm tra kết nối.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -133,8 +133,14 @@ export function DriveFolderPicker({ isOpen, onClose, onSelect, initialFolderId =
 
         {/* Error State */}
         {error && (
-          <div className="p-4 bg-red-50 dark:bg-rose-900/10 border border-red-100 dark:border-rose-900/20 rounded-2xl">
-            <p className="text-xs text-red-600 dark:text-rose-400 font-bold">{error}</p>
+          <div className="p-4 bg-red-50 dark:bg-rose-900/10 border border-red-100 dark:border-rose-900/20 rounded-2xl flex flex-col items-center">
+            <p className="text-xs text-red-600 dark:text-rose-400 font-bold text-center mb-3">{error}</p>
+            <button 
+              onClick={() => loadFolders(currentFolder.id)}
+              className="px-4 py-2 bg-red-100 dark:bg-rose-900/30 text-red-600 dark:text-rose-400 text-[10px] font-black uppercase tracking-widest rounded-xl hover:opacity-80"
+            >
+              Thử lại
+            </button>
           </div>
         )}
 

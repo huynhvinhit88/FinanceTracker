@@ -7,7 +7,8 @@ import {
   importDatabaseFromJSON,
   selectDirectoryHandle,
   verifyDirectoryPermission,
-  writeBlobToFolder
+  writeBlobToFolder,
+  getValidToken
 } from '../lib/syncService';
 import { RefreshCw, CloudDownload, CloudUpload, FolderTree, Trash2, ChevronRight, Download, ShieldCheck, Lock, FolderOpen } from 'lucide-react';
 import { CategoryManagementSheet } from '../components/settings/CategoryManagementSheet';
@@ -71,7 +72,13 @@ export default function Settings() {
 
   const handleSelectFolder = async () => {
     if (isMobileDevice) {
-      setShowDrivePicker(true);
+      try {
+        await getValidToken(); // Ensure token is ready while it's still a user gesture
+        setShowDrivePicker(true);
+      } catch (err) {
+        console.error('Drive connection error:', err);
+        alert('Không thể kết nối Google Drive. Vui lòng thử lại.');
+      }
       return;
     }
 

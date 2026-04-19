@@ -72,6 +72,10 @@ export const AuthProvider = ({ children }) => {
       }
       return { error: 'Mã PIN hiện tại không chính xác' };
     },
+    lock: () => {
+      sessionStorage.removeItem('isUnlocked');
+      setUser(null);
+    },
     signOut: async () => {
       sessionStorage.removeItem('isUnlocked');
       localStorage.removeItem('googleUser');

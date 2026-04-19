@@ -17,7 +17,7 @@ import { CompoundInterestSheet } from '../components/tools/CompoundInterestSheet
 import { calculateLoanSchedule } from '../utils/loanCalculator';
 
 export default function Settings() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, lock } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   const [showCategorySheet, setShowCategorySheet] = useState(false);
@@ -615,7 +615,7 @@ export default function Settings() {
           <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 px-1">Bảo mật & Quyền riêng tư</p>
           <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden divide-y divide-gray-50 dark:divide-white/5 transition-colors">
             <button
-              onClick={() => signOut()}
+              onClick={() => lock()}
               className="w-full flex items-center justify-between p-5 hover:bg-gray-50 dark:hover:bg-slate-800/20 active:bg-gray-100 dark:active:bg-slate-800/40 transition-colors group text-left"
             >
               <div className="flex items-center space-x-4 flex-1">

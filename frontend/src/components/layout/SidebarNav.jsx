@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   Home, Wallet, PieChart, BarChart3, User, 
-  ChevronRight, LogOut, ShieldCheck 
+  ChevronRight, Lock, ShieldCheck 
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { clsx } from 'clsx';
@@ -21,7 +21,7 @@ const TABS = [
 ];
 
 export function SidebarNav() {
-  const { googleUser, signOut } = useAuth();
+  const { googleUser, lock } = useAuth();
   const userName = googleUser?.email?.split('@')[0] || 'Guest';
 
   return (
@@ -82,11 +82,11 @@ export function SidebarNav() {
         </div>
 
         <button 
-          onClick={() => signOut()}
-          className="w-full flex items-center justify-center space-x-2 py-3 rounded-2xl bg-gray-50 dark:bg-slate-900 text-gray-600 dark:text-slate-400 text-xs font-bold hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/20 transition-all active:scale-95"
+          onClick={() => lock()}
+          className="w-full flex items-center justify-center space-x-2 py-3 rounded-2xl bg-gray-50 dark:bg-slate-900 text-gray-600 dark:text-slate-400 text-xs font-bold hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-950/20 transition-all active:scale-95 border border-transparent hover:border-amber-100 dark:hover:border-amber-900/50"
         >
-          <LogOut size={16} />
-          <span>Đăng xuất</span>
+          <Lock size={16} />
+          <span>Khoá ứng dụng</span>
         </button>
       </div>
     </aside>

@@ -29,8 +29,8 @@ export function SidebarNav() {
       {/* Brand / Logo */}
       <div className="p-8">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200 dark:shadow-none">
-            <ShieldCheck className="text-white" size={24} />
+          <div className="w-10 h-10 flex items-center justify-center shrink-0">
+            <img src="/logo.png" alt="Finance Tracker Logo" className="w-full h-full object-contain rounded-xl shadow-lg" />
           </div>
           <div>
             <h1 className="text-lg font-black text-gray-900 dark:text-slate-100 tracking-tight leading-none">Finance</h1>

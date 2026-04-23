@@ -58,14 +58,14 @@ export default function Settings() {
 
   const loadDriveFolder = async () => {
     const record = await db.settings.get('googleDriveFolder');
-    if (record && record.value) {
+    if (record) {
       setDriveFolder(record.value);
     }
   };
 
   const loadDirectoryHandle = async () => {
     const record = await db.settings.get('localDirectoryHandle');
-    if (record && record.value) {
+    if (record) {
       setFolderHandle(record.value);
       // Check permission but don't prompt immediately
       const granted = await verifyDirectoryPermission(record.value, false);
@@ -89,6 +89,10 @@ export default function Settings() {
       const handle = await selectDirectoryHandle();
       setFolderHandle(handle);
       setHasFolderPermission(true);
+      
+      // Lưu cấu hình vào DB
+      await db.settings.put({ key: 'localDirectoryHandle', value: handle });
+      
       alert(`Đã chọn thư mục: ${handle.name}`);
     } catch (err) {
       if (err.name !== 'AbortError') {
@@ -99,8 +103,11 @@ export default function Settings() {
 
   const handleDriveFolderSelect = async (folder) => {
     setDriveFolder(folder);
+    
+    // Lưu cấu hình vào DB
     await db.settings.put({ key: 'googleDriveFolder', value: folder });
-    alert(`Đã chọn thư mục Drive: ${folder.name}`);
+    
+    alert(`Đã chọn thư mục Google Drive: ${folder.name}`);
   };
 
   const handleVerifyFolder = async () => {
@@ -121,6 +128,7 @@ export default function Settings() {
     try {
       const { downloadFromDrive } = await import('../lib/syncService');
       await downloadFromDrive(file.id);
+      
       alert('Khôi phục dữ liệu từ Google Drive thành công! Ứng dụng sẽ tải lại.');
       window.location.reload();
     } catch (err) {

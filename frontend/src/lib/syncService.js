@@ -5,6 +5,72 @@ const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const SCOPES = 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.metadata.readonly https://www.googleapis.com/auth/drive.readonly email';
 const BACKUP_FILE_NAME = 'finance_tracker_backup.json';
 
+const getFormattedTimestamp = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  return `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
+};
+
+/**
+ * Export toàn bộ dữ liệu bao gồm cả localStorage
+ */
+async function exportFullBackup() {
+  const dbBlob = await exportDB(db);
+  const dbText = await dbBlob.text();
+  const dbData = JSON.parse(dbText);
+  
+  // Lấy dữ liệu từ localStorage
+  const loanProfiles = localStorage.getItem('loan_profiles');
+  
+  const fullBackup = {
+    ...dbData,
+    _extra_data: {
+      localStorage: {
+        loan_profiles: loanProfiles ? JSON.parse(loanProfiles) : null
+      }
+    }
+  };
+  
+  return new Blob([JSON.stringify(fullBackup)], { type: 'application/json' });
+}
+
+/**
+ * Import toàn bộ dữ liệu bao gồm cả localStorage
+ */
+async function importFullBackup(blob) {
+  const text = await blob.text();
+  const data = JSON.parse(text);
+  
+  // Khôi phục localStorage nếu có
+  if (data._extra_data && data._extra_data.localStorage) {
+    const { loan_profiles } = data._extra_data.localStorage;
+    if (loan_profiles) {
+      localStorage.setItem('loan_profiles', JSON.stringify(loan_profiles));
+    }
+  }
+  
+  // Xóa extra data trước khi đưa vào Dexie import
+  const dbData = { ...data };
+  delete dbData._extra_data;
+  
+  const dbBlob = new Blob([JSON.stringify(dbData)], { type: 'application/json' });
+  
+  // Khôi phục vào DB
+  await db.delete();
+  await db.open();
+  await importInto(db, dbBlob, { 
+    clearTablesBeforeImport: true,
+    overwriteValues: true 
+  });
+  
+  return true;
+}
+
 let tokenClient = null;
 let accessToken = null;
 
@@ -202,11 +268,11 @@ async function findBackupFile(token, folderId = 'appDataFolder', filename = BACK
 export async function uploadToDrive(targetFolderId = 'appDataFolder') {
   try {
     const token = await getValidToken();
-    const blob = await exportDB(db);
+    const blob = await exportFullBackup();
     
     // Nếu là folder do người dùng chọn, dùng tên file có ngày tháng + giờ phút để tránh trùng lặp và lỗi quyền ghi
     const isCustomFolder = targetFolderId !== 'appDataFolder';
-    const timestamp = new Date().toLocaleString('sv').replace(/[: ]/g, '-');
+    const timestamp = getFormattedTimestamp();
     const filename = isCustomFolder 
       ? `finance_tracker_backup_${timestamp}.json`
       : BACKUP_FILE_NAME;
@@ -296,14 +362,7 @@ export async function downloadFromDrive(fileId = null) {
     }
 
     const blob = await response.blob();
-    
-    // Khôi phục vào DB
-    await db.delete();
-    await db.open();
-    await importInto(db, blob, { 
-      clearTablesBeforeImport: true,
-      overwriteValues: true 
-    });
+    await importFullBackup(blob);
 
     return true;
   } catch (error) {
@@ -337,8 +396,8 @@ export async function checkRemoteBackup() {
 // Giữ lại các hàm export/import JSON nội bộ
 export async function exportDatabaseToJSON(targetFolderHandle = null) {
   try {
-    const blob = await exportDB(db);
-    const timestamp = new Date().toLocaleString('sv').replace(/[: ]/g, '-');
+    const blob = await exportFullBackup();
+    const timestamp = getFormattedTimestamp();
     const filename = `finance_tracker_backup_${timestamp}.json`;
 
     if (targetFolderHandle) {

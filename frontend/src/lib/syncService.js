@@ -2,7 +2,7 @@ import { exportDB, importInto } from 'dexie-export-import';
 import { db } from './db';
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-const SCOPES = 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.metadata.readonly email';
+const SCOPES = 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.metadata.readonly https://www.googleapis.com/auth/drive.readonly email';
 const BACKUP_FILE_NAME = 'finance_tracker_backup.json';
 
 let tokenClient = null;

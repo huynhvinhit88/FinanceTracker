@@ -59,13 +59,13 @@ export function ChangePinSheet({ isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div 
         className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
         onClick={handleClose}
       />
       
-      <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-300 border-none dark:border dark:border-white/5 mx-auto">
+      <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-300 border-none dark:border dark:border-white/5 mx-auto pb-safe">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-100 dark:border-white/5 flex items-center justify-between bg-white dark:bg-slate-900 sticky top-0 z-10">
           <h2 className="text-xl font-black text-gray-900 dark:text-slate-100 flex items-center">

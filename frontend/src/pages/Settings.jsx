@@ -36,9 +36,9 @@ export default function Settings() {
   const [hasFolderPermission, setHasFolderPermission] = useState(false);
   const [selectedExportYear, setSelectedExportYear] = useState(new Date().getFullYear());
   const [exportSelections, setExportSelections] = useState({
-    transactions: true,
-    accounts: true,
-    goals: true,
+    transactions: false,
+    accounts: false,
+    goals: false,
     loanProfiles: false,
     projection: false,
   });

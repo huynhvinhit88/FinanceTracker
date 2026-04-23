@@ -491,7 +491,7 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
 
             {showSchedule && schedule.length > 0 && (
               <div className="mt-4 bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl overflow-x-auto shadow-sm no-scrollbar transition-colors">
-                <table className="w-full text-[9px] text-right whitespace-nowrap tabular-nums">
+                <table className="w-full text-[11px] text-right whitespace-nowrap tabular-nums">
                   <thead className="bg-gray-50 dark:bg-slate-800 text-gray-400 dark:text-slate-500 font-bold uppercase tracking-widest border-b dark:border-white/5">
                     <tr>
                       <th className="sticky left-0 z-10 bg-gray-50 dark:bg-slate-800 px-1.5 py-3 text-center w-8 border-r border-gray-100 dark:border-white/5">Kỳ</th>
@@ -508,7 +508,7 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
                     {schedule.map((row) => (
                       <tr key={row.month} className={`${row.prepay > 0 ? 'bg-orange-50/50 dark:bg-orange-900/10' : 'hover:bg-gray-50/50 dark:hover:bg-slate-800/50 group'}`}>
                         <td className={`sticky left-0 z-10 px-1.5 py-3 text-center text-gray-400 dark:text-slate-500 border-r border-gray-50 dark:border-white/5 transition-colors ${row.prepay > 0 ? 'bg-orange-50 dark:bg-orange-900/10' : 'bg-white dark:bg-slate-900 group-hover:bg-gray-50 dark:group-hover:bg-slate-800/50'}`}>{row.month}</td>
-                        <td className="px-2 py-3 text-left text-[8px] font-normal">{row.dateStr}</td>
+                        <td className="px-2 py-3 text-left text-[10px] font-normal">{row.dateStr}</td>
                         <td className="px-2 py-3">{formatCurrency(row.principal)}</td>
                         <td className="px-2 py-3 text-red-400/80 dark:text-rose-400/80">{formatCurrency(row.interest)}</td>
                         <td className="px-2 py-3 font-bold text-gray-900 dark:text-slate-100">{formatCurrency(row.total)}</td>

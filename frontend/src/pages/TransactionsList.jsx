@@ -183,7 +183,7 @@ export default function TransactionsList() {
                       <p className={`font-bold tabular-nums ${isIncome ? 'text-green-600 dark:text-emerald-400' : isTransfer ? 'text-gray-900 dark:text-slate-100' : 'text-red-500 dark:text-rose-400'}`}>
                         {isIncome ? '+' : isTransfer ? '' : '-'}{formatCurrency(tx.amount)} đ
                       </p>
-                      <p className="text-[10px] text-gray-400 dark:text-slate-500 font-medium mt-0.5">
+                      <p className="text-xs text-gray-400 dark:text-slate-500 font-medium mt-0.5">
                         {new Date(tx.date).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>

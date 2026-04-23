@@ -520,10 +520,10 @@ export default function Plan() {
                     <table className="w-full text-center divide-y divide-gray-50 dark:divide-white/5 tabular-nums">
                       <thead className="bg-gray-50/50 dark:bg-slate-800/50">
                         <tr>
-                          <th className="py-3 px-4 text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase">Tháng</th>
-                          <th className="py-3 px-2 text-[9px] font-black text-emerald-500 dark:text-emerald-400 uppercase">Dự Thu</th>
-                          <th className="py-3 px-2 text-[9px] font-black text-blue-500 dark:text-blue-400 uppercase">Dự Chi</th>
-                          <th className="py-3 px-4 text-[9px] font-black text-indigo-600 dark:text-indigo-400 uppercase">Tiết kiệm</th>
+                          <th className="py-3 px-4 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase">Tháng</th>
+                          <th className="py-3 px-2 text-[10px] font-black text-emerald-500 dark:text-emerald-400 uppercase">Dự Thu</th>
+                          <th className="py-3 px-2 text-[10px] font-black text-blue-500 dark:text-blue-400 uppercase">Dự Chi</th>
+                          <th className="py-3 px-4 text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase">Tiết kiệm</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50 dark:divide-white/5">
@@ -536,10 +536,10 @@ export default function Plan() {
                           return (
                             <tr key={m} className="group hover:bg-indigo-50/30 dark:hover:bg-indigo-900/20 transition-colors">
                               <td className="py-3 px-4">
-                                <span className="text-[10px] font-black text-gray-900 dark:text-slate-100">T{d.getMonth() + 1}/{d.getFullYear()}</span>
+                                <span className="text-[11px] font-black text-gray-900 dark:text-slate-100">T{d.getMonth() + 1}/{d.getFullYear()}</span>
                               </td>
-                              <td className="py-3 px-2 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">+{formatCurrency(stats.income)}</td>
-                              <td className="py-3 px-2 text-[10px] font-bold text-blue-600 dark:text-blue-400">-{formatCurrency(stats.expense)}</td>
+                              <td className="py-3 px-2 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">+{formatCurrency(stats.income)}</td>
+                              <td className="py-3 px-2 text-[11px] font-bold text-blue-600 dark:text-blue-400">-{formatCurrency(stats.expense)}</td>
                               <td className="py-3 px-4">
                                 <div className="flex items-center justify-center space-x-1">
                                   <input

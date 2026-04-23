@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import * as XLSX from 'xlsx';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { db } from '../lib/db';
@@ -144,6 +145,30 @@ export default function Settings() {
     return true;
   };
 
+  const downloadXLSX = async (workbook, filename) => {
+    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    
+    if (folderHandle && hasFolderPermission) {
+      try {
+        await writeBlobToFolder(folderHandle, filename, blob);
+        return true;
+      } catch (err) {
+        console.warn("Folder save failed, falling back to download", err);
+      }
+    }
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    return true;
+  };
+
   const handleExportData = async () => {
     setExportLoading(true);
     try {
@@ -243,16 +268,62 @@ export default function Settings() {
   };
 
   const fetchAndExportLoans = async () => {
-    const loans = await db.loans.toArray();
-    const rows = loans.map(l => ({
-      'Tên': l.name,
-      'Tổng nợ': l.total_amount,
-      'Lãi suất (%)': l.interest_rate,
-      'Kỳ hạn (tháng)': l.term_months,
-      'Ngày bắt đầu': l.start_date ? new Date(l.start_date).toLocaleDateString('vi-VN') : '',
-      'Trạng thái': l.status
-    }));
-    return downloadCSV(toCSV(['Tên', 'Tổng nợ', 'Lãi suất (%)', 'Kỳ hạn (tháng)', 'Ngày bắt đầu', 'Trạng thái'], rows), 'Khoan_vay.csv');
+    const storageKey = `loan_profiles_${user?.id || 'guest'}`;
+    const profiles = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    
+    if (profiles.length === 0) {
+      alert('Không có hồ sơ khoản vay nào để xuất.');
+      return;
+    }
+
+    const wb = XLSX.utils.book_new();
+
+    profiles.forEach(p => {
+      const { schedule, result } = calculateLoanSchedule(p);
+      if (!schedule || !result) return;
+
+      const summary = [
+        ['THÔNG TIN HỒ SƠ', p.name],
+        ['Số tiền vay', Number(p.principal)],
+        ['Kỳ hạn (tháng)', Number(p.termMonths)],
+        ['Lãi suất ưu đãi (%)', p.promoRate],
+        ['Thời gian ưu đãi (tháng)', p.promoMonths],
+        ['Lãi suất cơ sở (%)', p.baseRate],
+        ['Biên độ (%)', p.marginRate],
+        ['Chuỗi phí phạt', p.penaltyConfig],
+        ['', ''],
+        ['KẾT QUẢ MÔ PHỎNG', ''],
+        ['Tháng đầu tiên phải trả', result.initialMonthlyPayment],
+        ['Tổng lãi (Gốc)', result.baseTotalInterest],
+        ['Thực trả (Lãi + Phí)', result.actualTotalInterest + result.totalPenalty],
+        ['Tiết kiệm được', result.interestSaved],
+        ['Rút ngắn được (tháng)', result.monthsSaved],
+        ['Ngày tất toán dự kiến', result.payoffDateStr],
+        ['', ''],
+        ['LỊCH THANH TOÁN CHI TIẾT', '']
+      ];
+
+      const data = schedule.map(row => ({
+        'Kỳ': row.month,
+        'Ngày': row.date,
+        'Dư nợ đầu kỳ': row.remaining,
+        'Gốc': row.principal,
+        'Lãi': row.interest,
+        'Trả thêm/Tất toán': row.prepay,
+        'Phí phạt': row.penalty,
+        'Tổng trả': row.total,
+        'Ví tích lũy': row.accumulated
+      }));
+
+      const ws = XLSX.utils.aoa_to_sheet(summary);
+      XLSX.utils.sheet_add_json(ws, data, { origin: 'A19' });
+
+      // Sanitize sheet name
+      const safeName = p.name.replace(/[\\/?*[\]:]/g, '_').substring(0, 31);
+      XLSX.utils.book_append_sheet(wb, ws, safeName || `Profile ${p.id}`);
+    });
+
+    return downloadXLSX(wb, 'Ho_so_khoan_vay.xlsx');
   };
 
   const generateAndExportProjection = async () => {
@@ -564,7 +635,7 @@ export default function Settings() {
                     {exportLoading
                       ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       : <Download size={18} />}
-                    <span>XÁC NHẬN TẢI CSV</span>
+                    <span>XÁC NHẬN TẢI BÁO CÁO</span>
                   </button>
                 </div>
               )}

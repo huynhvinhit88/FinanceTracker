@@ -204,25 +204,29 @@ export async function uploadToDrive(targetFolderId = 'appDataFolder') {
     const token = await getValidToken();
     const blob = await exportDB(db);
     
-    // Nếu là folder do người dùng chọn, dùng tên file có ngày tháng
-    const filename = targetFolderId === 'appDataFolder' 
-      ? BACKUP_FILE_NAME 
-      : `finance_tracker_backup_${new Date().toISOString().split('T')[0]}.json`;
-
-    const existingFile = await findBackupFile(token, targetFolderId, filename);
+    // Nếu là folder do người dùng chọn, dùng tên file có ngày tháng + giờ phút để tránh trùng lặp và lỗi quyền ghi
+    const isCustomFolder = targetFolderId !== 'appDataFolder';
+    const timestamp = new Date().toLocaleString('sv').replace(/[: ]/g, '-');
+    const filename = isCustomFolder 
+      ? `finance_tracker_backup_${timestamp}.json`
+      : BACKUP_FILE_NAME;
 
     const metadata = {
       name: filename,
-      parents: targetFolderId === 'appDataFolder' ? ['appDataFolder'] : [targetFolderId]
+      parents: isCustomFolder ? [targetFolderId] : ['appDataFolder']
     };
 
     let url = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
     let method = 'POST';
 
-    if (existingFile) {
-      url = `https://www.googleapis.com/upload/drive/v3/files/${existingFile.id}?uploadType=multipart`;
-      method = 'PATCH';
-      delete metadata.parents;
+    // Chỉ PATCH nếu là appDataFolder và file đã tồn tại (để giữ 1 bản duy nhất trong appData)
+    if (!isCustomFolder) {
+      const existingFile = await findBackupFile(token, 'appDataFolder', BACKUP_FILE_NAME);
+      if (existingFile) {
+        url = `https://www.googleapis.com/upload/drive/v3/files/${existingFile.id}?uploadType=multipart`;
+        method = 'PATCH';
+        delete metadata.parents;
+      }
     }
 
     const formData = new FormData();
@@ -237,6 +241,7 @@ export async function uploadToDrive(targetFolderId = 'appDataFolder') {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      console.error('Drive Upload Error:', errorData);
       if (response.status === 401) {
         accessToken = null;
         throw new Error('Phiên đăng nhập hết hạn. Vui lòng thử lại.');

@@ -337,7 +337,8 @@ export async function checkRemoteBackup() {
 export async function exportDatabaseToJSON(targetFolderHandle = null) {
   try {
     const blob = await exportDB(db);
-    const filename = `finance_tracker_backup_${new Date().toISOString().split('T')[0]}.json`;
+    const timestamp = new Date().toLocaleString('sv').replace(/[: ]/g, '-');
+    const filename = `finance_tracker_backup_${timestamp}.json`;
 
     if (targetFolderHandle) {
       await writeBlobToFolder(targetFolderHandle, filename, blob);

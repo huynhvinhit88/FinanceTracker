@@ -223,14 +223,31 @@ export default function Settings() {
   const handleBackupToJSON = async () => {
     setExportLoading(true);
     try {
-      if (isMobileDevice && driveFolder) {
+      // Ưu tiên 1: Google Drive (Nếu đã chọn thư mục Drive)
+      if (driveFolder) {
         const { uploadToDrive } = await import('../lib/syncService');
         await uploadToDrive(driveFolder.id);
-        alert(`Đã sao lưu lên Google Drive: ${driveFolder.name}`);
-      } else {
-        await exportDatabaseToJSON(hasFolderPermission ? folderHandle : null);
-        alert(hasFolderPermission ? `Đã lưu bản sao lưu JSON vào thư mục ${folderHandle.name}` : 'Đã tải xuống bản sao lưu JSON.');
+        alert(`Đã sao lưu thành công lên Google Drive: ${driveFolder.name}`);
+        setExportLoading(false);
+        return;
       }
+
+      // Ưu tiên 2: Thư mục Local (Nếu đã chọn và có quyền)
+      if (folderHandle) {
+        const granted = await verifyDirectoryPermission(folderHandle, true);
+        setHasFolderPermission(granted);
+        
+        if (granted) {
+          await exportDatabaseToJSON(folderHandle);
+          alert(`Đã sao lưu tự động vào thư mục: ${folderHandle.name}`);
+          setExportLoading(false);
+          return;
+        }
+      }
+
+      // Cuối cùng: Tải xuống thủ công
+      await exportDatabaseToJSON(null);
+      alert('Đã tải xuống bản sao lưu JSON.');
     } catch (err) {
       alert('Lỗi khi sao lưu dữ liệu: ' + err.message);
     } finally {

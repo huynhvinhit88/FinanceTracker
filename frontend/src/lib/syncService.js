@@ -132,7 +132,7 @@ export async function listDriveFolders(parentId = 'root') {
 export async function listDriveFiles(parentId = 'root', mimeType = 'application/json') {
   try {
     const token = await getValidToken();
-    const query = `'${parentId}' in parents and trashed = false${mimeType ? ` and mimeType = '${mimeType}'` : ''}`;
+    const query = `'${parentId}' in parents and trashed = false and (mimeType = 'application/json' or name contains '.json')`;
     const response = await fetch(
       `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,modifiedTime,size,iconLink)&orderBy=modifiedTime desc`,
       {
@@ -213,7 +213,8 @@ export async function uploadToDrive(targetFolderId = 'appDataFolder') {
 
     const metadata = {
       name: filename,
-      parents: isCustomFolder ? [targetFolderId] : ['appDataFolder']
+      parents: isCustomFolder ? [targetFolderId] : ['appDataFolder'],
+      mimeType: 'application/json'
     };
 
     let url = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
@@ -231,7 +232,7 @@ export async function uploadToDrive(targetFolderId = 'appDataFolder') {
 
     const formData = new FormData();
     formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-    formData.append('file', blob);
+    formData.append('file', new Blob([blob], { type: 'application/json' }), filename);
 
     const response = await fetch(url, {
       method,

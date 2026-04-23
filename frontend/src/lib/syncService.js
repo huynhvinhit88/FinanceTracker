@@ -127,6 +127,32 @@ export async function listDriveFolders(parentId = 'root') {
 }
 
 /**
+ * Liệt kê các file trong thư mục Drive
+ */
+export async function listDriveFiles(parentId = 'root', mimeType = 'application/json') {
+  try {
+    const token = await getValidToken();
+    const query = `'${parentId}' in parents and trashed = false${mimeType ? ` and mimeType = '${mimeType}'` : ''}`;
+    const response = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,modifiedTime,size,iconLink)&orderBy=modifiedTime desc`,
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error('Không thể lấy danh sách tập tin');
+    }
+    
+    const data = await response.json();
+    return data.files || [];
+  } catch (error) {
+    console.error('List files error:', error);
+    throw error;
+  }
+}
+
+/**
  * Tạo thư mục mới trên Drive
  */
 export async function createDriveFolder(name, parentId = 'root') {
@@ -158,8 +184,8 @@ export async function createDriveFolder(name, parentId = 'root') {
 /**
  * Tìm file backup trong folder cụ thể hoặc appDataFolder
  */
-async function findBackupFile(token, folderId = 'appDataFolder') {
-  const query = `name='${BACKUP_FILE_NAME}' and '${folderId}' in parents and trashed = false`;
+async function findBackupFile(token, folderId = 'appDataFolder', filename = BACKUP_FILE_NAME) {
+  const query = `name='${filename}' and '${folderId}' in parents and trashed = false`;
   const response = await fetch(
     `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,modifiedTime)`,
     {
@@ -177,10 +203,16 @@ export async function uploadToDrive(targetFolderId = 'appDataFolder') {
   try {
     const token = await getValidToken();
     const blob = await exportDB(db);
-    const existingFile = await findBackupFile(token, targetFolderId);
+    
+    // Nếu là folder do người dùng chọn, dùng tên file có ngày tháng
+    const filename = targetFolderId === 'appDataFolder' 
+      ? BACKUP_FILE_NAME 
+      : `finance_tracker_backup_${new Date().toISOString().split('T')[0]}.json`;
+
+    const existingFile = await findBackupFile(token, targetFolderId, filename);
 
     const metadata = {
-      name: BACKUP_FILE_NAME,
+      name: filename,
       parents: targetFolderId === 'appDataFolder' ? ['appDataFolder'] : [targetFolderId]
     };
 
@@ -225,17 +257,21 @@ export async function uploadToDrive(targetFolderId = 'appDataFolder') {
 /**
  * Tải dữ liệu từ Google Drive và khôi phục vào local
  */
-export async function downloadFromDrive() {
+export async function downloadFromDrive(fileId = null) {
   try {
     const token = await getValidToken();
-    const file = await findBackupFile(token);
+    let targetFileId = fileId;
 
-    if (!file) {
-      throw new Error('Không tìm thấy bản sao lưu trên Drive');
+    if (!targetFileId) {
+      const file = await findBackupFile(token);
+      if (!file) {
+        throw new Error('Không tìm thấy bản sao lưu trên Drive');
+      }
+      targetFileId = file.id;
     }
 
     const response = await fetch(
-      `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`,
+      `https://www.googleapis.com/drive/v3/files/${targetFileId}?alt=media`,
       {
         headers: { Authorization: `Bearer ${token}` }
       }

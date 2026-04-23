@@ -15,6 +15,7 @@ import { RefreshCw, CloudDownload, CloudUpload, FolderTree, Trash2, ChevronRight
 import { CategoryManagementSheet } from '../components/settings/CategoryManagementSheet';
 import { ChangePinSheet } from '../components/settings/ChangePinSheet';
 import { DriveFolderPicker } from '../components/settings/DriveFolderPicker';
+import { DriveFilePicker } from '../components/settings/DriveFilePicker';
 import { LoanCalculatorSheet } from '../components/tools/LoanCalculatorSheet';
 import { CompoundInterestSheet } from '../components/tools/CompoundInterestSheet';
 import { calculateLoanSchedule } from '../utils/loanCalculator';
@@ -43,6 +44,7 @@ export default function Settings() {
   });
   const [isMobileDevice, setIsMobileDevice] = useState(!window.showDirectoryPicker);
   const [showDrivePicker, setShowDrivePicker] = useState(false);
+  const [showDriveFilePicker, setShowDriveFilePicker] = useState(false);
   const [driveFolder, setDriveFolder] = useState(null);
 
   useEffect(() => {
@@ -107,6 +109,25 @@ export default function Settings() {
     setHasFolderPermission(granted);
     if (granted) {
       alert('Đã khôi phục quyền truy cập thư mục.');
+    }
+  };
+
+  const handleDriveFileSelect = async (file) => {
+    if (!window.confirm(`Bạn có chắc muốn khôi phục dữ liệu từ bản sao lưu "${file.name}"? Dữ liệu hiện tại sẽ bị ghi đè.`)) {
+      return;
+    }
+    
+    setExportLoading(true);
+    try {
+      const { downloadFromDrive } = await import('../lib/syncService');
+      await downloadFromDrive(file.id);
+      alert('Khôi phục dữ liệu từ Google Drive thành công! Ứng dụng sẽ tải lại.');
+      window.location.reload();
+    } catch (err) {
+      alert('Lỗi khôi phục: ' + err.message);
+    } finally {
+      setExportLoading(false);
+      setShowDriveFilePicker(false);
     }
   };
 
@@ -673,12 +694,18 @@ export default function Settings() {
                     </button>
                     
                     <label 
-                      onClick={hasFolderPermission ? handleImportFromFolder : undefined}
+                      onClick={() => {
+                        if (isMobileDevice && driveFolder) {
+                          setShowDriveFilePicker(true);
+                        } else if (hasFolderPermission) {
+                          handleImportFromFolder();
+                        }
+                      }}
                       className="flex flex-col items-center justify-center p-4 rounded-3xl bg-white dark:bg-slate-800 border-2 border-emerald-100 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 space-y-2 active:scale-95 transition-all disabled:opacity-60 cursor-pointer"
                     >
                       <CloudDownload size={18} />
                       <span className="text-[11px] font-black uppercase tracking-wider">Khôi phục</span>
-                      {!hasFolderPermission && <input type="file" accept=".json" onChange={handleImportJson} className="hidden" />}
+                      {(!isMobileDevice || !driveFolder) && !hasFolderPermission && <input type="file" accept=".json" onChange={handleImportJson} className="hidden" />}
                     </label>
                   </div>
                   <p className="text-[10px] text-gray-400 dark:text-slate-500 font-medium text-center leading-relaxed px-4">
@@ -793,6 +820,13 @@ export default function Settings() {
         isOpen={showDrivePicker}
         onClose={() => setShowDrivePicker(false)}
         onSelect={handleDriveFolderSelect}
+      />
+      <DriveFilePicker
+        isOpen={showDriveFilePicker}
+        onClose={() => setShowDriveFilePicker(false)}
+        folderId={driveFolder?.id}
+        folderName={driveFolder?.name}
+        onSelect={handleDriveFileSelect}
       />
     </div>
   );

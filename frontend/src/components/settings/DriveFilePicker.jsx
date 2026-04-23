@@ -131,10 +131,6 @@ export function DriveFilePicker({ isOpen, onClose, onSelect, folderId, folderNam
                     <Download size={16} />
                   </div>
                 </button>
-              ))}
-            </div>
-          ) : (
-            null
           )}
         </div>
 

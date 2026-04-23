@@ -180,7 +180,7 @@ export default function TransactionsList() {
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className={`font-bold ${isIncome ? 'text-green-600 dark:text-emerald-400' : isTransfer ? 'text-gray-900 dark:text-slate-100' : 'text-red-500 dark:text-rose-400'}`}>
+                      <p className={`font-bold tabular-nums ${isIncome ? 'text-green-600 dark:text-emerald-400' : isTransfer ? 'text-gray-900 dark:text-slate-100' : 'text-red-500 dark:text-rose-400'}`}>
                         {isIncome ? '+' : isTransfer ? '' : '-'}{formatCurrency(tx.amount)} đ
                       </p>
                       <p className="text-[10px] text-gray-400 dark:text-slate-500 font-medium mt-0.5">

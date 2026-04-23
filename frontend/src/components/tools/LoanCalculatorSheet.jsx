@@ -491,7 +491,7 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
 
             {showSchedule && schedule.length > 0 && (
               <div className="mt-4 bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-xl overflow-x-auto shadow-sm no-scrollbar transition-colors">
-                <table className="w-full text-[9px] text-right whitespace-nowrap">
+                <table className="w-full text-[9px] text-right whitespace-nowrap tabular-nums">
                   <thead className="bg-gray-50 dark:bg-slate-800 text-gray-400 dark:text-slate-500 font-bold uppercase tracking-widest border-b dark:border-white/5">
                     <tr>
                       <th className="sticky left-0 z-10 bg-gray-50 dark:bg-slate-800 px-1.5 py-3 text-center w-8 border-r border-gray-100 dark:border-white/5">Kỳ</th>

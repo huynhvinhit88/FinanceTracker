@@ -427,7 +427,7 @@ export default function Statistics() {
           <h3 className="text-sm font-black text-gray-900 dark:text-slate-100 mb-4 px-2 tracking-tight">Báo cáo chi tiết từng tháng</h3>
           <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden transition-all">
             <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
+              <table className="w-full text-xs text-left tabular-nums">
                 <thead className="bg-gray-50/50 dark:bg-slate-800/50 text-gray-500 dark:text-slate-500 font-bold uppercase tracking-widest text-[9px]">
                   <tr>
                     <th className="px-5 py-4">Tháng</th>
@@ -627,12 +627,12 @@ export default function Statistics() {
                     </div>
                     <div className="flex-1">
                       <div className="flex justify-between items-center">
-                        <p className="text-sm font-black text-gray-900 dark:text-slate-100">{formatCurrency(item.principal + item.interest)}₫</p>
+                        <p className="text-sm font-black text-gray-900 dark:text-slate-100 tabular-nums">{formatCurrency(item.principal + item.interest)}₫</p>
                         <ChevronRightIcon size={14} className="text-gray-300 opacity-50" />
                       </div>
                       <div className="flex justify-between mt-1">
-                        <p className="text-[9px] font-medium text-gray-500">Gốc: {formatCurrency(item.principal)}</p>
-                        <p className="text-[9px] text-emerald-600 font-bold">Lãi: +{formatCurrency(item.interest)}</p>
+                        <p className="text-[9px] font-medium text-gray-500 tabular-nums">Gốc: {formatCurrency(item.principal)}</p>
+                        <p className="text-[9px] text-emerald-600 font-bold tabular-nums">Lãi: +{formatCurrency(item.interest)}</p>
                       </div>
                     </div>
                   </div>
@@ -708,12 +708,11 @@ export default function Statistics() {
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-[11px]">
                     <div>
-                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Tiền gốc</p>
-                      <p className="font-black text-gray-900 dark:text-slate-100">{formatCurrency(book.principal_amount)}₫</p>
+                      <p className="font-black text-gray-900 dark:text-slate-100 tabular-nums">{formatCurrency(book.principal_amount)}₫</p>
                     </div>
                     <div>
                       <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Lãi nhận được</p>
-                      <p className="font-black text-emerald-600">+{formatCurrency(book.expected_interest)}₫</p>
+                      <p className="font-black text-emerald-600 tabular-nums">+{formatCurrency(book.expected_interest)}₫</p>
                     </div>
                     <div>
                       <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Ngày gửi</p>

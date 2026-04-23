@@ -517,7 +517,7 @@ export default function Plan() {
               {showPlanTable && (
                 <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-100 dark:border-white/5 overflow-hidden animate-in fade-in slide-in-from-top-2">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-center divide-y divide-gray-50 dark:divide-white/5">
+                    <table className="w-full text-center divide-y divide-gray-50 dark:divide-white/5 tabular-nums">
                       <thead className="bg-gray-50/50 dark:bg-slate-800/50">
                         <tr>
                           <th className="py-3 px-4 text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase">Tháng</th>

@@ -200,16 +200,16 @@ export default function Home() {
             <div className="bg-gradient-to-tr from-gray-900 to-gray-800 dark:from-indigo-950 dark:to-slate-900 rounded-2xl lg:rounded-[2.5rem] p-6 lg:p-10 text-white shadow-xl lg:shadow-2xl relative overflow-hidden transition-all duration-500 border border-white/5 h-full flex flex-col justify-center">
               <div className="absolute -right-8 -top-8 w-48 h-48 bg-white/5 rounded-full blur-3xl"></div>
               <p className="text-gray-300 dark:text-slate-400 text-sm lg:text-base mb-1 font-medium">Tổng tài sản ròng</p>
-              <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-6">{formatCurrency(globalNetWorth)} ₫</h2>
+              <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-6 tabular-nums">{formatCurrency(globalNetWorth)} ₫</h2>
               
               <div className="grid grid-cols-2 gap-4 mb-8">
                 <div className="bg-white/5 dark:bg-indigo-900/20 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
                   <p className="text-[10px] lg:text-xs text-emerald-300 dark:text-emerald-400 font-bold uppercase tracking-wider mb-1">Tổng tài sản (+)</p>
-                  <p className="text-sm lg:text-lg font-black text-emerald-400">+{formatCurrency(totalAssetsGross)} đ</p>
+                  <p className="text-sm lg:text-lg font-black text-emerald-400 tabular-nums">+{formatCurrency(totalAssetsGross)} đ</p>
                 </div>
                 <div className="bg-white/5 dark:bg-rose-900/20 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
                   <p className="text-[10px] lg:text-xs text-red-300 dark:text-rose-400 font-bold uppercase tracking-wider mb-1">Tổng nợ vay (-)</p>
-                  <p className="text-sm lg:text-lg font-black text-red-400 dark:text-rose-400">-{formatCurrency(totalAllLiabilities)} đ</p>
+                   <p className="text-sm lg:text-lg font-black text-red-400 dark:text-rose-400 tabular-nums">-{formatCurrency(totalAllLiabilities)} đ</p>
                 </div>
               </div>
 
@@ -224,13 +224,13 @@ export default function Home() {
                   <div className="flex items-center text-xs text-gray-400 dark:text-slate-500 mb-1 font-bold uppercase tracking-widest">
                     <TrendingUp size={14} className="text-green-400 dark:text-emerald-400 mr-2" /> Tháng này thu
                   </div>
-                  <p className="font-bold text-lg text-white dark:text-emerald-400">+{formatCurrency(totalIncomeAmount)}</p>
+                   <p className="font-bold text-lg text-white dark:text-emerald-400 tabular-nums">+{formatCurrency(totalIncomeAmount)}</p>
                 </div>
                 <div>
                   <div className="flex items-center text-xs text-gray-400 dark:text-slate-500 mb-1 font-bold uppercase tracking-widest">
                     <TrendingDown size={14} className="text-red-400 dark:text-rose-400 mr-2" /> Tháng này chi
                   </div>
-                  <p className="font-bold text-lg text-white dark:text-rose-400">-{formatCurrency(totalExpenseAmount)}</p>
+                   <p className="font-bold text-lg text-white dark:text-rose-400 tabular-nums">-{formatCurrency(totalExpenseAmount)}</p>
                 </div>
               </div>
             </div>
@@ -337,7 +337,7 @@ export default function Home() {
                       </div>
                     </div>
                     <div className="text-right shrink-0 min-w-fit">
-                      <p className={`font-black text-base lg:text-lg ${isIncome ? 'text-green-600 dark:text-emerald-400' : isTransfer ? 'text-gray-900 dark:text-slate-100' : 'text-red-500 dark:text-rose-400'}`}>
+                       <p className={`font-black text-base lg:text-lg tabular-nums ${isIncome ? 'text-green-600 dark:text-emerald-400' : isTransfer ? 'text-gray-900 dark:text-slate-100' : 'text-red-500 dark:text-rose-400'}`}>
                         {isIncome ? '+' : isTransfer ? '' : '-'}{formatCurrency(tx.amount)} đ
                       </p>
                       <p className="text-[10px] lg:text-xs text-gray-400 dark:text-slate-500 font-medium">

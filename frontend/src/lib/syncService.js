@@ -24,15 +24,20 @@ async function exportFullBackup() {
   const dbText = await dbBlob.text();
   const dbData = JSON.parse(dbText);
   
-  // Lấy dữ liệu từ localStorage
-  const loanProfiles = localStorage.getItem('loan_profiles');
+  // Lấy dữ liệu từ localStorage (tất cả các hồ sơ khoản vay của các user)
+  const localStorageData = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key.startsWith('loan_profiles')) {
+      const value = localStorage.getItem(key);
+      localStorageData[key] = value ? JSON.parse(value) : null;
+    }
+  }
   
   const fullBackup = {
     ...dbData,
     _extra_data: {
-      localStorage: {
-        loan_profiles: loanProfiles ? JSON.parse(loanProfiles) : null
-      }
+      localStorage: localStorageData
     }
   };
   
@@ -48,10 +53,12 @@ async function importFullBackup(blob) {
   
   // Khôi phục localStorage nếu có
   if (data._extra_data && data._extra_data.localStorage) {
-    const { loan_profiles } = data._extra_data.localStorage;
-    if (loan_profiles) {
-      localStorage.setItem('loan_profiles', JSON.stringify(loan_profiles));
-    }
+    const lsData = data._extra_data.localStorage;
+    Object.keys(lsData).forEach(key => {
+      if (key.startsWith('loan_profiles')) {
+        localStorage.setItem(key, JSON.stringify(lsData[key]));
+      }
+    });
   }
   
   // Xóa extra data trước khi đưa vào Dexie import

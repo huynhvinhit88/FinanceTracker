@@ -317,9 +317,6 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
                 </select>
               </div>
             </div>
-
-              </div>
-            </div>
           </>
         ) : (
           <div className="space-y-6 animate-in slide-in-from-right duration-300">

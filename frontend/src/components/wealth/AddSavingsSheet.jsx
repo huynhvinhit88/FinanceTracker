@@ -16,9 +16,7 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [maturityDate, setMaturityDate] = useState('');
   const [accountId, setAccountId] = useState('');
-  const [categoryId, setCategoryId] = useState('');
   const [accounts, setAccounts] = useState([]);
-  const [categories, setCategories] = useState([]);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -49,12 +47,6 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
       setAccounts(accs);
       if (accs.length > 0) setAccountId(accs[0].id);
 
-      const cats = await db.categories.filter(c => c.type === 'expense').toArray();
-      setCategories(cats);
-      const savingsCat = cats.find(c => c.name.toLowerCase().includes('tiết kiệm'));
-      if (savingsCat) setCategoryId(savingsCat.id);
-      else if (cats.length > 0) setCategoryId(cats[0].id);
-
       setInterestRate(0);
       setInterestRateDisplay('');
     } catch (err) {
@@ -69,7 +61,6 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
     if (interestRate < 0) return setError('Lãi suất không hợp lệ');
     if (!termMonths || parseInt(termMonths) <= 0) return setError('Kỳ hạn phải lớn hơn 0 tháng');
     if (!accountId) return setError('Vui lòng chọn tài khoản nguồn');
-    if (!categoryId) return setError('Vui lòng chọn hạng mục');
     
     setLoading(true);
     setError('');
@@ -94,10 +85,9 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
       await db.transactions.add({
         id: crypto.randomUUID(),
         account_id: accountId,
-        category_id: categoryId,
         amount: principalAmount,
         date: txDate.toISOString(),
-        type: 'expense',
+        type: 'transfer',
         note: `Mở sổ tiết kiệm: ${name.trim()}`
       });
 
@@ -105,7 +95,6 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
       await db.savings.add({
         id: crypto.randomUUID(),
         account_id: accountId,
-        category_id: categoryId,
         name: name.trim(),
         principal_amount: principalAmount,
         interest_rate: interestRate,
@@ -217,39 +206,21 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 flex items-center">
-              <Landmark size={14} className="mr-1.5 text-blue-500" /> Tài khoản nguồn
-            </label>
-            <select
-              value={accountId}
-              onChange={(e) => setAccountId(e.target.value)}
-              className="w-full bg-gray-50 dark:bg-slate-800 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-            >
-              {accounts.map(acc => (
-                <option key={acc.id} value={acc.id}>
-                  {acc.name} ({formatCurrency(acc.balance)}₫)
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 flex items-center">
-              <List size={14} className="mr-1.5 text-indigo-500" /> Hạng mục
-            </label>
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full bg-gray-50 dark:bg-slate-800 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-            >
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.icon} {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 flex items-center">
+            <Landmark size={14} className="mr-1.5 text-blue-500" /> Tài khoản nguồn
+          </label>
+          <select
+            value={accountId}
+            onChange={(e) => setAccountId(e.target.value)}
+            className="w-full bg-gray-50 dark:bg-slate-800 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+          >
+            {accounts.map(acc => (
+              <option key={acc.id} value={acc.id}>
+                {acc.name} ({formatCurrency(acc.balance)}₫)
+              </option>
+            ))}
+          </select>
         </div>
 
         <button

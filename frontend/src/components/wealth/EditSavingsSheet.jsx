@@ -23,7 +23,6 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
   const [error, setError] = useState('');
   const [sourceAccountName, setSourceAccountName] = useState('');
   const [categoryId, setCategoryId] = useState('');
-  const [expenseCategories, setExpenseCategories] = useState([]);
 
   // Settlement States
   const [isSettling, setIsSettling] = useState(false);
@@ -52,7 +51,6 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
       setStartDate(savings.start_date || '');
       setMaturityDate(savings.maturity_date || '');
       setStatus(savings.status);
-      setCategoryId(savings.category_id || '');
       setError('');
       setIsSettling(false);
       
@@ -97,9 +95,6 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
       const interestCat = cats.find(c => c.name.toLowerCase().includes('lãi') || c.name.toLowerCase().includes('tiết kiệm'));
       if (interestCat) setSettleCategoryId(interestCat.id);
       else if (cats.length > 0) setSettleCategoryId(cats[0].id);
-
-      const expCats = await db.categories.filter(c => c.type === 'expense').toArray();
-      setExpenseCategories(expCats);
     } catch (err) {
       console.error(err);
     }
@@ -123,8 +118,7 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
         term_months: parseInt(termMonths),
         start_date: startDate,
         maturity_date: maturityDate,
-        status: status,
-        category_id: categoryId
+        status: status
       });
       
       onSuccess();
@@ -164,16 +158,30 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
           balance: account.balance + totalAmount
         });
 
-        // 2. Tạo giao dịch thu nhập (Gốc + Lãi)
+        const txDate = new Date().toISOString();
+
+        // 2.a Tạo giao dịch nhận lại gốc (Chuyển tiền)
         await db.transactions.add({
           id: crypto.randomUUID(),
           account_id: settleAccountId,
-          category_id: settleCategoryId,
-          amount: totalAmount,
-          date: new Date().toISOString(),
-          type: 'income',
-          note: `Tất toán sổ tiết kiệm: ${savings.name}`
+          amount: savings.principal_amount,
+          date: txDate,
+          type: 'transfer',
+          note: `Nhận gốc tất toán: ${savings.name}`
         });
+
+        // 2.b Tạo giao dịch nhận lãi (Thu nhập) nếu có
+        if (actualInterest > 0) {
+          await db.transactions.add({
+            id: crypto.randomUUID(),
+            account_id: settleAccountId,
+            category_id: settleCategoryId,
+            amount: actualInterest,
+            date: txDate,
+            type: 'income',
+            note: `Lãi tất toán: ${savings.name}`
+          });
+        }
       }
 
       // 3. Cập nhật trạng thái sổ tiết kiệm
@@ -310,22 +318,7 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 flex items-center">
-                <List size={14} className="mr-1.5 text-indigo-500" /> Hạng mục
-              </label>
-              <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                className="w-full bg-gray-50 dark:bg-slate-800 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-              >
-                {expenseCategories.length === 0 && <option value="">Không có danh mục nào</option>}
-                {expenseCategories.map(cat => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.icon} {cat.name}
-                  </option>
-                ))}
-              </select>
+              </div>
             </div>
           </>
         ) : (
@@ -383,7 +376,7 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
 
              <div className="flex items-center space-x-2 text-[10px] text-gray-400 font-medium italic bg-gray-50 dark:bg-slate-800/50 p-3 rounded-xl">
                <X size={14} className="text-red-400 flex-shrink-0" />
-               <p>Hành động này sẽ cộng <span className="text-emerald-600 dark:text-emerald-400 font-bold">{formatCurrency(principalAmount + actualInterest)}₫</span> vào tài khoản nhận và tạo giao dịch thu nhập.</p>
+               <p>Hành động này sẽ cộng <span className="text-emerald-600 dark:text-emerald-400 font-bold">{formatCurrency(principalAmount + actualInterest)}₫</span> vào tài khoản. Trong đó Tiền gốc được tính là "Chuyển tiền", Tiền lãi được tính là "Khoản thu".</p>
              </div>
           </div>
         )}

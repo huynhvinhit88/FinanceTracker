@@ -171,10 +171,10 @@ export default function TransactionsList() {
                       {renderTransactionIcon(tx)}
                       <div className="truncate">
                         <p className="font-semibold text-gray-900 dark:text-slate-100 truncate">
-                          {tx.type === 'transfer' ? 'Chuyển tiền' : (tx.category?.name || 'Chưa phân loại')}
+                          {tx.type === 'transfer' ? (tx.note?.includes('tiết kiệm') ? 'Gửi tiết kiệm' : 'Chuyển tiền') : (tx.category?.name || 'Chưa phân loại')}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-slate-500 truncate">
-                          {tx.type === 'transfer' ? `${tx.account?.name} → ${tx.to_account?.name}` : tx.account?.name}
+                          {tx.type === 'transfer' ? (tx.to_account?.name ? `${tx.account?.name} → ${tx.to_account?.name}` : tx.account?.name) : tx.account?.name}
                           {tx.note && ` • ${tx.note}`}
                         </p>
                       </div>

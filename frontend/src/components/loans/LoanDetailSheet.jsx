@@ -416,7 +416,7 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                 <div className="space-y-1">
                   <label className="text-[9px] font-bold text-gray-400 dark:text-slate-500 ml-1 uppercase tracking-widest block">Kỳ ưu đãi (tháng)</label>
                   <input type="number" value={promoMonths} onChange={e => setPromoMonths(Number(e.target.value))}
-                    className="w-full bg-white dark:bg-slate-700 border border-gray-100 dark:border-white/5 rounded-xl py-3 px-4 text-sm font-bold text-emerald-600 dark:text-emerald-400 outline-none focus:ring-2 focus:ring-emerald-200 dark:focus:ring-emerald-500 transition-all" />
+                    className="w-full bg-white dark:bg-slate-800 border border-gray-100 dark:border-white/5 rounded-xl py-3 px-4 text-sm font-bold text-emerald-600 dark:text-emerald-400 outline-none focus:ring-2 focus:ring-emerald-300 dark:focus:ring-emerald-500/50 transition-all" />
                 </div>
                 <RateInput label="Lãi cơ sở (%)" value={baseRate} onChange={setBaseRate} className="text-blue-600 dark:text-blue-400" />
                 <RateInput label="Biên độ (+%)" value={marginRate} onChange={setMarginRate} className="text-blue-600 dark:text-blue-400" />
@@ -446,7 +446,7 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                 <label className="text-[9px] font-bold text-gray-400 dark:text-slate-500 ml-1">Phí phạt (%/năm theo từng năm)</label>
                 <input type="text" value={editForm.penalty_config}
                   onChange={e => setEditForm(p => ({...p, penalty_config: e.target.value}))}
-                  className="w-full bg-white dark:bg-slate-700 border border-gray-100 dark:border-white/5 rounded-xl py-3 px-4 text-sm font-medium text-gray-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-indigo-500 transition-all" />
+                  className="w-full bg-white dark:bg-slate-800 border border-gray-100 dark:border-white/5 rounded-xl py-3 px-4 text-sm font-medium text-gray-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-indigo-500 transition-all" />
                 <p className="text-[9px] text-gray-400 dark:text-slate-500 ml-1">Cách nhau bởi dấu phẩy, mỗi vị trí là 1 năm</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -454,7 +454,7 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                   <label className="text-[9px] font-bold text-gray-400 dark:text-slate-500 ml-1">Ngân sách/tháng</label>
                   <div className="relative">
                     <input type="text" inputMode="numeric" value={displayExtra} onChange={handleExtraChange}
-                      className="w-full bg-white dark:bg-slate-700 border border-gray-100 dark:border-white/5 rounded-xl py-3 px-4 pr-10 text-sm font-bold text-gray-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-indigo-500 transition-all" />
+                      className="w-full bg-white dark:bg-slate-800 border border-gray-100 dark:border-white/5 rounded-xl py-3 px-4 pr-10 text-sm font-bold text-gray-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-indigo-500 transition-all" />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] text-gray-400 dark:text-slate-500 font-bold">{extraSuffix}</span>
                   </div>
                 </div>
@@ -462,7 +462,7 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                   <label className="text-[9px] font-bold text-gray-400 dark:text-slate-500 ml-1">Ngưỡng tất toán</label>
                   <div className="relative">
                     <input type="text" inputMode="numeric" value={displayThreshold} onChange={handleThresholdChange}
-                      className="w-full bg-white dark:bg-slate-700 border border-gray-100 dark:border-white/5 rounded-xl py-3 px-4 pr-10 text-sm font-bold text-gray-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-indigo-500 transition-all" />
+                      className="w-full bg-white dark:bg-slate-800 border border-gray-100 dark:border-white/5 rounded-xl py-3 px-4 pr-10 text-sm font-bold text-gray-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-indigo-500 transition-all" />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] text-gray-400 dark:text-slate-500 font-bold">{thresholdSuffix}</span>
                   </div>
                 </div>
@@ -474,7 +474,7 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
               <div className="flex items-center justify-between">
                 <p className="text-[10px] font-bold text-gray-600 dark:text-slate-500 uppercase tracking-widest">Kế hoạch theo Giai đoạn</p>
                 <button type="button" onClick={() => setShowPeriods(v => !v)}
-                  className={`text-xs font-bold px-3 py-1 rounded-full transition-all ${showPeriods ? 'bg-purple-600 dark:bg-indigo-600 text-white' : 'bg-purple-100 dark:bg-slate-700 text-purple-700 dark:text-slate-400'}`}>
+                  className={`text-xs font-bold px-3 py-1 rounded-full transition-all ${showPeriods ? 'bg-purple-600 dark:bg-indigo-600 text-white' : 'bg-purple-100 dark:bg-slate-800 text-purple-700 dark:text-slate-400'}`}>
                   {showPeriods ? 'Đang bật' : 'Bật lên'}
                 </button>
               </div>
@@ -493,18 +493,18 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                           <input key={field} type="number" min="1" value={pd[field]}
                             placeholder={field === 'fromMonth' ? 'Từ kỳ' : 'Đến kỳ'}
                             onChange={e => setPeriods(prev => prev.map((p, i) => i === idx ? {...p, [field]: e.target.value} : p))}
-                            className="w-full bg-purple-50 dark:bg-slate-700 border border-purple-100 dark:border-white/5 rounded-lg px-3 py-2 text-sm font-bold text-gray-900 dark:text-slate-100 outline-none focus:ring-1 focus:ring-purple-400" />
+                            className="w-full bg-purple-50 dark:bg-slate-800 border border-purple-100 dark:border-white/5 rounded-lg px-3 py-2 text-sm font-bold text-gray-900 dark:text-slate-100 outline-none focus:ring-1 focus:ring-purple-400" />
                         ))}
                         <input type="text" inputMode="decimal" value={toViDecimal(pd.rate)} placeholder="Lãi (%/năm)"
                           onChange={e => { if (/^[\d,\.]*$/.test(e.target.value)) setPeriods(prev => prev.map((p, i) => i === idx ? {...p, rate: e.target.value} : p)); }}
-                          className="w-full bg-purple-50 dark:bg-slate-700 border border-purple-100 dark:border-white/5 rounded-lg px-3 py-2 text-sm font-bold text-gray-900 dark:text-slate-100 outline-none focus:ring-1 focus:ring-purple-400" />
+                          className="w-full bg-purple-50 dark:bg-slate-800 border border-purple-100 dark:border-white/5 rounded-lg px-3 py-2 text-sm font-bold text-gray-900 dark:text-slate-100 outline-none focus:ring-1 focus:ring-purple-400" />
                         <div className="relative">
                           <input
                             type="text"
                             inputMode="numeric"
                             value={formatCurrency(pd.budget)}
                             onChange={e => setPeriods(prev => prev.map((p, i) => i === idx ? {...p, budget: parseCurrencyInput(e.target.value)} : p))}
-                            className="w-full bg-purple-50 dark:bg-slate-700 border border-purple-100 dark:border-white/5 rounded-lg px-3 py-2 pr-10 text-sm font-bold text-gray-900 dark:text-slate-100 outline-none focus:ring-1 focus:ring-purple-400 font-bold"
+                            className="w-full bg-purple-50 dark:bg-slate-800 border border-purple-100 dark:border-white/5 rounded-lg px-3 py-2 pr-10 text-sm font-bold text-gray-900 dark:text-slate-100 outline-none focus:ring-1 focus:ring-purple-400 font-bold"
                             placeholder="Ngân sách"
                           />
                           <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gray-400 dark:text-slate-600">₫</span>

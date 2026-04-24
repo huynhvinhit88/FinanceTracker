@@ -9,7 +9,7 @@ import { db } from '../../lib/db';
 import { 
   History, Calendar, AlertCircle, TrendingUp,
   Info, Pencil, Trash2, Save, X, ChevronDown,
-  Clock, Percent, PlusCircle, XCircle, CheckCircle2
+  Clock, Percent, PlusCircle, XCircle, CheckCircle2, RefreshCw
 } from 'lucide-react';
 import { AddTransactionSheet } from '../transactions/AddTransactionSheet';
 
@@ -283,9 +283,15 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                   <h4 className="font-black text-gray-900 text-sm uppercase tracking-widest flex items-center">
                     <History size={16} className="mr-2 text-blue-500" /> Lịch trả nợ dự kiến
                   </h4>
-                  <div className="flex items-center text-[10px] font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
-                    <Info size={12} className="mr-1" /> Tự động cập nhật
-                  </div>
+                  <button 
+                    onClick={() => {
+                      getLoanTransactions(loan.id).then(setHistoricalEvents);
+                      onUpdated?.();
+                    }}
+                    className="flex items-center text-[10px] font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100 hover:bg-blue-100 hover:scale-105 active:scale-95 transition-all"
+                  >
+                    <RefreshCw size={12} className="mr-1" /> Làm mới dữ liệu
+                  </button>
                 </div>
                 <div className="bg-white dark:bg-slate-800 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden transition-all">
                   <div className="max-h-[420px] overflow-y-auto overflow-x-auto no-scrollbar">

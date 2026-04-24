@@ -15,7 +15,7 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
   // Editor State
   const [editingCat, setEditingCat] = useState(null); // null = List view. {id: ...} = Edit. {isNew: true} = Add
   const [name, setName] = useState('');
-  const [icon, setIcon] = useState('🍔');
+  const [icon, setIcon] = useState('');
   const [colorHex, setColorHex] = useState(COLORS[0]);
   const [error, setError] = useState('');
 
@@ -42,7 +42,7 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
   const handleOpenEdit = (cat) => {
     setEditingCat(cat);
     setName(cat.name);
-    setIcon(cat.icon || '📌');
+    setIcon(cat.icon || '');
     setColorHex(cat.color_hex || COLORS[0]);
     setError('');
   };
@@ -50,7 +50,7 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
   const handleOpenAdd = () => {
     setEditingCat({ isNew: true });
     setName('');
-    setIcon('✨');
+    setIcon('');
     setColorHex(COLORS[0]);
     setError('');
   };

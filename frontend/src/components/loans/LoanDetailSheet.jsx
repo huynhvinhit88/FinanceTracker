@@ -412,14 +412,14 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                 <Percent size={12} className="mr-1" /> Lãi suất & Ưu đãi
               </p>
               <div className="grid grid-cols-2 gap-3">
-                <RateInput label="Lãi ưu đãi (%/năm)" value={promoRate} onChange={setPromoRate} className="text-emerald-600 dark:text-emerald-400" />
+                <RateInput label="Lãi ưu đãi (%/năm)" value={promoRate} onChange={setPromoRate} />
                 <div className="space-y-1">
                   <label className="text-[9px] font-bold text-gray-400 dark:text-slate-500 ml-1 uppercase tracking-widest block">Kỳ ưu đãi (tháng)</label>
                   <input type="number" value={promoMonths} onChange={e => setPromoMonths(Number(e.target.value))}
-                    className="w-full bg-white dark:bg-slate-800 border border-gray-100 dark:border-white/5 rounded-xl py-3 px-4 text-sm font-bold text-emerald-600 dark:text-emerald-400 outline-none focus:ring-2 focus:ring-emerald-300 dark:focus:ring-emerald-500/50 transition-all" />
+                    className="w-full bg-white dark:bg-slate-800 border border-gray-100 dark:border-white/5 rounded-xl py-3 px-4 text-sm font-bold text-gray-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-emerald-300 dark:focus:ring-emerald-500/50 transition-all" />
                 </div>
-                <RateInput label="Lãi cơ sở (%)" value={baseRate} onChange={setBaseRate} className="text-blue-600 dark:text-blue-400" />
-                <RateInput label="Biên độ (+%)" value={marginRate} onChange={setMarginRate} className="text-blue-600 dark:text-blue-400" />
+                <RateInput label="Lãi cơ sở (%)" value={baseRate} onChange={setBaseRate} />
+                <RateInput label="Biên độ (+%)" value={marginRate} onChange={setMarginRate} />
               </div>
             </div>
 

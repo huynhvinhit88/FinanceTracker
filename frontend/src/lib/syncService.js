@@ -24,13 +24,12 @@ async function exportFullBackup() {
   const dbText = await dbBlob.text();
   const dbData = JSON.parse(dbText);
   
-  // Lấy dữ liệu từ localStorage (tất cả các hồ sơ khoản vay của các user)
+  // Lấy dữ liệu từ localStorage (hồ sơ khoản vay, kế hoạch tiết kiệm, giao diện)
   const localStorageData = {};
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key.startsWith('loan_profiles')) {
-      const value = localStorage.getItem(key);
-      localStorageData[key] = value ? JSON.parse(value) : null;
+    if (key.startsWith('loan_profiles') || key.startsWith('savings_plan') || key === 'theme') {
+      localStorageData[key] = localStorage.getItem(key);
     }
   }
   
@@ -55,8 +54,11 @@ async function importFullBackup(blob) {
   if (data._extra_data && data._extra_data.localStorage) {
     const lsData = data._extra_data.localStorage;
     Object.keys(lsData).forEach(key => {
-      if (key.startsWith('loan_profiles')) {
-        localStorage.setItem(key, JSON.stringify(lsData[key]));
+      let val = lsData[key];
+      if (val !== null && val !== undefined) {
+        // Hỗ trợ cả bản backup cũ (lưu object) và bản mới (lưu string)
+        const stringVal = typeof val === 'string' ? val : JSON.stringify(val);
+        localStorage.setItem(key, stringVal);
       }
     });
   }
@@ -478,13 +480,7 @@ export async function writeBlobToFolder(dirHandle, filename, blob) {
 
 export async function importDatabaseFromJSON(file) {
   try {
-    await db.delete();
-    await db.open();
-    await importInto(db, file, { 
-      clearTablesBeforeImport: true,
-      overwriteValues: true 
-    });
-    return true;
+    return await importFullBackup(file);
   } catch (error) {
     console.error('Import error: ', error);
     throw error;

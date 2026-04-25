@@ -90,7 +90,15 @@ export default function Statistics() {
   const categoryData = useMemo(() => {
     const expenseMap = {};
     transactions
-      .filter(tx => tx.type === 'expense' || (tx.type === 'transfer' && tx.category_id))
+      .filter(tx => {
+        if (tx.type === 'expense') return true;
+        if (tx.type === 'transfer' && tx.category_id) {
+          // Chỉ đưa vào pie chart chi nếu category là expense
+          const cat = categories.find(c => c.id === tx.category_id);
+          return cat && cat.type === 'expense';
+        }
+        return false;
+      })
       .forEach(tx => {
         const cat = categories.find(c => c.id === tx.category_id);
         const name = cat ? cat.name : 'Chưa phân loại';
@@ -132,12 +140,16 @@ export default function Statistics() {
       const categoryName = cat ? cat.name : 'Chưa phân loại';
       const categoryIcon = cat ? cat.icon : '📌';
 
-      // Transfer có category được thống kê vào mục chi
-      const isTransferWithCategory = tx.type === 'transfer' && tx.category_id;
-      const targetList = tx.type === 'income' ? data[month].income : data[month].expense;
-
       // Bỏ qua transfer không có category
       if (tx.type === 'transfer' && !tx.category_id) return;
+
+      // Với transfer có category: phân vào thu/chi dựa trên type của category
+      let targetList;
+      if (tx.type === 'transfer') {
+        targetList = cat && cat.type === 'income' ? data[month].income : data[month].expense;
+      } else {
+        targetList = tx.type === 'income' ? data[month].income : data[month].expense;
+      }
 
       let catEntry = targetList.find(c => c.name === categoryName);
       if (!catEntry) {

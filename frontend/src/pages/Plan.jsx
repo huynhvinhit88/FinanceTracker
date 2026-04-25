@@ -36,6 +36,7 @@ export default function Plan() {
 
   // Projection States
   const [currentNW, setCurrentNW] = useState(0);
+  const [currentTotalSavings, setCurrentTotalSavings] = useState(0);
   const [expectedAnnualReturn, setExpectedAnnualReturn] = useState(0); // VND amount
   const [projectionMonths, setProjectionMonths] = useState(12);
   const [targetProjectionMonth, setTargetProjectionMonth] = useState(() => {
@@ -172,6 +173,7 @@ export default function Plan() {
         return a.sub_type === 'debt' ? s - bal : s + bal;
       }, 0);
       const savTotal = activeSavings.reduce((s, x) => s + (parseFloat(x.principal_amount) || 0), 0);
+      setCurrentTotalSavings(savTotal);
       const invTotal = allInvestments.reduce((s, i) => {
         const cur = parseFloat(i.current_price) || 0;
         const qty = parseFloat(i.quantity) || 1;
@@ -483,22 +485,12 @@ export default function Plan() {
               </div>
 
               {/* Result Card */}
-              <div className="bg-gradient-to-br from-indigo-700 via-indigo-600 to-violet-700 rounded-3xl p-6 text-white shadow-xl shadow-indigo-100 relative overflow-hidden h-fit">
+              <div className="bg-gradient-to-br from-indigo-700 via-indigo-600 to-violet-700 rounded-3xl p-6 text-white shadow-xl shadow-indigo-100 relative overflow-hidden h-fit flex flex-col justify-center min-h-[160px]">
                 <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-                <p className="text-indigo-100 text-[10px] font-bold uppercase tracking-[0.2em] mb-4 text-center opacity-80">Tổng tài sản ròng dự kiến</p>
-                <div className="text-center mb-6">
-                  <h3 className="text-4xl font-black tracking-tight leading-none mb-2">{fmtLarge(projectedNW)}</h3>
-                  <p className="text-indigo-200/60 text-xs font-medium">{formatCurrency(Math.round(projectedNW))} ₫</p>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-                    <p className="text-indigo-100/70 text-[9px] font-bold uppercase mb-1">Tỷ suất tăng</p>
-                    <p className="font-black text-xl">×{growthX.toFixed(1)}</p>
-                  </div>
-                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10 text-right">
-                    <p className="text-indigo-100/70 text-[9px] font-bold uppercase mb-1">Tích thêm</p>
-                    <p className="font-black text-lg text-emerald-300">+{fmtLarge(totalGain)}</p>
-                  </div>
+                <p className="text-indigo-100 text-[10px] font-bold uppercase tracking-[0.2em] mb-4 text-center opacity-80">Tổng tích luỹ thêm dự kiến</p>
+                <div className="text-center mb-2">
+                  <h3 className="text-4xl lg:text-5xl font-black tracking-tight leading-none mb-3 text-emerald-300">+{fmtLarge(totalGain)}</h3>
+                  <p className="text-indigo-200/80 text-sm font-bold">+{formatCurrency(Math.round(totalGain))} ₫</p>
                 </div>
               </div>
             </div>
@@ -524,16 +516,22 @@ export default function Plan() {
                           <th className="py-3 px-2 text-[10px] font-black text-emerald-500 dark:text-emerald-400 uppercase">Dự Thu</th>
                           <th className="py-3 px-2 text-[10px] font-black text-blue-500 dark:text-blue-400 uppercase">Dự Chi</th>
                           <th className="py-3 px-4 text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase">Tiết kiệm</th>
+                          <th className="py-3 px-4 text-[10px] font-black text-purple-500 dark:text-purple-400 uppercase">Tổng tiết kiệm</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50 dark:divide-white/5">
-                        {Array.from({ length: Math.min(60, projectionMonths) }).map((_, i) => {
-                          const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + i);
-                          const m = d.toISOString().slice(0, 7);
-                          const overrideVal = savingsPlan[m];
-                          const stats = calculateMonthlyStats(m);
-                          
-                          return (
+                        {(() => {
+                          let cumulativeSavings = currentTotalSavings;
+                          return Array.from({ length: Math.min(60, projectionMonths + 1) }).map((_, i) => {
+                            const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + i);
+                            const m = d.toISOString().slice(0, 7);
+                            const overrideVal = savingsPlan[m];
+                            const stats = calculateMonthlyStats(m);
+                            
+                            const monthSaving = overrideVal !== undefined ? overrideVal : stats.surplus;
+                            cumulativeSavings += Math.max(0, monthSaving);
+                            
+                            return (
                             <tr key={m} className="group hover:bg-indigo-50/30 dark:hover:bg-indigo-900/20 transition-colors">
                               <td className="py-3 px-4">
                                 <span className="text-[11px] font-black text-gray-900 dark:text-slate-100">T{d.getMonth() + 1}/{d.getFullYear()}</span>
@@ -552,9 +550,12 @@ export default function Plan() {
                                   <span className="text-[8px] text-gray-300 dark:text-slate-700 font-bold">₫</span>
                                 </div>
                               </td>
+                              <td className="py-3 px-4 text-[11px] font-black text-purple-600 dark:text-purple-400 text-right">
+                                {formatCurrency(cumulativeSavings)} ₫
+                              </td>
                             </tr>
                           );
-                        })}
+                        })})()}
                       </tbody>
                     </table>
                   </div>

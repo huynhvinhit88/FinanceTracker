@@ -237,7 +237,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
       const payload = {
         id: crypto.randomUUID(),
         account_id: accountId,
-        category_id: type !== 'transfer' ? categoryId : null,
+        category_id: categoryId || null,
         to_account_id: type === 'transfer' ? toAccountId : null,
         amount: rawAmount,
         type: type === 'repayment' ? 'expense' : type,
@@ -301,15 +301,20 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title="Thêm giao dịch mới">
-      <form onSubmit={handleSubmit} className="space-y-5 h-[80vh] overflow-y-auto px-4 pb-10 no-scrollbar">
+      <form onSubmit={handleSubmit} className="space-y-5">
         
         <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-xl">
-          {['expense', 'income', 'transfer', 'repayment'].map(t => (
+          {[
+            { id: 'expense', name: 'Khoản chi' },
+            { id: 'income', name: 'Khoản thu' },
+            { id: 'transfer', name: 'Chuyển tiền' },
+            { id: 'repayment', name: 'Trả nợ' }
+          ].map(t => (
             <button
-              key={t} type="button" onClick={() => handleTypeChange(t)}
-              className={`flex-1 py-2 text-[10px] font-black uppercase tracking-tight rounded-lg transition-all ${type === t ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 shadow-sm' : 'text-gray-500 dark:text-slate-500'}`}
+              key={t.id} type="button" onClick={() => handleTypeChange(t.id)}
+              className={`flex-1 py-2 text-[10px] font-black uppercase tracking-tight rounded-lg transition-all ${type === t.id ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 shadow-sm' : 'text-gray-500 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300'}`}
             >
-              {t === 'expense' ? 'Chi' : t === 'income' ? 'Thu' : t === 'transfer' ? 'Chuyển' : 'Trả nợ'}
+              {t.name}
             </button>
           ))}
         </div>
@@ -341,16 +346,28 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
           
           {type === 'transfer' ? (
             <div className="space-y-1">
-              <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Đến ví</label>
-              <select value={toAccountId} onChange={(e) => setToAccountId(e.target.value)} className="w-full bg-gray-50 dark:bg-slate-800 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500">
-                {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
+              <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Đến tài khoản</label>
+              <select value={toAccountId} onChange={(e) => setToAccountId(e.target.value)} className="w-full bg-gray-50 dark:bg-slate-800 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all truncate">
+                <option value="">Chọn...</option>
+                {accounts.filter(a => a.id !== accountId).map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
               </select>
             </div>
           ) : (
             <div className="space-y-1">
               <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Hạng mục</label>
-              <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="w-full bg-gray-50 dark:bg-slate-800 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500">
+              <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="w-full bg-gray-50 dark:bg-slate-800 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all">
                 {activeCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>)}
+              </select>
+            </div>
+          )}
+
+          {/* Danh mục cho Chuyển khoản */}
+          {type === 'transfer' && (
+            <div className="space-y-1 col-span-2">
+              <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Hạng mục (tùy chọn)</label>
+              <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="w-full bg-gray-50 dark:bg-slate-800 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                <option value="">-- Không phân loại --</option>
+                {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>)}
               </select>
             </div>
           )}
@@ -439,9 +456,9 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
 
         <button
           type="submit" disabled={loading}
-          className="w-full py-4 mt-2 bg-gray-900 dark:bg-indigo-600 text-white font-black text-lg rounded-[2rem] shadow-xl shadow-gray-200 dark:shadow-none active:scale-95 transition-all flex items-center justify-center space-x-2"
+          className="w-full py-4 bg-blue-600 dark:bg-indigo-600 text-white font-semibold rounded-2xl shadow-lg shadow-blue-200 dark:shadow-none active:scale-[0.98] transition-transform flex items-center justify-center"
         >
-          {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Xác nhận giao dịch'}
+          {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'Xác nhận giao dịch'}
         </button>
       </form>
     </BottomSheet>

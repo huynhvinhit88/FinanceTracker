@@ -90,6 +90,8 @@ totalInvestmentsNet = investments.reduce((sum, inv) => {
 | `'transfer'` | Chuyển tiền | - from_account, + to_account |
 | `'loan_repayment'` | Trả nợ vay | - from_account (payment amount), calls `updateLoanBalance(principalPaid)` |
 
+**`category_id` on transfers**: As of the latest update, transfer transactions **CAN have a `category_id`**. When present, the transfer amount is **included in category-based spending statistics** (Statistics page, pie chart, and monthly detail). Transfers without `category_id` are excluded from category stats. This enables use-cases like tracking monthly savings deposits ("Gửi tiết kiệm") as a categorized expense in reports.
+
 **Overdraft protection**: Expenses, transfers, and loan repayments are blocked if `account.balance < amount`. Exception: accounts with `sub_type === 'debt'` (credit cards) are exempt from this check.
 
 ---
@@ -127,11 +129,12 @@ When processing historical transactions, the algorithm distinguishes between `lo
 ### 1. Opening a Savings Book (`AddSavingsSheet.jsx`)
 When a new savings book is created, the system performs an atomic-like operation:
 1. **Source Account Selection**: User must select a source account (non-debt types).
-2. **Category Selection**: User selects an expense category for the transaction (defaults to a "Tiết kiệm" category if found).
-3. **Balance Validation**: System blocks the creation if `account.balance < principal_amount`.
-4. **Account Update**: `account.balance -= principal_amount`.
-5. **Transaction Creation**: A new transaction of type `'expense'` is created with the chosen `account_id` and `category_id` to log the withdrawal.
-6. **Savings Record**: A new record is added to `db.savings` containing `account_id` and `start_date`.
+2. **Balance Validation**: System blocks the creation if `account.balance < principal_amount`.
+3. **Account Update**: `account.balance -= principal_amount`.
+4. **Transaction Creation**: A new transaction of type **`'transfer'`** is created with `account_id`, `amount`, `date`, and `note` (`Mở sổ tiết kiệm: <name>`). **No `category_id` is set** — this transaction does NOT appear in category-based spending statistics.
+5. **Savings Record**: A new record is added to `db.savings` with `account_id`, `name`, `principal_amount`, `interest_rate`, `term_months`, `start_date`, `maturity_date`, and `status: 'active'`.
+
+> **Workaround for statistics**: To track monthly savings deposits in category stats, users can create a **manual transfer transaction** with a "Tiết kiệm" category selected. Transfer transactions with a `category_id` are now included in category-based spending reports.
 
 ### 2. Settling a Savings Book (`EditSavingsSheet.jsx`)
 When a savings book is settled:

@@ -225,7 +225,7 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
 
       const payload = {
         account_id: accountId,
-        category_id: type !== 'transfer' ? categoryId : null,
+        category_id: categoryId || null,
         to_account_id: type === 'transfer' ? toAccountId : null,
         amount: rawAmount,
         type: type === 'repayment' ? 'expense' : type,
@@ -407,6 +407,23 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
             </div>
           )}
         </div>
+
+        {/* Hạng mục cho Chuyển khoản */}
+        {type === 'transfer' && (
+          <div className="space-y-1">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Hạng mục (tùy chọn)</label>
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            >
+              <option value="">-- Không phân loại --</option>
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* LOAN SPECIFIC FIELDS */}
         {isLoanMode && (

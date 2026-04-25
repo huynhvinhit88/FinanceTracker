@@ -90,7 +90,7 @@ export default function Statistics() {
   const categoryData = useMemo(() => {
     const expenseMap = {};
     transactions
-      .filter(tx => tx.type === 'expense')
+      .filter(tx => tx.type === 'expense' || (tx.type === 'transfer' && tx.category_id))
       .forEach(tx => {
         const cat = categories.find(c => c.id === tx.category_id);
         const name = cat ? cat.name : 'Chưa phân loại';
@@ -131,9 +131,14 @@ export default function Statistics() {
       const cat = categories.find(c => c.id === tx.category_id);
       const categoryName = cat ? cat.name : 'Chưa phân loại';
       const categoryIcon = cat ? cat.icon : '📌';
-      
+
+      // Transfer có category được thống kê vào mục chi
+      const isTransferWithCategory = tx.type === 'transfer' && tx.category_id;
       const targetList = tx.type === 'income' ? data[month].income : data[month].expense;
-      
+
+      // Bỏ qua transfer không có category
+      if (tx.type === 'transfer' && !tx.category_id) return;
+
       let catEntry = targetList.find(c => c.name === categoryName);
       if (!catEntry) {
         catEntry = { name: categoryName, icon: categoryIcon, amount: 0 };

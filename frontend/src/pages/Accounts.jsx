@@ -21,6 +21,7 @@ export default function Accounts() {
   const [accounts, setAccounts] = useState([]);
   const [savings, setSavings] = useState([]);
   const [investments, setInvestments] = useState([]);
+  const [savingsCategories, setSavingsCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const { loans, loading: loansLoading, fetchLoans } = useLoans();
@@ -80,6 +81,9 @@ export default function Accounts() {
       setAccounts(accData);
       setSavings(savData);
       setInvestments(invData);
+
+      const catRaw = await db.categories.filter(c => c.type === 'savings').toArray();
+      setSavingsCategories(catRaw);
     } catch (err) {
       console.error(err);
     } finally {
@@ -283,6 +287,8 @@ export default function Accounts() {
             {savings.map(sav => {
               const { expectedTotalInterest } = computeSavingsMath(sav);
               const isSettled = sav.status !== 'active';
+              const sourceAccount = accounts.find(a => a.id === sav.account_id);
+              const savCategory = savingsCategories.find(c => c.id === sav.category_id);
               return (
                 <div 
                   key={sav.id} 
@@ -290,7 +296,23 @@ export default function Accounts() {
                   className={`p-4 rounded-2xl shadow-sm border ${isSettled ? 'bg-gray-50 dark:bg-slate-800/40 border-gray-100 dark:border-white/5 opacity-60' : 'bg-white dark:bg-slate-900 border-emerald-50 dark:border-emerald-900/30'} relative overflow-hidden active:scale-[0.98] transition-all cursor-pointer`}
                 >
                   {isSettled && <div className="absolute top-0 right-0 bg-gray-200 dark:bg-slate-700 text-xs px-2 py-1 font-bold text-gray-600 dark:text-slate-400 rounded-bl-lg">Đã tất toán</div>}
-                  <h4 className="font-bold text-gray-900 dark:text-slate-100 text-lg mb-1">{sav.name}</h4>
+                  
+                  <div className="flex items-start justify-between mb-1">
+                    <h4 className="font-bold text-gray-900 dark:text-slate-100 text-lg">{sav.name}</h4>
+                    {savCategory && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/40 whitespace-nowrap ml-2 mt-1">
+                        {savCategory.icon} {savCategory.name}
+                      </span>
+                    )}
+                  </div>
+
+                  {sourceAccount && (
+                    <p className="text-[10px] text-gray-400 dark:text-slate-500 font-medium mb-3 flex items-center">
+                      <PiggyBank size={10} className="mr-1 flex-shrink-0" />
+                      Nguồn: {sourceAccount.name}
+                    </p>
+                  )}
+
                   <div className="flex flex-wrap gap-2 text-xs font-medium mb-4">
                     <div className="text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded border border-emerald-100 dark:border-emerald-900/50">
                       {toViDecimal(sav.interest_rate)}%/năm

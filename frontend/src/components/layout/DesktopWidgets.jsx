@@ -110,7 +110,7 @@ export function DesktopWidgets() {
         {/* Quick Insights */}
         <div className="p-5 bg-gradient-to-br from-indigo-600 to-violet-700 rounded-3xl text-white shadow-xl shadow-indigo-200 dark:shadow-none relative overflow-hidden">
           <div className="absolute -top-6 -right-6 w-20 h-20 bg-white/10 rounded-full blur-xl animate-pulse" />
-          <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-2 opacity-80">Ghi chú nhanh</p>
+
           <p className="text-xs font-medium leading-relaxed italic opacity-90">
             "Tiết kiệm là nền tảng của tự do tài chính. Hãy bắt đầu từ những khoản nhỏ nhất."
           </p>

@@ -218,14 +218,22 @@ export default function Home() {
               <p className="text-gray-300 dark:text-slate-400 text-sm lg:text-base mb-1 font-medium">Tổng tài sản ròng</p>
               <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-6 tabular-nums">{formatCurrency(globalNetWorth)} ₫</h2>
               
-              <div className="grid grid-cols-2 gap-4 mb-8">
+              <div className="grid grid-cols-2 gap-3 mb-8">
                 <div className="bg-white/5 dark:bg-indigo-900/20 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
-                  <p className="text-[10px] lg:text-xs text-emerald-300 dark:text-emerald-400 font-bold uppercase tracking-wider mb-1">Tổng tài sản (+)</p>
-                  <p className="text-sm lg:text-lg font-black text-emerald-400 tabular-nums">+{formatCurrency(totalAssetsGross)} đ</p>
+                  <p className="text-[10px] lg:text-xs text-emerald-300 dark:text-emerald-400 font-bold uppercase tracking-wider mb-1">Tài sản thanh khoản</p>
+                  <p className="text-sm lg:text-base font-black text-emerald-400 tabular-nums">+{formatCurrency(totalCashAndReceivable + totalSavings)} đ</p>
                 </div>
                 <div className="bg-white/5 dark:bg-rose-900/20 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
-                  <p className="text-[10px] lg:text-xs text-red-300 dark:text-rose-400 font-bold uppercase tracking-wider mb-1">Tổng nợ vay (-)</p>
-                   <p className="text-sm lg:text-lg font-black text-red-400 dark:text-rose-400 tabular-nums">-{formatCurrency(totalLoanLiabilities)} đ</p>
+                  <p className="text-[10px] lg:text-xs text-orange-300 dark:text-orange-400 font-bold uppercase tracking-wider mb-1">Nợ thẻ / Sổ nợ</p>
+                  <p className="text-sm lg:text-base font-black text-orange-400 tabular-nums">-{formatCurrency(totalDebtAccounts)} đ</p>
+                </div>
+                <div className="bg-white/5 dark:bg-indigo-900/20 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
+                  <p className="text-[10px] lg:text-xs text-blue-300 dark:text-blue-400 font-bold uppercase tracking-wider mb-1">Tài sản đầu tư</p>
+                  <p className="text-sm lg:text-base font-black text-blue-400 tabular-nums">+{formatCurrency(totalInvestmentMarketValue)} đ</p>
+                </div>
+                <div className="bg-white/5 dark:bg-rose-900/20 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
+                  <p className="text-[10px] lg:text-xs text-red-300 dark:text-rose-400 font-bold uppercase tracking-wider mb-1">Tổng nợ vay</p>
+                  <p className="text-sm lg:text-base font-black text-red-400 dark:text-rose-400 tabular-nums">-{formatCurrency(totalLoanLiabilities)} đ</p>
                 </div>
               </div>
 

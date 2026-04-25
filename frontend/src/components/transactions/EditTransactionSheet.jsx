@@ -314,20 +314,23 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
                 if (type === 'repayment' && t.id !== 'repayment') {
                   setExternalPrincipal(0);
                 }
-                
-                // Tự động tìm danh mục "Trả nợ vay" nếu là tab Trả nợ
+
                 if (t.id === 'repayment') {
+                  // Tự động tìm danh mục "Trả nợ vay" nếu là tab Trả nợ
                   const loanCat = categories.find(c => c.name === 'Trả nợ vay' || c.icon === '🏦');
                   if (loanCat) setCategoryId(loanCat.id);
+                } else if (t.id === 'transfer') {
+                  // Không chọn danh mục mặc định khi chuyển sang Chuyển tiền
+                  setCategoryId('');
+                } else {
+                  const relevantCats = categories.filter(c => c.type === t.id);
+                  const isCatValid = relevantCats.some(c => c.id === categoryId);
+                  if (!isCatValid && relevantCats.length > 0) {
+                    setCategoryId(relevantCats[0].id);
+                  }
                 }
 
                 setType(t.id);
-                const relevantCats = categories.filter(c => c.type === (t.id === 'repayment' ? 'expense' : t.id));
-                // Nếu đổi sang tab nợ vay mà chưa có category được chọn, hoặc category hiện tại không thuộc Expense
-                const isCatValid = relevantCats.some(c => c.id === categoryId);
-                if (!isCatValid && relevantCats.length > 0) {
-                  setCategoryId(relevantCats[0].id);
-                }
               }}
               className={`flex-1 py-2 text-[10px] font-black uppercase tracking-tight rounded-lg transition-all ${
                 type === t.id 

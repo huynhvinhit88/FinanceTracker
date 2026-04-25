@@ -109,6 +109,11 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
       }
     }
 
+    if (type === 'transfer') {
+      setCategoryId('');
+      return;
+    }
+
     const relevantCats = categories.filter(c => c.type === type);
     if (relevantCats.length > 0) {
       const isValid = relevantCats.some(c => c.id === categoryId);
@@ -270,17 +275,17 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
 
   const handleTypeChange = (newType) => {
     if (type !== newType) {
-      // Chỉ xóa số tiền nếu đang chuyển từ tab Trả nợ sang các tab khác
-      // (vì tab Trả nợ có tính năng tự điền số tiền gợi ý)
       if (type === 'repayment') {
         resetAmount();
         resetPrincipal();
       }
-      
-      // Tự động tìm danh mục "Trả nợ vay" nếu là tab Trả nợ
+
       if (newType === 'repayment') {
         const loanCat = categories.find(c => c.name === 'Trả nợ vay' || c.icon === '🏦');
         if (loanCat) setCategoryId(loanCat.id);
+      } else if (newType === 'transfer') {
+        // Không chọn danh mục mặc định khi chuyển khoản
+        setCategoryId('');
       }
 
       setType(newType);

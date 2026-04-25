@@ -44,6 +44,13 @@ db.version(4).stores({}).upgrade(async (tx) => {
     .delete();
 });
 
+db.version(5).stores({}).upgrade(async (tx) => {
+  // Migration: Remove default 'Khác' transfer category (no longer needed)
+  await tx.table('categories')
+    .filter(cat => cat.name === 'Khác' && cat.type === 'transfer' && cat.is_default === true)
+    .delete();
+});
+
 export const DEFAULT_CATEGORIES = [
   { name: 'Trả nợ vay', type: 'expense', icon: '🏦', color_hex: '#EF4444' },
   { name: 'Chi hộ', type: 'expense', icon: '🤝', color_hex: '#EF4444' },
@@ -51,7 +58,6 @@ export const DEFAULT_CATEGORIES = [
   { name: 'Thưởng', type: 'income', icon: '🎁', color_hex: '#F59E0B' },
   { name: 'Thu hộ', type: 'income', icon: '🤝', color_hex: '#10B981' },
   { name: 'Thu hồi nợ', type: 'income', icon: '💰', color_hex: '#10B981' },
-  { name: 'Khác', type: 'transfer', icon: '🔄', color_hex: '#6B7280' },
 ];
 
 export async function seedDefaultData() {

@@ -421,7 +421,7 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
               className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all"
             >
               <option value="">-- Không phân loại --</option>
-              {categories.map(cat => (
+              {categories.filter(c => c.type === 'expense').map(cat => (
                 <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
               ))}
             </select>

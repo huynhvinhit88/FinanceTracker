@@ -17,6 +17,8 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
   const [maturityDate, setMaturityDate] = useState('');
   const [accountId, setAccountId] = useState('');
   const [accounts, setAccounts] = useState([]);
+  const [categoryId, setCategoryId] = useState('');
+  const [savingsCategories, setSavingsCategories] = useState([]);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -46,6 +48,10 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
       const accs = await db.accounts.filter(a => a.sub_type !== 'debt').toArray();
       setAccounts(accs);
       if (accs.length > 0) setAccountId(accs[0].id);
+
+      const cats = await db.categories.filter(c => c.type === 'savings').toArray();
+      setSavingsCategories(cats);
+      setCategoryId('');
 
       setInterestRate(0);
       setInterestRateDisplay('');
@@ -95,6 +101,7 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
       await db.savings.add({
         id: crypto.randomUUID(),
         account_id: accountId,
+        category_id: categoryId || null,
         name: name.trim(),
         principal_amount: principalAmount,
         interest_rate: interestRate,
@@ -221,6 +228,25 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
               </option>
             ))}
           </select>
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400">Hạng mục (tùy chọn)</label>
+          <select
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            className="w-full bg-gray-50 dark:bg-slate-800 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+          >
+            <option value="">-- Không phân loại --</option>
+            {savingsCategories.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+            ))}
+          </select>
+          {savingsCategories.length === 0 && (
+            <p className="text-[11px] text-gray-400 dark:text-slate-500 ml-1">
+              Chưa có danh mục tiết kiệm. Thêm trong Đặt cài ủng → Quản lý Danh mục → Tab Tiết kiệm.
+            </p>
+          )}
         </div>
 
         <button

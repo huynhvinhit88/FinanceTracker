@@ -517,48 +517,36 @@ export default function Statistics() {
               <h3 className="font-bold text-gray-900 dark:text-slate-100 flex items-center mb-6 text-sm">
                 <PieChartIcon size={16} className="mr-2 text-indigo-500" /> Cơ cấu theo Hạng mục
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                <div className="space-y-4">
-                  {activeSavingsAnalysis.byCategory.map((cat, idx) => (
-                    <div 
-                      key={cat.name} 
-                      onClick={() => handleOpenDetail(`Sổ tiết kiệm: ${cat.name}`, { type: 'savings_books', books: cat.books })}
-                      className="group flex items-center justify-between p-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-white/5"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-slate-800 flex items-center justify-center text-lg">{cat.icon}</div>
-                        <div>
-                          <p className="text-sm font-bold text-gray-900 dark:text-slate-100">{cat.name}</p>
-                          <p className="text-[10px] font-medium text-gray-400 dark:text-slate-500">{Math.round((cat.amount / activeSavingsAnalysis.totalPrincipal) * 100)}% tổng vốn</p>
-                        </div>
+              <div className="space-y-4">
+                {activeSavingsAnalysis.byCategory.map((cat, idx) => (
+                  <div
+                    key={cat.name}
+                    onClick={() => handleOpenDetail(`Sổ tiết kiệm: ${cat.name}`, { type: 'savings_books', books: cat.books })}
+                    className="group flex items-center justify-between p-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-white/5"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg" style={{ backgroundColor: (COLORS[idx % COLORS.length]) + '20', color: COLORS[idx % COLORS.length] }}>
+                        {cat.icon || '📌'}
                       </div>
-                      <div className="text-right flex items-center">
-                        <div className="mr-3">
-                          <p className="text-sm font-black text-gray-900 dark:text-slate-100">{formatCurrency(cat.amount)}₫</p>
-                          <p className="text-[10px] font-bold text-emerald-500">+{formatCurrency(cat.interest)}₫ lãi</p>
-                        </div>
-                        <ChevronRightIcon size={16} className="text-gray-300 group-hover:translate-x-1 transition-transform" />
+                      <div>
+                        <p className="text-sm font-bold text-gray-900 dark:text-slate-100">{cat.name}</p>
+                        <p className="text-[10px] font-medium text-gray-400 dark:text-slate-500">{Math.round((cat.amount / activeSavingsAnalysis.totalPrincipal) * 100)}% tổng vốn</p>
                       </div>
                     </div>
-                  ))}
-                </div>
-                <div className="h-48 hidden md:block">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={activeSavingsAnalysis.byCategory}
-                        innerRadius={60}
-                        outerRadius={80}
-                        paddingAngle={5}
-                        dataKey="amount"
-                      >
-                        {activeSavingsAnalysis.byCategory.map((_, idx) => (
-                          <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
+                    <div className="text-right flex items-center">
+                      <div className="mr-3">
+                        <p className="text-sm font-black text-gray-900 dark:text-slate-100 tabular-nums">{formatCurrency(cat.amount)}₫</p>
+                        <p className="text-[10px] font-bold text-emerald-500 tabular-nums">+{formatCurrency(cat.interest)}₫ lãi</p>
+                      </div>
+                      <ChevronRightIcon size={16} className="text-gray-300 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                ))}
+                {activeSavingsAnalysis.byCategory.length === 0 && (
+                  <div className="text-center py-8 text-gray-400 dark:text-slate-500 text-sm italic">
+                    Chưa có sổ nào được phân loại danh mục
+                  </div>
+                )}
               </div>
             </div>
           </div>

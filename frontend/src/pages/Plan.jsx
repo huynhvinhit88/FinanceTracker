@@ -173,7 +173,15 @@ export default function Plan() {
         return a.sub_type === 'debt' ? s - bal : s + bal;
       }, 0);
       const savTotal = activeSavings.reduce((s, x) => s + (parseFloat(x.principal_amount) || 0), 0);
-      setCurrentTotalSavings(savTotal);
+      
+      const specificSavingsTotal = activeSavings.reduce((s, x) => {
+        const cat = allCategories.find(c => c.id === x.category_id);
+        if (cat && cat.name.toLowerCase() === 'tiết kiệm') {
+          return s + (parseFloat(x.principal_amount) || 0);
+        }
+        return s;
+      }, 0);
+      setCurrentTotalSavings(specificSavingsTotal);
       const invTotal = allInvestments.reduce((s, i) => {
         const cur = parseFloat(i.current_price) || 0;
         const qty = parseFloat(i.quantity) || 1;
@@ -485,13 +493,10 @@ export default function Plan() {
               </div>
 
               {/* Result Card */}
-              <div className="bg-gradient-to-br from-indigo-700 via-indigo-600 to-violet-700 rounded-3xl p-6 text-white shadow-xl shadow-indigo-100 relative overflow-hidden h-fit flex flex-col justify-center min-h-[160px]">
-                <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-                <p className="text-indigo-100 text-[10px] font-bold uppercase tracking-[0.2em] mb-4 text-center opacity-80">Tổng tích luỹ thêm dự kiến</p>
-                <div className="text-center mb-2">
-                  <h3 className="text-4xl lg:text-5xl font-black tracking-tight leading-none mb-3 text-emerald-300">+{fmtLarge(totalGain)}</h3>
-                  <p className="text-indigo-200/80 text-sm font-bold">+{formatCurrency(Math.round(totalGain))} ₫</p>
-                </div>
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm p-8 flex flex-col items-center justify-center text-center">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 dark:text-slate-500 mb-3">Tổng tích luỹ thêm dự kiến</p>
+                <h3 className="text-4xl lg:text-5xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight leading-none mb-2">+{fmtLarge(totalGain)}</h3>
+                <p className="text-sm font-bold text-gray-500 dark:text-slate-500">+{formatCurrency(Math.round(totalGain))} ₫</p>
               </div>
             </div>
 

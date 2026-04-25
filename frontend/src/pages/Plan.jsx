@@ -237,7 +237,7 @@ export default function Plan() {
         else if (catGroup.type === 'expense') exp += amt;
       });
 
-      return { income: inc, expense: exp, surplus: Math.max(0, inc - exp) };
+      return { income: inc, expense: exp, surplus: inc - exp };
     };
 
     const currentStatus = getStatsForMonth(selectedMonth);
@@ -255,7 +255,7 @@ export default function Plan() {
       const monthData = getStatsForMonth(key);
       const sVal = override !== undefined ? override : monthData.surplus;
       
-      pNW = pNW * (1 + (monthlyRate || 0)) + Math.max(0, sVal || 0);
+      pNW = pNW * (1 + (monthlyRate || 0)) + (sVal || 0);
     }
 
     return {
@@ -433,7 +433,7 @@ export default function Plan() {
             </div>
             <div className="mt-4 pt-4 border-t border-gray-50 dark:border-white/5 flex justify-between items-center">
               <span className="text-xs font-bold text-gray-500 dark:text-slate-500">Kế hoạch dư ra (Savings)</span>
-              <span className="text-xl font-black text-indigo-600 dark:text-indigo-400">{formatCurrency(activeMonthlySaving)} ₫</span>
+              <span className={`text-xl font-black ${activeMonthlySaving < 0 ? 'text-red-500 dark:text-rose-400' : 'text-indigo-600 dark:text-indigo-400'}`}>{formatCurrency(activeMonthlySaving)} ₫</span>
             </div>
           </div>
         )}
@@ -534,7 +534,12 @@ export default function Plan() {
                             const stats = calculateMonthlyStats(m);
                             
                             const monthSaving = overrideVal !== undefined ? overrideVal : stats.surplus;
-                            cumulativeSavings += Math.max(0, monthSaving);
+                            cumulativeSavings += monthSaving;
+                            
+                            const isDeficit = monthSaving < 0;
+                            const inputColor = overrideVal !== undefined 
+                              ? (overrideVal < 0 ? 'text-red-500 dark:text-rose-400' : 'text-indigo-600 dark:text-indigo-400')
+                              : (stats.surplus < 0 ? 'text-red-400 dark:text-rose-500' : 'text-gray-400 dark:text-slate-600');
                             
                             return (
                             <tr key={m} className="group hover:bg-indigo-50/30 dark:hover:bg-indigo-900/20 transition-colors">
@@ -550,10 +555,10 @@ export default function Plan() {
                                     placeholder={formatCurrency(stats.surplus)}
                                     value={overrideVal !== undefined ? formatCurrency(overrideVal) : ''}
                                     onChange={(e) => {
-                                      const rawVal = e.target.value.replace(/\D/g, '');
+                                      const rawVal = e.target.value.replace(/[^\d-]/g, '').replace(/(?!^)-/g, '');
                                       updatePlanMonth(m, rawVal);
                                     }}
-                                    className={`text-center text-xs font-black outline-none w-24 py-1 rounded-lg border border-transparent focus:border-indigo-200 dark:focus:border-indigo-900 bg-transparent ${overrideVal !== undefined ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-slate-600'}`}
+                                    className={`text-center text-xs font-black outline-none w-24 py-1 rounded-lg border border-transparent focus:border-indigo-200 dark:focus:border-indigo-900 bg-transparent ${inputColor}`}
                                   />
                                   <span className="text-[8px] text-gray-300 dark:text-slate-700 font-bold">₫</span>
                                 </div>

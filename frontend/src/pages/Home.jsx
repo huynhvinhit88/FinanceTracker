@@ -89,9 +89,24 @@ export default function Home() {
     setIsEditSheetOpen(true);
   };
 
-  // Computations
+  // Tách rõ từng loại tài khoản
+  const totalCashOnly = accounts.reduce((sum, acc) => {
+    if (acc.sub_type === 'payment') return sum + (acc.balance || 0);
+    return sum;
+  }, 0);
+
+  const totalReceivable = accounts.reduce((sum, acc) => {
+    if (acc.sub_type === 'receivable') return sum + (acc.balance || 0);
+    return sum;
+  }, 0);
+
+  const totalSavingsAccounts = accounts.reduce((sum, acc) => {
+    if (acc.sub_type === 'savings') return sum + (acc.balance || 0);
+    return sum;
+  }, 0);
+
   const totalCashAndReceivable = accounts.reduce((sum, acc) => {
-    if (acc.sub_type === 'debt') return sum; // Debt accounts separate
+    if (acc.sub_type === 'debt') return sum;
     return sum + (acc.balance || 0);
   }, 0);
 
@@ -115,12 +130,13 @@ export default function Home() {
     return sum + (marketVal - debt);
   }, 0);
 
-  // Tổng nợ = Nợ thẻ + Nợ trong bảng Loans + Nợ trong Investments (nếu chưa được link vào bảng Loans)
-  const totalAllLiabilities = totalDebtAccounts + loans.reduce((sum, loan) => {
+  // Tổng nợ = chỉ tính Loans (không cộng debt accounts vì đó là Nợ thẻ tín dụng, tách riêng)
+  const totalLoanLiabilities = loans.reduce((sum, loan) => {
     if (loan.status === 'active') return sum + (loan.remaining_principal || loan.total_amount || 0);
     return sum;
-  }, 0) + investments.reduce((sum, inv) => {
-    // Nếu đầu tư có nợ nhưng KHÔNG có khoản vay nào trong bảng Loans gắn với nó (tránh đếm trùng)
+  }, 0);
+
+  const totalAllLiabilities = totalDebtAccounts + totalLoanLiabilities + investments.reduce((sum, inv) => {
     const hasLinkedLoan = loans.some(l => l.linked_investment_id === inv.id);
     if (!hasLinkedLoan && inv.loan_amount > 0) return sum + inv.loan_amount;
     return sum;
@@ -209,14 +225,16 @@ export default function Home() {
                 </div>
                 <div className="bg-white/5 dark:bg-rose-900/20 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
                   <p className="text-[10px] lg:text-xs text-red-300 dark:text-rose-400 font-bold uppercase tracking-wider mb-1">Tổng nợ vay (-)</p>
-                   <p className="text-sm lg:text-lg font-black text-red-400 dark:text-rose-400 tabular-nums">-{formatCurrency(totalAllLiabilities)} đ</p>
+                   <p className="text-sm lg:text-lg font-black text-red-400 dark:text-rose-400 tabular-nums">-{formatCurrency(totalLoanLiabilities)} đ</p>
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-x-6 gap-y-2 text-white/40 text-[10px] font-bold uppercase tracking-tight mb-8">
-                <p>Tiền mặt: {formatCurrency(totalCashAndReceivable)}</p>
-                <p>Tiết kiệm: {formatCurrency(totalSavings)}</p>
-                <p>Đầu tư (Ròng): {formatCurrency(totalInvestmentsNet)}</p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-white/40 text-[10px] font-bold uppercase tracking-tight mb-8">
+                {totalCashOnly > 0 && <p>Tiền mặt: {formatCurrency(totalCashOnly)}</p>}
+                {totalSavings > 0 && <p>Tiết kiệm: {formatCurrency(totalSavings)}</p>}
+                {totalInvestmentsNet > 0 && <p>Đầu tư (Ròng): {formatCurrency(totalInvestmentsNet)}</p>}
+                {totalReceivable > 0 && <p>Phải thu: {formatCurrency(totalReceivable)}</p>}
+                {totalSavingsAccounts > 0 && <p>TK Tiết kiệm: {formatCurrency(totalSavingsAccounts)}</p>}
               </div>
               
               <div className={`flex space-x-8 border-t border-gray-700 dark:border-white/10 pt-6 mt-2`}>
@@ -267,7 +285,7 @@ export default function Home() {
                     </ResponsiveContainer>
                   </div>
                   <div className="flex-1 w-full space-y-4">
-                    {chartData.slice(0, 5).map((item, idx) => (
+                    {chartData.map((item, idx) => (
                       <div key={idx} className="space-y-1.5">
                         <div className="flex justify-between items-center text-xs lg:text-sm font-bold">
                           <div className="flex items-center truncate">

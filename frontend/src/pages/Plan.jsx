@@ -517,7 +517,7 @@ export default function Plan() {
                     <table className="w-full text-center divide-y divide-gray-50 dark:divide-white/5 tabular-nums">
                       <thead className="bg-gray-50/50 dark:bg-slate-800/50">
                         <tr>
-                          <th className="py-3 px-4 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase">Tháng</th>
+                          <th className="sticky left-0 z-10 bg-gray-50 dark:bg-slate-800 py-3 px-4 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase shadow-[1px_0_0_0_rgba(0,0,0,0.05)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.05)]">Tháng</th>
                           <th className="py-3 px-2 text-[10px] font-black text-emerald-500 dark:text-emerald-400 uppercase">Dự Thu</th>
                           <th className="py-3 px-2 text-[10px] font-black text-blue-500 dark:text-blue-400 uppercase">Dự Chi</th>
                           <th className="py-3 px-4 text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase">Tiết kiệm</th>
@@ -538,7 +538,7 @@ export default function Plan() {
                             
                             return (
                             <tr key={m} className="group hover:bg-indigo-50/30 dark:hover:bg-indigo-900/20 transition-colors">
-                              <td className="py-3 px-4">
+                              <td className="sticky left-0 z-10 bg-white dark:bg-slate-900 group-hover:bg-indigo-50/30 dark:group-hover:bg-indigo-900/20 py-3 px-4 shadow-[1px_0_0_0_rgba(0,0,0,0.05)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.05)] transition-colors">
                                 <span className="text-[11px] font-black text-gray-900 dark:text-slate-100">T{d.getMonth() + 1}/{d.getFullYear()}</span>
                               </td>
                               <td className="py-3 px-2 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">+{formatCurrency(stats.income)}</td>
@@ -546,11 +546,14 @@ export default function Plan() {
                               <td className="py-3 px-4">
                                 <div className="flex items-center justify-center space-x-1">
                                   <input
-                                    type="number"
+                                    type="text"
                                     placeholder={formatCurrency(stats.surplus)}
-                                    value={overrideVal || ''}
-                                    onChange={(e) => updatePlanMonth(m, e.target.value)}
-                                    className={`text-center text-xs font-black outline-none w-20 py-1 rounded-lg border border-transparent focus:border-indigo-200 dark:focus:border-indigo-900 bg-transparent ${overrideVal ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-slate-600'}`}
+                                    value={overrideVal !== undefined ? formatCurrency(overrideVal) : ''}
+                                    onChange={(e) => {
+                                      const rawVal = e.target.value.replace(/\D/g, '');
+                                      updatePlanMonth(m, rawVal);
+                                    }}
+                                    className={`text-center text-xs font-black outline-none w-24 py-1 rounded-lg border border-transparent focus:border-indigo-200 dark:focus:border-indigo-900 bg-transparent ${overrideVal !== undefined ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-slate-600'}`}
                                   />
                                   <span className="text-[8px] text-gray-300 dark:text-slate-700 font-bold">₫</span>
                                 </div>

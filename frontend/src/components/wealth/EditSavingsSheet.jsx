@@ -23,6 +23,8 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
   const [error, setError] = useState('');
   const [sourceAccountName, setSourceAccountName] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [accountId, setAccountId] = useState('');
+  const [savingsCategories, setSavingsCategories] = useState([]);
 
   // Settlement States
   const [isSettling, setIsSettling] = useState(false);
@@ -53,6 +55,8 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
       setStatus(savings.status);
       setError('');
       setIsSettling(false);
+      setAccountId(savings.account_id || '');
+      setCategoryId(savings.category_id || '');
       
       if (savings.account_id) {
         db.accounts.get(savings.account_id).then(acc => {
@@ -95,6 +99,9 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
       const interestCat = cats.find(c => c.name.toLowerCase().includes('lãi') || c.name.toLowerCase().includes('tiết kiệm'));
       if (interestCat) setSettleCategoryId(interestCat.id);
       else if (cats.length > 0) setSettleCategoryId(cats[0].id);
+
+      const sCats = await db.categories.filter(c => c.type === 'savings').toArray();
+      setSavingsCategories(sCats);
     } catch (err) {
       console.error(err);
     }
@@ -113,6 +120,8 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
     try {
       await db.savings.update(savings.id, {
         name: name.trim(),
+        account_id: accountId,
+        category_id: categoryId || null,
         principal_amount: principalAmount,
         interest_rate: interestRate,
         term_months: parseInt(termMonths),
@@ -300,22 +309,42 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
               </div>
             </div>
 
-            <div className="flex items-center justify-between bg-gray-50 dark:bg-slate-800 p-4 rounded-2xl border border-transparent dark:border-white/5">
-              <div>
-                <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Tài khoản nguồn</label>
-                <p className="font-bold text-gray-900 dark:text-slate-100">{sourceAccountName}</p>
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1 text-right">Trạng thái</label>
-                <select 
-                  value={status} 
-                  onChange={e => setStatus(e.target.value)}
-                  className="bg-transparent font-bold text-gray-900 dark:text-slate-100 outline-none transition-all text-sm"
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1 flex items-center">
+                  <Landmark size={12} className="mr-1" /> Tài khoản nguồn
+                </label>
+                <select
+                  value={accountId}
+                  onChange={e => setAccountId(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-3 py-3 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 >
-                  <option value="active">Đang hoạt động</option>
-                  <option value="settled">Đã tất toán</option>
+                  {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
                 </select>
               </div>
+              <div className="space-y-1">
+                <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Hạng mục</label>
+                <select
+                  value={categoryId}
+                  onChange={e => setCategoryId(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-3 py-3 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                >
+                  <option value="">-- Không phân loại --</option>
+                  {savingsCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between bg-gray-50 dark:bg-slate-800 px-4 py-3 rounded-2xl border border-transparent dark:border-white/5">
+              <label className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest">Trạng thái</label>
+              <select
+                value={status}
+                onChange={e => setStatus(e.target.value)}
+                className="bg-transparent font-bold text-gray-900 dark:text-slate-100 outline-none transition-all text-sm"
+              >
+                <option value="active">Đang hoạt động</option>
+                <option value="settled">Đã tất toán</option>
+              </select>
             </div>
           </>
         ) : (

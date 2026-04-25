@@ -74,30 +74,12 @@ export default function Settings() {
   };
 
   const handleSelectFolder = async () => {
-    if (isMobileDevice) {
-      try {
-        await getValidToken(); // Ensure token is ready while it's still a user gesture
-        setShowDrivePicker(true);
-      } catch (err) {
-        console.error('Drive connection error:', err);
-        alert('Không thể kết nối Google Drive. Vui lòng thử lại.');
-      }
-      return;
-    }
-
     try {
-      const handle = await selectDirectoryHandle();
-      setFolderHandle(handle);
-      setHasFolderPermission(true);
-      
-      // Lưu cấu hình vào DB
-      await db.settings.put({ key: 'localDirectoryHandle', value: handle });
-      
-      alert(`Đã chọn thư mục: ${handle.name}`);
+      await getValidToken(); // Ensure token is ready while it's still a user gesture
+      setShowDrivePicker(true);
     } catch (err) {
-      if (err.name !== 'AbortError') {
-        alert(err.message);
-      }
+      console.error('Drive connection error:', err);
+      alert('Không thể kết nối Google Drive. Vui lòng thử lại.');
     }
   };
 
@@ -231,8 +213,8 @@ export default function Settings() {
   const handleBackupToJSON = async () => {
     setExportLoading(true);
     try {
-      // Ưu tiên 1: Google Drive (Nếu là thiết bị di động và đã chọn thư mục Drive)
-      if (isMobileDevice && driveFolder) {
+      // Ưu tiên 1: Google Drive (Nếu đã chọn thư mục Drive)
+      if (driveFolder) {
         const { uploadToDrive } = await import('../lib/syncService');
         await uploadToDrive(driveFolder.id);
         alert(`Đã sao lưu thành công lên Google Drive: ${driveFolder.name}`);
@@ -240,8 +222,8 @@ export default function Settings() {
         return;
       }
 
-      // Ưu tiên 2: Thư mục Local (Nếu là Desktop, đã chọn thư mục và có quyền)
-      if (!isMobileDevice && folderHandle) {
+      // Ưu tiên 2: Thư mục Local (Để tương thích ngược nếu còn lưu)
+      if (folderHandle) {
         const granted = await verifyDirectoryPermission(folderHandle, true);
         setHasFolderPermission(granted);
         
@@ -575,7 +557,7 @@ export default function Settings() {
           <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden divide-y divide-gray-50 dark:divide-white/5">
             <div>
               <button
-                onClick={folderHandle ? handleVerifyFolder : handleSelectFolder}
+                onClick={handleSelectFolder}
                 className="w-full flex items-center justify-between p-5 hover:bg-gray-50 dark:hover:bg-slate-800/20 active:bg-gray-100 dark:active:bg-slate-800/40 transition-colors group text-left"
               >
                 <div className="flex items-center space-x-4 flex-1">
@@ -584,27 +566,19 @@ export default function Settings() {
                   </div>
                   <div>
                     <p className="font-black text-gray-900 dark:text-slate-100 group-active:text-indigo-600 transition-colors">
-                      {isMobileDevice 
-                        ? (driveFolder ? 'Drive: ' + driveFolder.name : 'Chọn thư mục Google Drive')
-                        : (folderHandle ? 'Thư mục: ' + folderHandle.name : 'Chọn thư mục lưu trữ')}
+                      {driveFolder ? 'Drive: ' + driveFolder.name : 'Chọn thư mục Google Drive'}
                     </p>
                     <div className="flex items-center space-x-2 mt-0.5">
                       <span className={`w-2 h-2 rounded-full ${
-                        isMobileDevice 
-                          ? (driveFolder ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300')
-                          : (folderHandle ? (hasFolderPermission ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500') : 'bg-gray-300')
+                        driveFolder ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'
                       }`} />
                       <p className="text-[11px] text-gray-500 dark:text-slate-500 font-medium leading-relaxed italic opacity-70">
-                        {isMobileDevice
-                          ? (driveFolder ? 'Sẵn sàng sao lưu lên đám mây' : 'Chọn một thư mục Drive để lưu trữ')
-                          : (folderHandle 
-                            ? (hasFolderPermission ? 'Đang hoạt động - Tự động lưu file' : 'Nhấp để cấp lại quyền truy cập')
-                            : 'Sử dụng File System API để tự động hóa')}
+                        {driveFolder ? 'Sẵn sàng sao lưu lên đám mây' : 'Chọn một thư mục Drive để lưu trữ'}
                       </p>
                     </div>
                   </div>
                 </div>
-                {(folderHandle || (isMobileDevice && driveFolder)) && (
+                {driveFolder && (
                   <button 
                     onClick={(e) => { e.stopPropagation(); handleSelectFolder(); }}
                     className="text-[10px] font-black text-indigo-600 hover:underline uppercase px-2"
@@ -720,9 +694,9 @@ export default function Settings() {
                     
                     <label 
                       onClick={() => {
-                        if (isMobileDevice && driveFolder) {
+                        if (driveFolder) {
                           setShowDriveFilePicker(true);
-                        } else if (hasFolderPermission) {
+                        } else if (folderHandle && hasFolderPermission) {
                           handleImportFromFolder();
                         }
                       }}
@@ -730,7 +704,7 @@ export default function Settings() {
                     >
                       <CloudDownload size={18} />
                       <span className="text-[11px] font-black uppercase tracking-wider">Khôi phục</span>
-                      {(!isMobileDevice || !driveFolder) && !hasFolderPermission && <input type="file" accept=".json" onChange={handleImportJson} className="hidden" />}
+                      {!driveFolder && !hasFolderPermission && <input type="file" accept=".json" onChange={handleImportJson} className="hidden" />}
                     </label>
                   </div>
                   <p className="text-[10px] text-gray-400 dark:text-slate-500 font-medium text-center leading-relaxed px-4">

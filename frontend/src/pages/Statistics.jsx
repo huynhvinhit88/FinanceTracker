@@ -382,9 +382,12 @@ export default function Statistics() {
           </div>
 
           <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-sm transition-colors">
-            <h3 className="font-bold text-gray-900 dark:text-slate-100 text-sm flex items-center mb-6">
-              <TrendingUp size={16} className="mr-2 text-indigo-500" /> Hiệu quả tích lũy
-            </h3>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-bold text-gray-900 dark:text-slate-100 text-sm flex items-center">
+                <TrendingUp size={16} className="mr-2 text-indigo-500" /> Hiệu quả tích lũy
+              </h3>
+              <span className="text-[10px] text-gray-400 font-medium">Đơn vị: Ngàn ₫</span>
+            </div>
             <div className="h-48 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={monthlyData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
@@ -396,7 +399,7 @@ export default function Statistics() {
                   </defs>
                   <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="currentColor" className="text-gray-100 dark:text-slate-800" />
                   <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 600 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b' }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b' }} tickFormatter={(val) => `${(val / 1000).toFixed(0)}`} />
                   <Tooltip 
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '11px' }}
                     formatter={(val) => [`${formatCurrency(val)} ₫`]}

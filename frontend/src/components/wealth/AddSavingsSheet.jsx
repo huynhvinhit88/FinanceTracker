@@ -10,6 +10,7 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
   const { user } = useAuth();
   
   const [name, setName] = useState('');
+  const [isCustomName, setIsCustomName] = useState(false);
   const [interestRateDisplay, setInterestRateDisplay] = useState('');
   const [interestRate, setInterestRate] = useState(0);
   const [termMonths, setTermMonths] = useState('');
@@ -29,8 +30,29 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
     if (isOpen) {
       fetchDependencies();
       setStartDate(new Date().toISOString().split('T')[0]);
+      setIsCustomName(false);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isCustomName && accounts.length > 0) {
+      const acc = accounts.find(a => a.id === accountId);
+      const accName = acc ? acc.name : '';
+      const cat = savingsCategories.find(c => c.id === categoryId);
+      const catName = cat ? cat.name : '';
+      
+      let formattedDate = '';
+      if (startDate) {
+        const dateParts = startDate.split('-');
+        if (dateParts.length === 3) {
+          formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0].slice(-2)}`;
+        }
+      }
+
+      const generated = [accName, catName, formattedDate].filter(Boolean).join(' ');
+      setName(generated);
+    }
+  }, [accountId, categoryId, startDate, accounts, savingsCategories, isCustomName]);
 
   useEffect(() => {
     if (startDate && termMonths) {
@@ -113,6 +135,7 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
       
       resetPrincipal();
       setName('');
+      setIsCustomName(false);
       setInterestRate(0);
       setInterestRateDisplay('');
       setTermMonths('');
@@ -139,7 +162,10 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
           <input
             type="text"
             value={name}
-            onChange={e => setName(e.target.value)}
+            onChange={e => {
+              setName(e.target.value);
+              setIsCustomName(true);
+            }}
             placeholder="Ví dụ: Gửi góp VCB..."
             className="w-full bg-gray-50 dark:bg-slate-800 border border-transparent focus:border-blue-500 dark:focus:border-indigo-500 rounded-xl px-4 py-3 outline-none transition-all text-gray-900 dark:text-slate-100"
           />

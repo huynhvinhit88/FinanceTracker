@@ -360,17 +360,7 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
               </div>
             )}
 
-            <div className="p-4 bg-blue-50/50 rounded-3xl border border-blue-100/50 flex space-x-3">
-              <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-500 flex-shrink-0">
-                <Info size={18} />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-blue-900 mb-1">Mẹo tiết kiệm lãi suất</p>
-                <p className="text-[10px] text-blue-700/80 leading-relaxed font-medium">
-                  Thực hiện <strong>Trả nợ định kỳ</strong> tại màn hình Thêm giao dịch và nhập thêm tiền gốc để hệ thống tự động giảm lãi các tháng tiếp theo.
-                </p>
-              </div>
-            </div>
+
           </>
         )}
 

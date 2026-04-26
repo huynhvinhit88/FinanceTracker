@@ -43,16 +43,24 @@ export function DesktopWidgets() {
     const now = new Date();
     const currentMonth = now.toISOString().slice(0, 7);
     
-    // Total income/expense budgets for the current month (including default)
-    const monthlyBudgets = budgets.filter(b => b.month === currentMonth || !b.month);
-    
-    // Group budgets by category
-    const expenseBudgets = monthlyBudgets.filter(b => {
+    // Group budgets by category to handle overriding (month-specific overrides default)
+    const groupedBudgets = {};
+    budgets.forEach(b => {
       const cat = categories.find(c => c.id === b.category_id);
-      return cat?.type === 'expense';
+      if (cat?.type === 'expense') {
+        if (!groupedBudgets[b.category_id]) groupedBudgets[b.category_id] = { entries: [] };
+        groupedBudgets[b.category_id].entries.push(b);
+      }
     });
 
-    return expenseBudgets.map(b => {
+    const activeBudgets = Object.keys(groupedBudgets).map(catId => {
+      const catGroup = groupedBudgets[catId];
+      const monthSpecific = catGroup.entries.find(e => e.month === currentMonth);
+      const defaultEntry = catGroup.entries.find(e => !e.month);
+      return monthSpecific || defaultEntry;
+    }).filter(Boolean);
+
+    return activeBudgets.map(b => {
       const cat = categories.find(c => c.id === b.category_id);
       const spent = transactions
         .filter(tx => tx.category_id === b.category_id)

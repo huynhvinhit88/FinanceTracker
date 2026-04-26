@@ -113,6 +113,7 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
       await db.transactions.add({
         id: crypto.randomUUID(),
         account_id: accountId,
+        category_id: categoryId || null,
         amount: principalAmount,
         date: txDate.toISOString(),
         type: 'transfer',

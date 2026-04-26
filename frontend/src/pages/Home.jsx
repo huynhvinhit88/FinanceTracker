@@ -152,7 +152,10 @@ export default function Home() {
   const totalExpenseAmount = currentMonthExpenses.reduce((sum, tx) => sum + tx.amount, 0);
   const totalIncomeAmount = currentMonthIncome.reduce((sum, tx) => sum + tx.amount, 0);
 
-  const chartData = Object.values(currentMonthExpenses.reduce((acc, tx) => {
+  const chartDataRaw = currentMonthExpenses.filter(tx => tx.category?.name?.toLowerCase() !== 'trả nợ vay');
+  const pieChartTotal = chartDataRaw.reduce((sum, tx) => sum + tx.amount, 0) || 1;
+
+  const chartData = Object.values(chartDataRaw.reduce((acc, tx) => {
     const catName = tx.category?.name || 'Chưa phân loại';
     if (!acc[catName]) {
       acc[catName] = { name: catName, value: 0, color: tx.category?.color_hex || '#9CA3AF' };
@@ -300,10 +303,10 @@ export default function Home() {
                             <div className="w-2.5 h-2.5 rounded-full mr-3 shrink-0" style={{ backgroundColor: item.color }}></div>
                             <span className="text-gray-600 dark:text-slate-400 truncate">{item.name}</span>
                           </div>
-                          <span className="text-gray-900 dark:text-slate-200 ml-4 font-black">{Math.round((item.value / totalExpenseAmount) * 100)}%</span>
+                          <span className="text-gray-900 dark:text-slate-200 ml-4 font-black">{Math.round((item.value / pieChartTotal) * 100)}%</span>
                         </div>
                         <div className="h-1.5 w-full bg-gray-50 dark:bg-slate-800 rounded-full overflow-hidden">
-                          <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${(item.value / totalExpenseAmount) * 100}%`, backgroundColor: item.color }} />
+                          <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${(item.value / pieChartTotal) * 100}%`, backgroundColor: item.color }} />
                         </div>
                       </div>
                     ))}

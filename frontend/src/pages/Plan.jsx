@@ -161,8 +161,12 @@ export default function Plan() {
       const earnedByCat = {};
       allTxRaw.forEach(tx => {
         const amt = parseFloat(tx.amount) || 0;
-        if (tx.type === 'expense') spentByCat[tx.category_id] = (spentByCat[tx.category_id] || 0) + amt;
-        else if (tx.type === 'income') earnedByCat[tx.category_id] = (earnedByCat[tx.category_id] || 0) + amt;
+        if (!tx.category_id) return;
+        const cat = allCategories.find(c => c.id === tx.category_id);
+        if (cat) {
+          if (cat.type === 'expense') spentByCat[tx.category_id] = (spentByCat[tx.category_id] || 0) + amt;
+          else if (cat.type === 'income') earnedByCat[tx.category_id] = (earnedByCat[tx.category_id] || 0) + amt;
+        }
       });
       setActualExpenses(spentByCat);
       setActualIncome(earnedByCat);

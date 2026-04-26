@@ -113,10 +113,22 @@ export default function Accounts() {
 
   // --- Calculations ---
   
-  const totalCashAndReceivable = (accounts || []).reduce((acc, curr) => {
-    if (curr?.sub_type === 'debt') return acc;
-    return acc + (Number(curr?.balance) || 0);
+  const totalPayment = (accounts || []).reduce((acc, curr) => {
+    if (curr?.sub_type === 'payment') return acc + (Number(curr?.balance) || 0);
+    return acc;
   }, 0);
+
+  const totalReceivable = (accounts || []).reduce((acc, curr) => {
+    if (curr?.sub_type === 'receivable') return acc + (Number(curr?.balance) || 0);
+    return acc;
+  }, 0);
+
+  const totalSavingsAcc = (accounts || []).reduce((acc, curr) => {
+    if (curr?.sub_type === 'savings') return acc + (Number(curr?.balance) || 0);
+    return acc;
+  }, 0);
+
+  const totalCashAndReceivable = totalPayment + totalReceivable + totalSavingsAcc;
 
   const totalDebtAccounts = (accounts || []).reduce((acc, curr) => {
     if (curr?.sub_type === 'debt') return acc + (Number(curr?.balance) || 0);
@@ -242,14 +254,22 @@ export default function Accounts() {
 
     return (
       <div className="space-y-8">
-        <div className="grid grid-cols-2 lg:grid-cols-2 gap-4 lg:gap-8 mb-2">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl lg:rounded-3xl p-5 lg:p-8 shadow-sm border border-gray-100 dark:border-white/5">
-            <p className="text-[10px] lg:text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2">Tiền mặt & Thu</p>
-            <p className="text-xl lg:text-3xl font-black text-gray-900 dark:text-slate-100">{formatCurrency(totalCashAndReceivable)} ₫</p>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm border border-gray-100 dark:border-white/5 flex flex-col justify-center">
+            <p className="text-[10px] lg:text-[11px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1.5">TK Thanh toán</p>
+            <p className="text-lg lg:text-xl font-black text-gray-900 dark:text-slate-100">{formatCurrency(totalPayment)} ₫</p>
           </div>
-          <div className="bg-white dark:bg-slate-900 rounded-2xl lg:rounded-3xl p-5 lg:p-8 shadow-sm border border-gray-100 dark:border-white/5">
-            <p className="text-[10px] lg:text-xs font-bold text-red-400 dark:text-rose-400 uppercase tracking-widest mb-2">Nợ thẻ (Thanh toán)</p>
-            <p className="text-xl lg:text-3xl font-black text-red-500 dark:text-rose-400">-{formatCurrency(totalDebtAccounts)} ₫</p>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm border border-emerald-50 dark:border-emerald-900/30 flex flex-col justify-center">
+            <p className="text-[10px] lg:text-[11px] font-bold text-emerald-500 dark:text-emerald-400 uppercase tracking-widest mb-1.5">Phải thu</p>
+            <p className="text-lg lg:text-xl font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(totalReceivable)} ₫</p>
+          </div>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm border border-blue-50 dark:border-blue-900/30 flex flex-col justify-center">
+            <p className="text-[10px] lg:text-[11px] font-bold text-blue-500 dark:text-blue-400 uppercase tracking-widest mb-1.5">TK Tiết kiệm</p>
+            <p className="text-lg lg:text-xl font-black text-blue-600 dark:text-blue-400">{formatCurrency(totalSavingsAcc)} ₫</p>
+          </div>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm border border-red-50 dark:border-rose-900/30 flex flex-col justify-center">
+            <p className="text-[10px] lg:text-[11px] font-bold text-red-400 dark:text-rose-400 uppercase tracking-widest mb-1.5">Sổ nợ / Thẻ tín dụng</p>
+            <p className="text-lg lg:text-xl font-black text-red-500 dark:text-rose-400">-{formatCurrency(totalDebtAccounts)} ₫</p>
           </div>
         </div>
         

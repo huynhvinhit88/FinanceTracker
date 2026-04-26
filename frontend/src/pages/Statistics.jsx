@@ -123,7 +123,8 @@ export default function Statistics() {
     const data = Array.from({ length: 12 }, (_, i) => ({
       month: `T${i + 1}`,
       income: [],
-      expense: []
+      expense: [],
+      transfer: []
     }));
 
     transactions.forEach(tx => {
@@ -135,10 +136,10 @@ export default function Statistics() {
       // Bỏ qua transfer không có category
       if (tx.type === 'transfer' && !tx.category_id) return;
 
-      // Với transfer có category: phân vào thu/chi dựa trên type của category
+      // Phân loại
       let targetList;
       if (tx.type === 'transfer') {
-        targetList = cat && cat.type === 'income' ? data[month].income : data[month].expense;
+        targetList = data[month].transfer;
       } else {
         targetList = tx.type === 'income' ? data[month].income : data[month].expense;
       }
@@ -155,6 +156,7 @@ export default function Statistics() {
     data.forEach(m => {
       m.income.sort((a, b) => b.amount - a.amount);
       m.expense.sort((a, b) => b.amount - a.amount);
+      m.transfer.sort((a, b) => b.amount - a.amount);
     });
 
     return data;

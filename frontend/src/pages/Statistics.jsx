@@ -457,7 +457,8 @@ export default function Statistics() {
                       onClick={() => handleOpenDetail(`Chi tiết ${row.month}`, { 
                         type: 'monthly_category', 
                         income: monthlyCategoryData[idx].income, 
-                        expense: monthlyCategoryData[idx].expense 
+                        expense: monthlyCategoryData[idx].expense,
+                        transfer: monthlyCategoryData[idx].transfer
                       })}
                       className="hover:bg-blue-50/50 dark:hover:bg-indigo-950/20 transition-all cursor-pointer active:scale-[0.98]"
                     >

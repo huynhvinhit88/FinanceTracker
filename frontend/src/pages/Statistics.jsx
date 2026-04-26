@@ -688,8 +688,25 @@ export default function Statistics() {
                   </div>
                 </div>
               )}
+              {/* Transfer Section */}
+              {detailSheet.items.transfer && detailSheet.items.transfer.length > 0 && (
+                <div>
+                  <h4 className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-3 px-1">Chuyển khoản (Trích lập)</h4>
+                  <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-100 dark:border-white/5 divide-y divide-gray-50 dark:divide-white/5 shadow-sm">
+                    {detailSheet.items.transfer.map((cat, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-lg">{cat.icon}</div>
+                          <span className="text-sm font-bold text-gray-800 dark:text-slate-200">{cat.name}</span>
+                        </div>
+                        <span className="text-sm font-black text-indigo-500">{formatCurrency(cat.amount)}₫</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               
-              {detailSheet.items.income.length === 0 && detailSheet.items.expense.length === 0 && (
+              {detailSheet.items.income.length === 0 && detailSheet.items.expense.length === 0 && (!detailSheet.items.transfer || detailSheet.items.transfer.length === 0) && (
                 <div className="text-center py-10 text-gray-400 italic">Không có giao dịch nào trong tháng này</div>
               )}
             </div>

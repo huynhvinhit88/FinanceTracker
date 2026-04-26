@@ -90,15 +90,7 @@ export default function Statistics() {
   const categoryData = useMemo(() => {
     const expenseMap = {};
     transactions
-      .filter(tx => {
-        if (tx.type === 'expense') return true;
-        if (tx.type === 'transfer' && tx.category_id) {
-          // Chỉ đưa vào pie chart chi nếu category là expense
-          const cat = categories.find(c => c.id === tx.category_id);
-          return cat && cat.type === 'expense';
-        }
-        return false;
-      })
+      .filter(tx => tx.type === 'expense')
       .forEach(tx => {
         const cat = categories.find(c => c.id === tx.category_id);
         const name = cat ? cat.name : 'Chưa phân loại';
@@ -106,13 +98,10 @@ export default function Statistics() {
       });
 
     return Object.entries(expenseMap)
-      .filter(([name]) => name.toLowerCase() !== 'trả nợ vay')
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 8);
   }, [transactions, categories]);
-
-  const categoryDataTotal = useMemo(() => categoryData.reduce((s, c) => s + c.value, 0), [categoryData]);
 
   const totalSummary = useMemo(() => {
     const income = transactions.filter(tx => tx.type === 'income').reduce((s, tx) => s + tx.amount, 0);
@@ -436,7 +425,7 @@ export default function Statistics() {
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
                     <span className="text-[10px] font-bold text-gray-600 dark:text-slate-400 truncate flex-1">{cat.name}</span>
                     <span className="text-[9px] text-gray-400 dark:text-slate-500 font-medium ml-auto">
-                      {Math.round((cat.value / (categoryDataTotal || 1)) * 100)}%
+                      {Math.round((cat.value / (totalSummary.expense || 1)) * 100)}%
                     </span>
                   </div>
                 ))}

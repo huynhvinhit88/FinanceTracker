@@ -34,8 +34,8 @@ export function AddBudgetSheet({ isOpen, onClose, onSuccess, initialMonth }) {
       const data = await db.categories
         .filter(c => c.type === planType)
         .toArray();
-      // Xếp theo A-Z
-      data.sort((a,b) => a.name.localeCompare(b.name));
+      // Sắp xếp theo sort_order
+      data.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
         
       setCategories(data);
       if (data && data.length > 0) {

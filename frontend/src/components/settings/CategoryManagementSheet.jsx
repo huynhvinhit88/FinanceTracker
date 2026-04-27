@@ -103,29 +103,30 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
 
   const handleMove = async (cat, direction) => {
     // direction: -1 = Up, 1 = Down
-    const typeList = categories.filter(c => c.type === activeTab);
+    const typeList = [...categories.filter(c => c.type === activeTab)];
     const index = typeList.findIndex(c => c.id === cat.id);
     if (index === -1) return;
     
     const newIndex = index + direction;
     if (newIndex < 0 || newIndex >= typeList.length) return;
     
+    // Swap in the local array first
     const neighbor = typeList[newIndex];
+    typeList[newIndex] = cat;
+    typeList[index] = neighbor;
     
-    // Swap sort_order
+    // Update ALL items in this type to have a consistent sort_order based on their new positions
     try {
-      const currentOrder = cat.sort_order || 0;
-      const neighborOrder = neighbor.sort_order || 0;
-      
-      // Ensure they have different orders if they were both 0
-      const finalCurrent = direction === -1 ? neighborOrder - 1 : neighborOrder + 1;
-      
-      await db.categories.update(cat.id, { sort_order: neighborOrder });
-      await db.categories.update(neighbor.id, { sort_order: currentOrder });
-      
-      fetchCategories();
+      setLoading(true);
+      for (let i = 0; i < typeList.length; i++) {
+        await db.categories.update(typeList[i].id, { sort_order: i });
+      }
+      await fetchCategories();
     } catch (err) {
       console.error(err);
+      alert('Không thể sắp xếp: ' + err.message);
+    } finally {
+      setLoading(false);
     }
   };
 

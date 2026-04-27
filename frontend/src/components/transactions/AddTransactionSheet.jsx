@@ -62,12 +62,17 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
       if (accData.length > 0) setAccountId(accData[0].id);
 
       const catData = await db.categories.toArray();
-      setCategories(catData);
-      const relevantCats = catData.filter(c => c.type === type);
+      const sortedCats = catData.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+      setCategories(sortedCats);
+      
+      const currentType = initialData?.type || type;
+      const relevantCats = sortedCats.filter(c => c.type === currentType);
       if (relevantCats.length > 0) {
-        // Only reset categoryId if current selection is not relevant
         const isCurrentValid = relevantCats.some(c => c.id === categoryId);
-        if (!isCurrentValid) setCategoryId(relevantCats[0].id);
+        if (!isCurrentValid) {
+          const defaultCat = relevantCats.find(c => c.is_ui_default);
+          setCategoryId(defaultCat ? defaultCat.id : relevantCats[0].id);
+        }
       }
 
     } catch (err) {

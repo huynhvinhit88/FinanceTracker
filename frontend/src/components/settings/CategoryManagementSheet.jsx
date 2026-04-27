@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BottomSheet } from '../ui/BottomSheet';
 import { useAuth } from '../../contexts/AuthContext';
 import { db } from '../../lib/db';
-import { Plus, Edit2, Trash2, ArrowLeft, Check } from 'lucide-react';
+import { Plus, Edit2, Trash2, ArrowLeft, Check, Star, ChevronUp, ChevronDown } from 'lucide-react';
 
 const COLORS = ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#6B7280'];
 
@@ -31,7 +31,9 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
     setLoading(true);
     try {
       const data = await db.categories.toArray();
-      setCategories(data);
+      // Sort by sort_order
+      const sorted = data.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+      setCategories(sorted);
     } catch (err) {
       console.error(err);
     } finally {
@@ -81,6 +83,52 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
     }
   };
 
+  const handleSetDefault = async (cat) => {
+    try {
+      // 1. Clear current default for this type
+      await db.categories
+        .where('type')
+        .equals(cat.type)
+        .modify({ is_ui_default: false });
+      
+      // 2. Set this one as default
+      await db.categories.update(cat.id, { is_ui_default: true });
+      
+      fetchCategories();
+    } catch (err) {
+      console.error(err);
+      alert('Không thể thiết lập mặc định: ' + err.message);
+    }
+  };
+
+  const handleMove = async (cat, direction) => {
+    // direction: -1 = Up, 1 = Down
+    const typeList = categories.filter(c => c.type === activeTab);
+    const index = typeList.findIndex(c => c.id === cat.id);
+    if (index === -1) return;
+    
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= typeList.length) return;
+    
+    const neighbor = typeList[newIndex];
+    
+    // Swap sort_order
+    try {
+      const currentOrder = cat.sort_order || 0;
+      const neighborOrder = neighbor.sort_order || 0;
+      
+      // Ensure they have different orders if they were both 0
+      const finalCurrent = direction === -1 ? neighborOrder - 1 : neighborOrder + 1;
+      
+      await db.categories.update(cat.id, { sort_order: neighborOrder });
+      await db.categories.update(neighbor.id, { sort_order: currentOrder });
+      
+      fetchCategories();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     if (!name.trim()) {
@@ -90,12 +138,18 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
     
     try {
       if (editingCat.isNew) {
+        // Find max sort_order for this type
+        const typeList = categories.filter(c => c.type === activeTab);
+        const maxOrder = typeList.reduce((max, c) => Math.max(max, c.sort_order || 0), 0);
+        
         const payload = {
           id: crypto.randomUUID(),
           name: name.trim(),
           type: activeTab,
           icon,
-          color_hex: colorHex
+          color_hex: colorHex,
+          sort_order: maxOrder + 1,
+          is_ui_default: typeList.length === 0 // Make first one default automatically
         };
         await db.categories.add(payload);
       } else {
@@ -150,15 +204,43 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
           </div>
 
           <div className="space-y-2 mt-4">
-            {currentList.map(cat => (
+            {currentList.map((cat, idx) => (
               <div key={cat.id} className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 border border-gray-100 dark:border-white/5 rounded-xl shadow-sm">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg" style={{ backgroundColor: cat.color_hex + '20', color: cat.color_hex }}>
                     {cat.icon}
                   </div>
-                  <span className="font-semibold text-gray-800 dark:text-slate-100">{cat.name}</span>
+                  <div>
+                    <span className="font-semibold text-gray-800 dark:text-slate-100">{cat.name}</span>
+                    {cat.is_ui_default && (
+                      <span className="ml-2 text-[8px] bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-widest">Mặc định</span>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center">
+                <div className="flex items-center space-x-1">
+                  <div className="flex flex-col mr-1">
+                     <button 
+                       disabled={idx === 0} 
+                       onClick={() => handleMove(cat, -1)} 
+                       className="p-1 text-gray-400 hover:text-blue-500 disabled:opacity-0 transition-all"
+                     >
+                       <ChevronUp size={14} />
+                     </button>
+                     <button 
+                       disabled={idx === currentList.length - 1} 
+                       onClick={() => handleMove(cat, 1)} 
+                       className="p-1 text-gray-400 hover:text-blue-500 disabled:opacity-0 transition-all"
+                     >
+                       <ChevronDown size={14} />
+                     </button>
+                  </div>
+                  <button 
+                    onClick={() => handleSetDefault(cat)} 
+                    className={`p-2 transition-all active:scale-90 ${cat.is_ui_default ? 'text-amber-500' : 'text-gray-300 hover:text-amber-400'}`}
+                    title="Đặt làm mặc định"
+                  >
+                    <Star size={18} fill={cat.is_ui_default ? "currentColor" : "none"} />
+                  </button>
                   <button onClick={() => handleOpenEdit(cat)} className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
                     <Edit2 size={16} />
                   </button>

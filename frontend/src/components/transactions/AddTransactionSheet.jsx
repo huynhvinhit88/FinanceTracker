@@ -117,7 +117,10 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
     const relevantCats = categories.filter(c => c.type === type);
     if (relevantCats.length > 0) {
       const isValid = relevantCats.some(c => c.id === categoryId);
-      if (!isValid) setCategoryId(relevantCats[0].id);
+      if (!isValid) {
+        const defaultCat = relevantCats.find(c => c.is_ui_default);
+        setCategoryId(defaultCat ? defaultCat.id : relevantCats[0].id);
+      }
     }
   }, [type, categories]);
 

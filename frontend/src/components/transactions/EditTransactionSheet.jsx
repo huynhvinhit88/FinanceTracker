@@ -154,7 +154,8 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
       setAccounts(accData);
       
       const catData = await db.categories.toArray();
-      setCategories(catData);
+      const sortedCats = catData.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+      setCategories(sortedCats);
     } catch (err) {
       console.error(err);
     }
@@ -326,7 +327,8 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
                   const relevantCats = categories.filter(c => c.type === t.id);
                   const isCatValid = relevantCats.some(c => c.id === categoryId);
                   if (!isCatValid && relevantCats.length > 0) {
-                    setCategoryId(relevantCats[0].id);
+                    const defaultCat = relevantCats.find(c => c.is_ui_default);
+                    setCategoryId(defaultCat ? defaultCat.id : relevantCats[0].id);
                   }
                 }
 

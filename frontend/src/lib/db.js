@@ -17,7 +17,7 @@ export const db = new Dexie('FinanceTrackerDB');
 db.version(1).stores({
   settings: 'key, value',
   accounts: 'id, name, type, sub_type, balance, currency, icon, color_hex, is_default, include_in_net_worth, status',
-  categories: 'id, name, type, icon, color_hex, parent_id, is_default',
+  categories: 'id, name, type, icon, color_hex, parent_id, is_default, is_ui_default, sort_order',
   transactions: 'id, account_id, category_id, amount, date, type, note, tags',
   loans: 'id, account_id, name, total_amount, interest_rate, term_months, start_date, type, status, minimum_payment, payment_date, interest_type, next_payment_amount',
   budgets: 'id, category_id, amount, month, type',

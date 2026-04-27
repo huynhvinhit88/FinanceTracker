@@ -150,20 +150,23 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
 
     if (hasActualTransactions) {
       // SỬ DỤNG DỮ LIỆU THỰC TẾ (Quá khứ hoặc Hiện tại đã đóng tiền)
-      if (hasPayoffEvent) {
-        principalThisMonth = 0;
-        prepayThisMonth = Math.min(actualPrincipalPaid, remaining);
-      } else {
-        const targetNormal = isUnderFreePeriod ? 0 : basePrincipal;
-        principalThisMonth = Math.min(actualPrincipalPaid, targetNormal, remaining);
-        prepayThisMonth = Math.max(0, actualPrincipalPaid - principalThisMonth);
-      }
+      // Nghiệp vụ kế toán: Ưu tiên hạch toán Gốc định kỳ (nghĩa vụ) trước, sau đó mới đến Gốc trả thêm (tất toán)
+      const targetNormal = isUnderFreePeriod ? 0 : basePrincipal;
+      
+      // 1. Hạch toán Gốc định kỳ
+      principalThisMonth = Math.min(actualPrincipalPaid, targetNormal, remaining);
+      
+      // 2. Hạch toán Gốc trả thêm (Tất toán)
+      prepayThisMonth = Math.max(0, actualPrincipalPaid - principalThisMonth);
+      // Đảm bảo không vượt quá dư nợ hiện tại
+      prepayThisMonth = Math.min(prepayThisMonth, remaining - principalThisMonth);
       
       if (prepayThisMonth > 0) {
         freePrincipalMonths += prepayThisMonth / basePrincipal;
       }
       
-      if (!hasPayoffEvent && isUnderFreePeriod && actualPrincipalPaid < basePrincipal) {
+      // Khấu trừ số tháng được miễn gốc nếu đang trong giai đoạn miễn và đóng ít hơn định mức
+      if (isUnderFreePeriod && actualPrincipalPaid < basePrincipal) {
         freePrincipalMonths = Math.max(0, freePrincipalMonths - 1);
       }
     } else {

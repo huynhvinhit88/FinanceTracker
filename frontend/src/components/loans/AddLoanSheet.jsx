@@ -259,7 +259,7 @@ export function AddLoanSheet({ isOpen, onClose, onSuccess, initialProfile = null
                   inputMode="numeric"
                   value={displayPrincipal}
                   onChange={handlePrincipalChange}
-                  placeholder="VD: 1.500.000"
+                  placeholder="VD: 1.000.000"
                   className="w-full bg-gray-50 dark:bg-slate-800 rounded-2xl py-4 px-4 pr-16 text-gray-900 dark:text-slate-100 font-bold border border-transparent focus:border-blue-500 dark:focus:border-indigo-500 outline-none transition-all"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 dark:text-slate-600">{suffix}</span>
@@ -363,7 +363,7 @@ export function AddLoanSheet({ isOpen, onClose, onSuccess, initialProfile = null
                 inputMode="numeric"
                 value={displayExtra}
                 onChange={handleExtraChange}
-                placeholder="VD: 25.000.000"
+                placeholder="VD: 25.000"
                 className="w-full bg-white dark:bg-slate-700 border border-gray-100 dark:border-white/5 rounded-xl py-3 px-4 pr-16 text-sm font-bold text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-indigo-500 transition-all"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gray-400 dark:text-slate-500">{extraSuffix}</span>
@@ -378,7 +378,7 @@ export function AddLoanSheet({ isOpen, onClose, onSuccess, initialProfile = null
                 inputMode="numeric"
                 value={displayThreshold}
                 onChange={handleThresholdChange}
-                placeholder="VD: 50.000.000"
+                placeholder="VD: 50.000"
                 className="w-full bg-white dark:bg-slate-700 border border-gray-100 dark:border-white/5 rounded-xl py-3 px-4 pr-16 text-sm font-bold text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-indigo-500 transition-all"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gray-400 dark:text-slate-500">{thresholdSuffix}</span>

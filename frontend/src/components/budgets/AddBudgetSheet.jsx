@@ -39,7 +39,8 @@ export function AddBudgetSheet({ isOpen, onClose, onSuccess, initialMonth }) {
         
       setCategories(data);
       if (data && data.length > 0) {
-        setCategoryId(data[0].id);
+        const defaultCat = data.find(c => c.is_ui_default);
+        setCategoryId(defaultCat ? defaultCat.id : data[0].id);
       } else {
         setCategoryId('');
       }

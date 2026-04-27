@@ -180,6 +180,7 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
               inputMode="numeric"
               value={displayValue}
               onChange={handleInputChange}
+              placeholder="VD: 50.000"
               className="w-full bg-gray-50 dark:bg-slate-800 text-blue-600 dark:text-blue-400 text-2xl font-bold py-3 pr-24 pl-4 rounded-xl border-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-indigo-500 outline-none transition-all"
             />
             <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">

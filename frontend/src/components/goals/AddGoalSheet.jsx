@@ -73,7 +73,7 @@ export function AddGoalSheet({ isOpen, onClose, onSuccess }) {
               inputMode="numeric"
               value={displayValue}
               onChange={handleInputChange}
-              placeholder="0"
+              placeholder="VD: 100.000"
               className="w-full bg-gray-50 text-green-600 text-3xl font-bold py-4 pr-24 pl-4 rounded-2xl border-none focus:ring-2 focus:ring-green-500 transition-all outline-none"
             />
             <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">

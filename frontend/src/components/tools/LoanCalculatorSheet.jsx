@@ -281,7 +281,7 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 mb-2">Số tiền vay giải ngân</label>
               <div className="relative">
-                <input type="text" inputMode="numeric" value={displayPrincipal} onChange={handlePrincipalChange} placeholder="VD: 1.500.000.000" className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white text-xl font-bold py-3 pr-16 pl-4 rounded-xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-indigo-500 outline-none transition-all" />
+                <input type="text" inputMode="numeric" value={displayPrincipal} onChange={handlePrincipalChange} placeholder="VD: 1.000.000" className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white text-xl font-bold py-3 pr-16 pl-4 rounded-xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-indigo-500 outline-none transition-all" />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 font-semibold text-gray-400 dark:text-slate-600">{suffix}</span>
               </div>
             </div>
@@ -411,14 +411,14 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 mb-2">Ngân sách trả nợ mỗi tháng</label>
                   <div className="relative">
-                    <input type="text" inputMode="numeric" value={displayExtra} onChange={handleExtraChange} className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white font-bold py-3 pr-24 pl-4 rounded-xl outline-none transition-all" />
+                    <input type="text" inputMode="numeric" value={displayExtra} onChange={handleExtraChange} placeholder="VD: 25.000" className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white font-bold py-3 pr-24 pl-4 rounded-xl outline-none transition-all" />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-gray-400 dark:text-slate-600">{extraSuffix}</span>
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 mb-2">Ngưỡng kích hoạt Tất Toán</label>
                   <div className="relative">
-                    <input type="text" inputMode="numeric" value={displayThreshold} onChange={handleThresholdChange} className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white font-bold py-3 pr-24 pl-4 rounded-xl outline-none transition-all" />
+                    <input type="text" inputMode="numeric" value={displayThreshold} onChange={handleThresholdChange} placeholder="VD: 50.000" className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white font-bold py-3 pr-24 pl-4 rounded-xl outline-none transition-all" />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-gray-400 dark:text-slate-600">{thresholdSuffix}</span>
                   </div>
                 </div>

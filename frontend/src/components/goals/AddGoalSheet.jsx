@@ -13,7 +13,7 @@ export function AddGoalSheet({ isOpen, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { displayValue, value: rawTarget, handleInputChange, reset: resetAmount, suffix } = useCurrencyInput('');
+  const { displayValue, value: rawTarget, handleInputChange, reset: resetAmount, suffix } = useCurrencyInput('', { useShortcut: true });
 
   const handleSubmit = async (e) => {
     e.preventDefault();

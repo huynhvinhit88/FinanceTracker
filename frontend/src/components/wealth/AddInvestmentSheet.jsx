@@ -16,9 +16,9 @@ export function AddInvestmentSheet({ isOpen, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { displayValue: displayBuyRow, value: buyPrice, handleInputChange: handleBuyPriceChange, reset: resetBuyPrice, suffix } = useCurrencyInput('');
-  const { displayValue: displayCurrentRow, value: currentPrice, handleInputChange: handleCurrentPriceChange, reset: resetCurrentPrice } = useCurrencyInput('');
-  const { displayValue: displayLoanRow, value: loanAmount, handleInputChange: handleLoanAmountChange, reset: resetLoanAmount } = useCurrencyInput('');
+  const { displayValue: displayBuyRow, value: buyPrice, handleInputChange: handleBuyPriceChange, reset: resetBuyPrice, suffix } = useCurrencyInput('', { useShortcut: true });
+  const { displayValue: displayCurrentRow, value: currentPrice, handleInputChange: handleCurrentPriceChange, reset: resetCurrentPrice } = useCurrencyInput('', { useShortcut: true });
+  const { displayValue: displayLoanRow, value: loanAmount, handleInputChange: handleLoanAmountChange, reset: resetLoanAmount } = useCurrencyInput('', { useShortcut: true });
 
   const handleSubmit = async (e) => {
     e.preventDefault();

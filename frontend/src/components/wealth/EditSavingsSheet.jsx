@@ -33,7 +33,7 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
   const [accounts, setAccounts] = useState([]);
   const [categories, setCategories] = useState([]);
 
-  const { displayValue, value: principalAmount, handleInputChange, setExternalValue, suffix } = useCurrencyInput('');
+  const { displayValue, value: principalAmount, handleInputChange, setExternalValue, suffix } = useCurrencyInput('', { useShortcut: true });
   
   const { 
     displayValue: interestDisplay, 
@@ -41,7 +41,7 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
     handleInputChange: handleInterestChange, 
     setExternalValue: setExternalInterest,
     reset: resetInterest 
-  } = useCurrencyInput(0);
+  } = useCurrencyInput(0, { useShortcut: true });
 
   useEffect(() => {
     if (isOpen && savings) {

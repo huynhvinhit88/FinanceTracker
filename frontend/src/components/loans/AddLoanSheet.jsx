@@ -62,9 +62,9 @@ export function AddLoanSheet({ isOpen, onClose, onSuccess, initialProfile = null
   const [profileApplied, setProfileApplied] = useState(false);
 
   // Số tiền vay — dùng useCurrencyInput như Calculator
-  const { displayValue: displayPrincipal, value: principal, handleInputChange: handlePrincipalChange, setExternalValue: setExternalPrincipal, suffix } = useCurrencyInput('');
-  const { displayValue: displayExtra, value: extraPayment, handleInputChange: handleExtraChange, setExternalValue: setExternalExtra, suffix: extraSuffix } = useCurrencyInput('');
-  const { displayValue: displayThreshold, value: offsetThreshold, handleInputChange: handleThresholdChange, setExternalValue: setExternalThreshold, suffix: thresholdSuffix } = useCurrencyInput('');
+  const { displayValue: displayPrincipal, value: principal, handleInputChange: handlePrincipalChange, setExternalValue: setExternalPrincipal, suffix } = useCurrencyInput('', { useShortcut: true });
+  const { displayValue: displayExtra, value: extraPayment, handleInputChange: handleExtraChange, setExternalValue: setExternalExtra, suffix: extraSuffix } = useCurrencyInput('', { useShortcut: true });
+  const { displayValue: displayThreshold, value: offsetThreshold, handleInputChange: handleThresholdChange, setExternalValue: setExternalThreshold, suffix: thresholdSuffix } = useCurrencyInput('', { useShortcut: true });
 
   // Lãi suất — riêng từng field
   const [promoRate, setPromoRate] = useState(0);

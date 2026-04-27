@@ -469,6 +469,7 @@ export default function Settings() {
       await db.goals.clear();
       await db.savings.clear();
       await db.investments.clear();
+      await db.loans.clear();
       await db.accounts.clear();
       await db.categories.clear();
       

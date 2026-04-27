@@ -35,6 +35,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
 
   useEffect(() => {
     if (isOpen) {
+      resetForm();
       if (initialData) {
         setType(initialData.type || 'repayment');
         if (initialData.amount !== undefined && initialData.amount !== null) setExternalValue(initialData.amount);
@@ -305,6 +306,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
     resetAmount();
     resetPrincipal();
     setNote('');
+    setCategoryId('');
     setDate(new Date().toISOString().split('T')[0]);
     setType('expense');
     setIsLoanMode(false);

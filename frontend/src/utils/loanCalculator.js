@@ -187,9 +187,15 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
     let automatedPrepay = 0;
     let penaltyPaid = 0;
 
-    // CHẠY MÔ PHỎNG TẤT TOÁN TỰ ĐỘNG
-    // Chỉ kích hoạt nếu kỳ này CHƯA có giao dịch thực tế và Dư nợ vẫn còn
-    if (!hasActualTransactions && threshold > 0 && remaining > 0) {
+    if (hasActualTransactions) {
+      // XÁC ĐỊNH PHÍ PHẠT THỰC TẾ
+      // Phí phạt = Tổng tiền thực đóng - (Gốc định kỳ + Gốc tất toán + Lãi tính toán)
+      const actualTotalPaid = eventsThisMonth.reduce((sum, e) => sum + (e.amount || 0), 0);
+      penaltyPaid = Math.max(0, actualTotalPaid - (principalThisMonth + prepayThisMonth + interestThisMonth));
+      totalPenalty += penaltyPaid;
+    } else if (threshold > 0 && remaining > 0) {
+      // CHẠY MÔ PHỎNG TẤT TOÁN TỰ ĐỘNG
+      // Chỉ kích hoạt nếu kỳ này CHƯA có giao dịch thực tế và Dư nợ vẫn còn
       const pRate = getPenaltyRate(m);
       const targetPrepay = Math.min(threshold, remaining);
       const penaltyForTarget = targetPrepay * (pRate / 100);

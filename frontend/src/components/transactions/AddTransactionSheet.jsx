@@ -64,13 +64,13 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
 
       const catData = await db.categories.toArray();
       const typeOrder = { expense: 1, income: 2, savings: 3 };
-      const sortedCats = catData.sort((a, b) => {
+      const sortedCats = [...catData].sort((a, b) => {
         const orderA = typeOrder[a.type] || 99;
         const orderB = typeOrder[b.type] || 99;
         if (orderA !== orderB) return orderA - orderB;
         return (a.sort_order || 0) - (b.sort_order || 0);
       });
-      setCategories(sortedCats);
+      setCategories([...sortedCats]);
       
       const currentType = initialData?.type || type;
       const relevantCats = sortedCats.filter(c => c.type === currentType);

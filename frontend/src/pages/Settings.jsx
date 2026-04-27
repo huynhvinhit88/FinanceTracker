@@ -471,6 +471,9 @@ export default function Settings() {
       await db.investments.clear();
       await db.accounts.clear();
       await db.categories.clear();
+      
+      // Clear localStorage data (Loan profiles)
+      localStorage.removeItem(`loan_profiles_${user?.id || 'guest'}`);
 
       alert('✅ Đã xóa toàn bộ dữ liệu thành công. Ứng dụng sẽ tải lại.');
       window.location.href = '/';

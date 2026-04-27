@@ -133,7 +133,6 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
   // Khi chọn khoản vay, gợi ý tiền lãi và gốc từ bảng kế hoạch
   useEffect(() => {
     if (isLoanMode && loanId && loans.length > 0) {
-      // Nếu vừa mở từ Quick Pay, bỏ qua lượt gợi ý đầu tiên để không ghi đè dữ liệu truyền vào
       if (isFirstRenderFromInitialData) {
         setIsFirstRenderFromInitialData(false);
         return;
@@ -141,46 +140,56 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
 
       const loan = loans.find(l => l.id === loanId);
       if (loan) {
+        const { schedule } = calculateLoanSchedule({
+          principal: loan.principal_amount,
+          termMonths: loan.term_months,
+          promoRate: loan.promo_rate,
+          promoMonths: loan.promo_months,
+          baseRate: loan.base_rate,
+          marginRate: loan.margin_rate,
+          penaltyConfig: loan.penalty_config,
+          startDate: loan.start_date,
+          firstPaymentDate: loan.first_payment_date,
+          extraPayment: loan.extra_payment,
+          offsetThreshold: loan.offset_threshold,
+          periods: loan.periods || [],
+        }, loanTransactions, loan.remaining_principal);
+
+        const now = new Date(date);
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        const match = schedule.find(row => {
+          const d = new Date(row.dateObj);
+          const checkDate = new Date(d.getTime() + 12 * 60 * 60 * 1000);
+          return checkDate.getMonth() === currentMonth && checkDate.getFullYear() === currentYear;
+        });
+
         if (repaymentType === 'payoff') {
-          // Tất toán: Tổng tiền = Toàn bộ dư nợ + Lãi dự kiến (Dùng số tuyệt đối)
-          const interest = suggestInterest(loan);
-          const totalPayoff = loan.remaining_principal + interest;
-          setExternalValue(totalPayoff);
-          setExternalPrincipal(loan.remaining_principal);
+          if (match && match.prepay > 0) {
+            // Trường hợp 1: Có trả thêm dự kiến trong kỳ này
+            setExternalPrincipal(match.prepay);
+            setExternalValue(match.prepay + match.penalty);
+          } else {
+            // Trường hợp 2: Không có trả thêm dự kiến -> Gợi ý tất toán toàn bộ
+            const interest = suggestInterest(loan);
+            
+            // Tính phí phạt toàn bộ dựa trên cấu hình
+            const currentMonthIdx = match ? match.month : 1;
+            const year = Math.ceil(currentMonthIdx / 12);
+            const rates = (loan.penalty_config || '0').split(',').map(s => parseFloat(s.trim()));
+            const pRate = rates.length ? (year <= rates.length ? rates[year - 1] : rates[rates.length - 1]) : 0;
+            const penalty = loan.remaining_principal * (isNaN(pRate) ? 0 : pRate / 100);
+            
+            setExternalPrincipal(loan.remaining_principal);
+            setExternalValue(loan.remaining_principal + interest + penalty);
+          }
         } else {
-          // Trả định kỳ: Tìm trong bảng kế hoạch dòng có tháng và năm khớp với hệ thống
-          // Cần map đúng các key mà calculateLoanSchedule mong đợi
-          const { schedule } = calculateLoanSchedule({
-            principal: loan.principal_amount,
-            termMonths: loan.term_months,
-            promoRate: loan.promo_rate,
-            promoMonths: loan.promo_months,
-            baseRate: loan.base_rate,
-            marginRate: loan.margin_rate,
-            penaltyConfig: loan.penalty_config,
-            startDate: loan.start_date,
-            firstPaymentDate: loan.first_payment_date,
-            extraPayment: loan.extra_payment,
-            offsetThreshold: loan.offset_threshold,
-            periods: loan.periods || [],
-          }, loanTransactions, loan.remaining_principal);
-
-          const now = new Date(date);
-          const currentMonth = now.getMonth();
-          const currentYear = now.getFullYear();
-
-          const match = schedule.find(row => {
-            const d = new Date(row.dateObj);
-            // Cộng thêm 12 giờ để tránh lệch ngày do múi giờ khi so sánh tháng/năm
-            const checkDate = new Date(d.getTime() + 12 * 60 * 60 * 1000);
-            return checkDate.getMonth() === currentMonth && checkDate.getFullYear() === currentYear;
-          });
-
+          // Trả định kỳ
           if (match) {
             setExternalPrincipal(match.principal);
-            setExternalValue(match.total);
+            setExternalValue(match.principal + match.interest);
           } else {
-            // Trường hợp không tìm thấy kỳ khớp (quá hạn hoặc chưa đến kỳ): Để trống
             setExternalPrincipal('');
             setExternalValue('');
           }

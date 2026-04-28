@@ -182,7 +182,14 @@ export default function Plan() {
       }, 0);
       const savTotal = activeSavings.reduce((s, x) => s + (parseFloat(x.principal_amount) || 0), 0);
       
-      setCurrentTotalSavings(savTotal);
+      const specificSavingsTotal = activeSavings.reduce((s, x) => {
+        const cat = allCategories.find(c => c.id === x.category_id);
+        if (cat && cat.name.toLowerCase() === 'tiết kiệm') {
+          return s + (parseFloat(x.principal_amount) || 0);
+        }
+        return s;
+      }, 0);
+      setCurrentTotalSavings(specificSavingsTotal);
       const invTotal = allInvestments.reduce((s, i) => {
         const cur = parseFloat(i.current_price) || 0;
         const qty = parseFloat(i.quantity) || 1;

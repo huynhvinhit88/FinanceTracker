@@ -116,7 +116,12 @@ export default function Plan() {
         // Filter by type
         const filteredByCat = {};
         allBudgets.forEach(b => {
-          if (b.category?.type === type) {
+          const catType = b.category?.type;
+          const isMatch = (type === 'expense') 
+            ? (catType === 'expense' || catType === 'savings')
+            : (catType === type);
+
+          if (isMatch) {
             if (!filteredByCat[b.category_id]) filteredByCat[b.category_id] = { meta: b.category, entries: [] };
             filteredByCat[b.category_id].entries.push(b);
           }
@@ -164,7 +169,7 @@ export default function Plan() {
         if (!tx.category_id) return;
         const cat = allCategories.find(c => c.id === tx.category_id);
         if (cat) {
-          if (cat.type === 'expense') spentByCat[tx.category_id] = (spentByCat[tx.category_id] || 0) + amt;
+          if (cat.type === 'expense' || cat.type === 'savings') spentByCat[tx.category_id] = (spentByCat[tx.category_id] || 0) + amt;
           else if (cat.type === 'income') earnedByCat[tx.category_id] = (earnedByCat[tx.category_id] || 0) + amt;
         }
       });
@@ -238,7 +243,7 @@ export default function Plan() {
         const amt = monthSpecific ? parseFloat(monthSpecific.amount) : (defaultEntry ? parseFloat(defaultEntry.amount) : 0);
 
         if (catGroup.type === 'income') inc += amt;
-        else if (catGroup.type === 'expense') exp += amt;
+        else if (catGroup.type === 'expense' || catGroup.type === 'savings') exp += amt;
       });
 
       return { income: inc, expense: exp, surplus: inc - exp };

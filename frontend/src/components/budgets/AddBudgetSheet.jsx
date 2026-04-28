@@ -32,7 +32,12 @@ export function AddBudgetSheet({ isOpen, onClose, onSuccess, initialMonth }) {
   const fetchCategories = async () => {
     try {
       const data = await db.categories
-        .filter(c => c.type === planType)
+        .filter(c => {
+          if (planType === 'expense') {
+            return c.type === 'expense' || c.type === 'savings';
+          }
+          return c.type === planType;
+        })
         .toArray();
       // Sắp xếp theo sort_order
       data.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));

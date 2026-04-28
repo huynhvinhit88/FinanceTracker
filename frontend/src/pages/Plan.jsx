@@ -182,14 +182,7 @@ export default function Plan() {
       }, 0);
       const savTotal = activeSavings.reduce((s, x) => s + (parseFloat(x.principal_amount) || 0), 0);
       
-      const specificSavingsTotal = activeSavings.reduce((s, x) => {
-        const cat = allCategories.find(c => c.id === x.category_id);
-        if (cat && cat.name.toLowerCase() === 'tiết kiệm') {
-          return s + (parseFloat(x.principal_amount) || 0);
-        }
-        return s;
-      }, 0);
-      setCurrentTotalSavings(specificSavingsTotal);
+      setCurrentTotalSavings(savTotal);
       const invTotal = allInvestments.reduce((s, i) => {
         const cur = parseFloat(i.current_price) || 0;
         const qty = parseFloat(i.quantity) || 1;
@@ -544,7 +537,7 @@ export default function Plan() {
                       </thead>
                       <tbody className="divide-y divide-gray-50 dark:divide-white/5">
                         {(() => {
-                          let cumulativeSavings = savTotal;
+                          let cumulativeSavings = currentTotalSavings;
                           return Array.from({ length: Math.min(60, projectionMonths + 1) }).map((_, i) => {
                             const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + i);
                             const m = d.toISOString().slice(0, 7);

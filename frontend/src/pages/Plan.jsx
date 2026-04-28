@@ -593,7 +593,7 @@ export default function Plan() {
                     <p className="text-[10px] text-gray-400 dark:text-slate-500 font-medium">Dư ra = Thu nhập - Chi tiêu</p>
                     {Object.keys(savingsPlan).length > 0 && (
                       <button 
-                        onClick={() => { if(window.confirm('Xoá tất cả ghi đè tiết kiệm?')) { setSavingsPlan({}); localStorage.removeItem(`savings_plan_${user.id}`); } }} 
+                        onClick={() => { if(window.confirm('Xoá tất cả ghi đè tiết kiệm?')) { setSavingsPlan({}); localStorage.removeItem(`savings_plan_${user?.id || 'guest'}`); } }} 
                         className="text-[10px] text-red-500 font-black uppercase tracking-tight hover:underline"
                       >
                         Xoá ghi đè

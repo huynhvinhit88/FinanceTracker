@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/db';
-import { Plus, Target, PiggyBank, HandCoins, TrendingUp, TrendingDown, Activity, RefreshCw, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Calendar, Settings2 } from 'lucide-react';
+import { Plus, Target, PiggyBank, HandCoins, TrendingUp, TrendingDown, Activity, RefreshCw, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Calendar, Settings2, ArrowRightLeft } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 import { AddBudgetSheet } from '../components/budgets/AddBudgetSheet';
 import { EditBudgetSheet } from '../components/budgets/EditBudgetSheet';
@@ -90,10 +90,6 @@ export default function Plan() {
     if (!user) return;
     setLoading(true);
     try {
-      // Logic resolution:
-      // If planViewMode is 'default', we only care about budgets with month = null
-      // If planViewMode is 'monthly', we prefer budgets with month = selectedMonth, then fallback to month = null
-      
       const allTxRaw = await db.transactions
         .filter(tx => tx.date.startsWith(selectedMonth))
         .toArray();
@@ -113,7 +109,6 @@ export default function Plan() {
       setRawBudgets(allBudgets);
 
       const processBudgets = (type) => {
-        // Filter by type
         const filteredByCat = {};
         allBudgets.forEach(b => {
           const catType = b.category?.type;
@@ -133,10 +128,8 @@ export default function Plan() {
 
           if (planViewMode === 'default') {
             targetEntry = catGroup.entries.find(e => !e.month);
-            // If viewing Default and no default entry exists, we could show a placeholder
             if (!targetEntry) return null; 
           } else {
-            // Monthly Mode
             const monthSpecific = catGroup.entries.find(e => e.month === selectedMonth);
             const defaultEntry = catGroup.entries.find(e => !e.month);
             targetEntry = monthSpecific || defaultEntry;
@@ -155,7 +148,9 @@ export default function Plan() {
             is_default: !targetEntry.month,
             displayAmount: parseFloat(targetEntry.amount) || 0
           };
-        }).filter(Boolean).sort((a, b) => {
+        })
+        .filter(Boolean)
+        .sort((a, b) => {
           const typeOrder = { expense: 1, savings: 2, income: 3 };
           const orderA = typeOrder[a.category?.type] || 99;
           const orderB = typeOrder[b.category?.type] || 99;
@@ -167,7 +162,6 @@ export default function Plan() {
       setExpenseBudgets(processBudgets('expense'));
       setIncomeBudgets(processBudgets('income'));
 
-      // 2. Process Transactions (only if viewing monthly)
       const spentByCat = {};
       const earnedByCat = {};
       allTxRaw.forEach(tx => {
@@ -182,7 +176,6 @@ export default function Plan() {
       setActualExpenses(spentByCat);
       setActualIncome(earnedByCat);
 
-      // 3. Asset Processing
       const accNW = allAccounts.reduce((s, a) => {
         const bal = parseFloat(a.balance) || 0;
         return a.sub_type === 'debt' ? s - bal : s + bal;
@@ -230,7 +223,7 @@ export default function Plan() {
   };
 
   // Robust Calculations with useMemo
-  const { totalIncomePlan, totalExpensePlan, activeMonthlySaving, projectedNW, growthX, totalGain, calculateMonthlyStats } = React.useMemo(() => {
+  const { totalIncomePlan, totalExpensePlan, totalTransferPlan, activeMonthlySaving, projectedNW, growthX, totalGain, calculateMonthlyStats } = React.useMemo(() => {
     const getStatsForMonth = (mKey) => {
       const grouped = {};
       (rawBudgets || []).forEach(b => {
@@ -240,6 +233,7 @@ export default function Plan() {
 
       let inc = 0;
       let exp = 0;
+      let sav = 0;
 
       Object.keys(grouped).forEach(catId => {
         const catGroup = grouped[catId];
@@ -249,14 +243,15 @@ export default function Plan() {
         const amt = monthSpecific ? parseFloat(monthSpecific.amount) : (defaultEntry ? parseFloat(defaultEntry.amount) : 0);
 
         if (catGroup.type === 'income') inc += amt;
-        else if (catGroup.type === 'expense' || catGroup.type === 'savings') exp += amt;
+        else if (catGroup.type === 'expense') exp += amt;
+        else if (catGroup.type === 'savings') sav += amt;
       });
 
-      return { income: inc, expense: exp, surplus: inc - exp };
+      return { income: inc, expense: exp, savings: sav, surplus: inc - exp };
     };
 
     const currentStatus = getStatsForMonth(selectedMonth);
-    const activeSaving = currentStatus.surplus;
+    const activeSaving = currentStatus.surplus; // Surplus = Income - Real Expense
     const weightedAnnualRate = currentNW > 0 ? (expectedAnnualReturn / currentNW) : 0.08;
     const monthlyRate = weightedAnnualRate / 12;
 
@@ -276,6 +271,7 @@ export default function Plan() {
     return {
       totalIncomePlan: currentStatus.income,
       totalExpensePlan: currentStatus.expense,
+      totalTransferPlan: currentStatus.savings,
       activeMonthlySaving: activeSaving,
       projectedNW: pNW,
       growthX: currentNW > 0 ? pNW / currentNW : 0,
@@ -297,7 +293,6 @@ export default function Plan() {
     localStorage.setItem(planKey, JSON.stringify(newPlan));
   };
 
-  // Month Navigator Helpers
   const changeMonth = (offset) => {
     const d = new Date(selectedMonth + '-02');
     d.setMonth(d.getMonth() + offset);
@@ -320,9 +315,10 @@ export default function Plan() {
           const targetVal = p.amount;
           const percentage = targetVal > 0 ? Math.min((actualVal / targetVal) * 100, 100) : 0;
           
-          let progressColor = type === 'expense' ? 'bg-blue-500' : 'bg-emerald-500';
-          if (type === 'expense' && percentage >= 100) progressColor = 'bg-red-500';
-          else if (type === 'expense' && percentage >= 80) progressColor = 'bg-orange-500';
+          const isTransfer = p.category?.type === 'savings';
+          let progressColor = type === 'expense' ? (isTransfer ? 'bg-indigo-500' : 'bg-blue-500') : 'bg-emerald-500';
+          if (type === 'expense' && !isTransfer && percentage >= 100) progressColor = 'bg-red-500';
+          else if (type === 'expense' && !isTransfer && percentage >= 80) progressColor = 'bg-orange-500';
 
           return (
             <div 
@@ -341,14 +337,17 @@ export default function Plan() {
                       {p.is_default && planViewMode === 'monthly' && (
                         <span className="bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 text-[8px] font-black px-1 rounded uppercase">MẶC ĐỊNH</span>
                       )}
+                      {isTransfer && (
+                        <span className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[8px] font-black px-1 rounded uppercase tracking-tighter">CHUYỂN KHOẢN</span>
+                      )}
                     </div>
                     {planViewMode === 'monthly' && (
-                      <p className="text-[10px] font-medium text-gray-500 dark:text-slate-500 mt-0.5">{type === 'expense' ? 'Đã chi' : 'Tiến độ'} {Math.round(percentage)}%</p>
+                      <p className="text-[10px] font-medium text-gray-500 dark:text-slate-500 mt-0.5">{type === 'expense' ? (isTransfer ? 'Đã tích luỹ' : 'Đã chi') : 'Tiến độ'} {Math.round(percentage)}%</p>
                     )}
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className={`font-bold text-sm leading-tight ${type === 'expense' && percentage >= 100 && planViewMode === 'monthly' ? 'text-red-500 dark:text-rose-400' : 'text-gray-900 dark:text-slate-100'}`}>
+                  <p className={`font-bold text-sm leading-tight ${type === 'expense' && !isTransfer && percentage >= 100 && planViewMode === 'monthly' ? 'text-red-500 dark:text-rose-400' : 'text-gray-900 dark:text-slate-100'}`}>
                     {planViewMode === 'monthly' ? formatCurrency(actualVal) : formatCurrency(targetVal)} {planViewMode === 'monthly' && '₫'}
                   </p>
                   {planViewMode === 'monthly' && (
@@ -436,18 +435,25 @@ export default function Plan() {
         {/* --- SUMMARY CARD (Only in Monthly Mode) --- */}
         {planViewMode === 'monthly' && (
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-white/5 mb-8">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <div>
                 <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase mb-1">Dự thu</p>
                 <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(totalIncomePlan)} ₫</p>
               </div>
-              <div className="text-right">
+              <div className="text-right sm:text-left">
                 <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase mb-1">Dự chi</p>
                 <p className="text-lg font-black text-blue-600 dark:text-blue-400">{formatCurrency(totalExpensePlan)} ₫</p>
               </div>
+              <div className="col-span-2 sm:col-span-1 text-right">
+                <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase mb-1">Dự kiến tiết kiệm</p>
+                <p className="text-lg font-black text-indigo-600 dark:text-indigo-400">{formatCurrency(totalTransferPlan)} ₫</p>
+              </div>
             </div>
             <div className="mt-4 pt-4 border-t border-gray-50 dark:border-white/5 flex justify-between items-center">
-              <span className="text-xs font-bold text-gray-500 dark:text-slate-500">Kế hoạch dư ra (Savings)</span>
+              <div className="flex flex-col">
+                <span className="text-xs font-bold text-gray-500 dark:text-slate-500">Kế hoạch dư ra (Surplus)</span>
+                <span className="text-[9px] text-gray-400 dark:text-slate-600 italic">Dùng để dự báo tăng trưởng Tài sản ròng</span>
+              </div>
               <span className={`text-xl font-black ${activeMonthlySaving < 0 ? 'text-red-500 dark:text-rose-400' : 'text-indigo-600 dark:text-indigo-400'}`}>{formatCurrency(activeMonthlySaving)} ₫</span>
             </div>
           </div>
@@ -472,7 +478,7 @@ export default function Plan() {
           <section>
             <div className="flex items-center space-x-3 mb-6 px-1">
               <div className="w-1.5 h-6 bg-blue-500 rounded-full shadow-sm shadow-blue-500/40" />
-              <h2 className="text-xl font-black text-gray-900 dark:text-slate-100 tracking-tight">{planViewMode === 'default' ? 'Dự chi mặc định' : 'Dự chi trong tháng'}</h2>
+              <h2 className="text-xl font-black text-gray-900 dark:text-slate-100 tracking-tight">{planViewMode === 'default' ? 'Dự chi & Tiết kiệm mặc định' : 'Dự chi & Tiết kiệm trong tháng'}</h2>
             </div>
             {loading ? (
               <div className="flex justify-center p-12">
@@ -491,7 +497,6 @@ export default function Plan() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
             <div className="space-y-6">
-              {/* Year Slider */}
               <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm">
                 <div className="flex justify-between items-center mb-1">
                   <label className="text-sm font-bold text-gray-700 dark:text-slate-300">Dự báo đến mốc</label>
@@ -507,7 +512,6 @@ export default function Plan() {
                 </p>
               </div>
 
-              {/* Result Card */}
               <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm p-8 flex flex-col items-center justify-center text-center">
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 dark:text-slate-500 mb-3">Tổng tích luỹ thêm dự kiến</p>
                 <h3 className="text-4xl lg:text-5xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight leading-none mb-2">+{fmtLarge(totalGain)}</h3>
@@ -516,7 +520,6 @@ export default function Plan() {
             </div>
 
             <div className="space-y-4">
-              {/* Table Toggle */}
               <button
                 onClick={() => setShowPlanTable(!showPlanTable)}
                 className="w-full py-4 bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 text-indigo-600 dark:text-indigo-400 rounded-2xl text-xs font-bold flex items-center justify-center space-x-2 active:scale-[0.98] transition-all shadow-sm"
@@ -535,13 +538,13 @@ export default function Plan() {
                           <th className="sticky left-0 z-10 bg-gray-50 dark:bg-slate-800 py-3 px-4 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase shadow-[1px_0_0_0_rgba(0,0,0,0.05)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.05)]">Tháng</th>
                           <th className="py-3 px-2 text-[10px] font-black text-emerald-500 dark:text-emerald-400 uppercase">Dự Thu</th>
                           <th className="py-3 px-2 text-[10px] font-black text-blue-500 dark:text-blue-400 uppercase">Dự Chi</th>
-                          <th className="py-3 px-4 text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase">Tiết kiệm</th>
-                          <th className="py-3 px-4 text-[10px] font-black text-purple-500 dark:text-purple-400 uppercase">Tổng tiết kiệm</th>
+                          <th className="py-3 px-4 text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase">Dư ra (Saving)</th>
+                          <th className="py-3 px-4 text-[10px] font-black text-purple-500 dark:text-purple-400 uppercase">Tổng tài sản</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50 dark:divide-white/5">
                         {(() => {
-                          let cumulativeSavings = currentTotalSavings;
+                          let cumulativeSavings = currentNW;
                           return Array.from({ length: Math.min(60, projectionMonths + 1) }).map((_, i) => {
                             const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + i);
                             const m = d.toISOString().slice(0, 7);
@@ -551,7 +554,6 @@ export default function Plan() {
                             const monthSaving = overrideVal !== undefined ? overrideVal : stats.surplus;
                             cumulativeSavings += monthSaving;
                             
-                            const isDeficit = monthSaving < 0;
                             const inputColor = overrideVal !== undefined 
                               ? (overrideVal < 0 ? 'text-red-500 dark:text-rose-400' : 'text-indigo-600 dark:text-indigo-400')
                               : (stats.surplus < 0 ? 'text-red-400 dark:text-rose-500' : 'text-gray-400 dark:text-slate-600');
@@ -587,9 +589,8 @@ export default function Plan() {
                       </tbody>
                     </table>
                   </div>
-                  {projectionMonths > 60 && <div className="p-4 bg-gray-50 dark:bg-slate-800/50 text-center text-[10px] text-gray-400 dark:text-slate-500 italic">Bảng chỉ hiển thị chi tiết 5 năm đầu tiên</div>}
                   <div className="p-4 bg-gray-50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-white/5 flex flex-col sm:flex-row justify-between items-center px-6 gap-3">
-                    <p className="text-[10px] text-gray-400 dark:text-slate-500 font-medium">Thay đổi cột Tiết kiệm để ghi đè kế hoạch</p>
+                    <p className="text-[10px] text-gray-400 dark:text-slate-500 font-medium">Dư ra (Saving) = Thu nhập - Chi tiêu</p>
                     {Object.keys(savingsPlan).length > 0 && (
                       <button 
                         onClick={() => { if(window.confirm('Xoá tất cả ghi đè tiết kiệm?')) { setSavingsPlan({}); localStorage.removeItem(`savings_plan_${user.id}`); } }} 

@@ -47,7 +47,7 @@ export function DesktopWidgets() {
     const groupedBudgets = {};
     budgets.forEach(b => {
       const cat = categories.find(c => c.id === b.category_id);
-      if (cat?.type === 'expense') {
+      if (cat?.type === 'expense' || cat?.type === 'savings') {
         if (!groupedBudgets[b.category_id]) groupedBudgets[b.category_id] = { entries: [] };
         groupedBudgets[b.category_id].entries.push(b);
       }
@@ -72,9 +72,16 @@ export function DesktopWidgets() {
         icon: cat?.icon || '📌',
         limit: b.amount,
         spent: spent,
-        percent: b.amount > 0 ? Math.min(100, (spent / b.amount) * 100) : 0
+        percent: b.amount > 0 ? Math.min(100, (spent / b.amount) * 100) : 0,
+        type: cat?.type
       };
-    }).sort((a, b) => b.percent - a.percent).slice(0, 3);
+    }).sort((a, b) => {
+      const typeOrder = { expense: 1, savings: 2 };
+      const orderA = typeOrder[a.type] || 99;
+      const orderB = typeOrder[b.type] || 99;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.name.localeCompare(b.name);
+    });
   }, [budgets, categories, transactions]);
 
   if (loading) return null;

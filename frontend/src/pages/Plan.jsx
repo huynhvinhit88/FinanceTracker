@@ -538,13 +538,13 @@ export default function Plan() {
                           <th className="sticky left-0 z-10 bg-gray-50 dark:bg-slate-800 py-3 px-4 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase shadow-[1px_0_0_0_rgba(0,0,0,0.05)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.05)]">Tháng</th>
                           <th className="py-3 px-2 text-[10px] font-black text-emerald-500 dark:text-emerald-400 uppercase">Dự Thu</th>
                           <th className="py-3 px-2 text-[10px] font-black text-blue-500 dark:text-blue-400 uppercase">Dự Chi</th>
-                          <th className="py-3 px-4 text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase">Dư ra (Saving)</th>
-                          <th className="py-3 px-4 text-[10px] font-black text-purple-500 dark:text-purple-400 uppercase">Tổng tài sản</th>
+                          <th className="py-3 px-4 text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase">Dư ra</th>
+                          <th className="py-3 px-4 text-[10px] font-black text-purple-500 dark:text-purple-400 uppercase">Tổng tích luỹ</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50 dark:divide-white/5">
                         {(() => {
-                          let cumulativeSavings = currentNW;
+                          let cumulativeSavings = savTotal;
                           return Array.from({ length: Math.min(60, projectionMonths + 1) }).map((_, i) => {
                             const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + i);
                             const m = d.toISOString().slice(0, 7);
@@ -590,7 +590,7 @@ export default function Plan() {
                     </table>
                   </div>
                   <div className="p-4 bg-gray-50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-white/5 flex flex-col sm:flex-row justify-between items-center px-6 gap-3">
-                    <p className="text-[10px] text-gray-400 dark:text-slate-500 font-medium">Dư ra (Saving) = Thu nhập - Chi tiêu</p>
+                    <p className="text-[10px] text-gray-400 dark:text-slate-500 font-medium">Dư ra = Thu nhập - Chi tiêu</p>
                     {Object.keys(savingsPlan).length > 0 && (
                       <button 
                         onClick={() => { if(window.confirm('Xoá tất cả ghi đè tiết kiệm?')) { setSavingsPlan({}); localStorage.removeItem(`savings_plan_${user.id}`); } }} 

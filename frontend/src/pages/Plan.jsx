@@ -155,7 +155,13 @@ export default function Plan() {
             is_default: !targetEntry.month,
             displayAmount: parseFloat(targetEntry.amount) || 0
           };
-        }).filter(Boolean);
+        }).filter(Boolean).sort((a, b) => {
+          const typeOrder = { expense: 1, savings: 2, income: 3 };
+          const orderA = typeOrder[a.category?.type] || 99;
+          const orderB = typeOrder[b.category?.type] || 99;
+          if (orderA !== orderB) return orderA - orderB;
+          return (a.category?.sort_order || 0) - (b.category?.sort_order || 0);
+        });
       };
 
       setExpenseBudgets(processBudgets('expense'));

@@ -39,8 +39,15 @@ export function AddBudgetSheet({ isOpen, onClose, onSuccess, initialMonth }) {
           return c.type === planType;
         })
         .toArray();
-      // Sắp xếp theo sort_order
-      data.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+      // Thứ tự ưu tiên: expense (chi) -> savings (chuyển khoản) -> income (thu)
+      data.sort((a, b) => {
+        const typeOrder = { expense: 1, savings: 2, income: 3 };
+        const orderA = typeOrder[a.type] || 99;
+        const orderB = typeOrder[b.type] || 99;
+        
+        if (orderA !== orderB) return orderA - orderB;
+        return (a.sort_order || 0) - (b.sort_order || 0);
+      });
         
       setCategories(data);
       if (data && data.length > 0) {
@@ -195,9 +202,24 @@ export function AddBudgetSheet({ isOpen, onClose, onSuccess, initialMonth }) {
             className="w-full bg-gray-50 dark:bg-slate-800 dark:text-slate-200 border border-transparent dark:border-white/5 focus:border-blue-500 rounded-xl px-4 py-3 outline-none"
           >
             {categories.length === 0 && <option value="">Không có danh mục nào</option>}
-            {categories.map(cat => (
-              <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
-            ))}
+            {planType === 'expense' ? (
+              <>
+                <optgroup label="─── HẠNG MỤC CHI TIÊU ───">
+                  {categories.filter(c => c.type === 'expense').map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="─── HẠNG MỤC CHUYỂN KHOẢN ───">
+                  {categories.filter(c => c.type === 'savings').map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+                  ))}
+                </optgroup>
+              </>
+            ) : (
+              categories.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+              ))
+            )}
           </select>
           <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-2 px-1">
             {applyType === 'default' 

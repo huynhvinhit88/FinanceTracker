@@ -43,7 +43,7 @@ export default function Plan() {
     const d = new Date();
     return `${d.getFullYear()}-12`;
   });
-  const [showPlanTable, setShowPlanTable] = useState(false);
+  const [showPlanTable, setShowPlanTable] = useState(true);
   const { displayValue: displayManualSaving, value: manualSaving, handleInputChange: handleManualSavingChange, setExternalValue: setManualSaving } = useCurrencyInput('');
 
   useEffect(() => {

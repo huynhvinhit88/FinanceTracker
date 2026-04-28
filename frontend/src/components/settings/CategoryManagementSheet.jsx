@@ -200,7 +200,7 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
                 activeTab === 'savings' ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 shadow-sm' : 'text-gray-500 dark:text-slate-400'
               }`}
             >
-              Tiết kiệm
+              Chuyển khoản
             </button>
           </div>
 
@@ -266,7 +266,7 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
             className="w-full py-4 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 font-bold rounded-xl mt-4 flex items-center justify-center space-x-2 transition-colors active:scale-95 border-none dark:border dark:border-white/5"
           >
             <Plus size={18} />
-            <span>Thêm danh mục {activeTab === 'expense' ? 'Chi' : activeTab === 'income' ? 'Thu' : 'Tiết kiệm'}</span>
+            <span>Thêm danh mục {activeTab === 'expense' ? 'Chi' : activeTab === 'income' ? 'Thu' : 'Chuyển khoản'}</span>
           </button>
         </div>
       )}

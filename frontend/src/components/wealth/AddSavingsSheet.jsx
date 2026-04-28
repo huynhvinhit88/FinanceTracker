@@ -106,9 +106,9 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
       });
 
       // 2. Tạo giao dịch chi tiền để mở sổ
-      const txDate = new Date(startDate);
-      const now = new Date();
-      txDate.setUTCHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+      const [y, m, d] = startDate.split('-').map(Number);
+      const txDate = new Date();
+      txDate.setFullYear(y, m - 1, d);
 
       await db.transactions.add({
         id: crypto.randomUUID(),
@@ -272,7 +272,7 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
           </select>
           {savingsCategories.length === 0 && (
             <p className="text-[11px] text-gray-400 dark:text-slate-500 ml-1">
-              Chưa có danh mục tiết kiệm. Thêm trong Đặt cài ủng → Quản lý Danh mục → Tab Tiết kiệm.
+              Chưa có danh mục tiết kiệm. Thêm trong Đặt cài đặt → Quản lý Danh mục → Tab Chuyển khoản.
             </p>
           )}
         </div>

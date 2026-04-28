@@ -170,9 +170,27 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
         const txDate = new Date().toISOString();
 
         // 2.a Tạo giao dịch nhận lại gốc (Chuyển tiền)
+        let principalCategoryId = null;
+        const settlementCat = savingsCategories.find(c => c.name === 'Tất toán sổ tiết kiệm' || c.name === 'Rút sổ tiết kiệm');
+        if (settlementCat) {
+          principalCategoryId = settlementCat.id;
+        } else {
+          principalCategoryId = crypto.randomUUID();
+          await db.categories.add({
+            id: principalCategoryId,
+            name: 'Tất toán sổ tiết kiệm',
+            type: 'savings',
+            icon: '💰',
+            color_hex: '#10B981',
+            sort_order: 999
+          });
+          await fetchDependencies();
+        }
+
         await db.transactions.add({
           id: crypto.randomUUID(),
           account_id: settleAccountId,
+          category_id: principalCategoryId,
           amount: savings.principal_amount,
           date: txDate,
           type: 'transfer',

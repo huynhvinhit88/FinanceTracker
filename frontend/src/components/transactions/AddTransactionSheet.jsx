@@ -397,7 +397,7 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
               <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Hạng mục (tùy chọn)</label>
               <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="w-full bg-gray-50 dark:bg-slate-800 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all">
                 <option value="">-- Không phân loại --</option>
-                {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>)}
+                {categories.filter(c => c.type === 'savings').map(cat => <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>)}
               </select>
             </div>
           )}

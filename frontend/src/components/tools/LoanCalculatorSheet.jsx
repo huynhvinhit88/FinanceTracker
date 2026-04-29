@@ -30,7 +30,7 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
     d.setMonth(d.getMonth() + 1);
     return d.toISOString().slice(0, 10);
   });
-  const { displayValue: displayPrincipal, value: principal, handleInputChange: handlePrincipalChange, setExternalValue: setExternalPrincipal, reset: resetPrincipal, suffix } = useCurrencyInput('');
+  const { displayValue: displayPrincipal, value: principal, handleInputChange: handlePrincipalChange, setExternalValue: setExternalPrincipal, reset: resetPrincipal, suffix } = useCurrencyInput('', { useShortcut: true });
   const [termMonths, setTermMonths] = useState('');
 
   // 2. Cấu hình Lãi suất
@@ -40,8 +40,8 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
   const [marginRate, setMarginRate] = useState('');
 
   // 3. Cơ chế Tất toán & Tiết kiệm
-  const { displayValue: displayExtra, value: extraPayment, handleInputChange: handleExtraChange, setExternalValue: setExternalExtra, reset: resetExtra, suffix: extraSuffix } = useCurrencyInput('');
-  const { displayValue: displayThreshold, value: offsetThreshold, handleInputChange: handleThresholdChange, setExternalValue: setExternalThreshold, reset: resetThreshold, suffix: thresholdSuffix } = useCurrencyInput('');
+  const { displayValue: displayExtra, value: extraPayment, handleInputChange: handleExtraChange, setExternalValue: setExternalExtra, reset: resetExtra, suffix: extraSuffix } = useCurrencyInput('', { useShortcut: true });
+  const { displayValue: displayThreshold, value: offsetThreshold, handleInputChange: handleThresholdChange, setExternalValue: setExternalThreshold, reset: resetThreshold, suffix: thresholdSuffix } = useCurrencyInput('', { useShortcut: true });
   const [penaltyConfig, setPenaltyConfig] = useState('3, 3, 3, 1, 0');
 
   // 4. Kế hoạch theo Giai đoạn (Periods)

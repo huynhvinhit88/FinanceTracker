@@ -9,7 +9,7 @@ import {
   TrendingUp, TrendingDown, PiggyBank, Calendar, 
   ChevronLeft, ChevronRight, Filter, Download,
   Wallet, PieChart as PieChartIcon, Clock, ChevronRight as ChevronRightIcon,
-  Info, Landmark
+  Info, Landmark, ArrowLeftRight, AlertCircle
 } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 import { BottomSheet } from '../components/ui/BottomSheet';
@@ -160,6 +160,52 @@ export default function Statistics() {
     });
 
     return data;
+  }, [transactions, categories]);
+
+  // --- THU HỘ / CHI HỘ RECONCILIATION ---
+  const thuHoChiHoData = useMemo(() => {
+    const thuHoCat = categories.find(c => c.name === 'Thu hộ');
+    const chiHoCat = categories.find(c => c.name === 'Chi hộ');
+
+    const monthlyStats = Array.from({ length: 12 }, (_, i) => ({
+      month: `T${i + 1}`,
+      monthIndex: i,
+      thuHo: 0,
+      chiHo: 0,
+      txs: []
+    }));
+
+    let totalThuHo = 0;
+    let totalChiHo = 0;
+
+    transactions.forEach(tx => {
+      const month = new Date(tx.date).getMonth();
+      const isThuHo = thuHoCat && tx.category_id === thuHoCat.id;
+      const isChiHo = chiHoCat && tx.category_id === chiHoCat.id;
+
+      if (isThuHo) {
+        monthlyStats[month].thuHo += Number(tx.amount) || 0;
+        monthlyStats[month].txs.push({ ...tx, _kind: 'thu' });
+        totalThuHo += Number(tx.amount) || 0;
+      }
+      if (isChiHo) {
+        monthlyStats[month].chiHo += Number(tx.amount) || 0;
+        monthlyStats[month].txs.push({ ...tx, _kind: 'chi' });
+        totalChiHo += Number(tx.amount) || 0;
+      }
+    });
+
+    const activeMonths = monthlyStats.filter(m => m.thuHo > 0 || m.chiHo > 0);
+
+    return {
+      totalThuHo,
+      totalChiHo,
+      chenh: totalChiHo - totalThuHo,
+      activeMonths,
+      hasThuHoCat: !!thuHoCat,
+      hasChiHoCat: !!chiHoCat,
+      hasData: totalThuHo > 0 || totalChiHo > 0
+    };
   }, [transactions, categories]);
 
   // --- SAVINGS SPECIFIC AGGREGATION ---
@@ -480,6 +526,144 @@ export default function Statistics() {
         </div>
       </div>
 
+      {/* --- SECTION 3: ĐỐI SOÁT THU HỘ / CHI HỘ --- */}
+      <div className="mb-12">
+        <div className="flex items-center mb-6 px-1">
+          <div className="w-1.5 h-6 bg-amber-500 rounded-full mr-3 shadow-sm shadow-amber-500/40" />
+          <h2 className="text-lg font-black text-gray-900 dark:text-slate-100 tracking-tight">Đối soát Thu hộ / Chi hộ</h2>
+        </div>
+
+        {(!thuHoChiHoData.hasThuHoCat && !thuHoChiHoData.hasChiHoCat) ? (
+          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-800/30 rounded-3xl p-6 flex items-start space-x-4">
+            <AlertCircle size={20} className="text-amber-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-bold text-amber-800 dark:text-amber-300">Chưa có danh mục Thu hộ / Chi hộ</p>
+              <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">Vào <strong>Cài đặt → Quản lý Danh mục</strong> và tạo danh mục tên <strong>"Thu hộ"</strong> (loại Thu nhập) và <strong>"Chi hộ"</strong> (loại Chi tiêu) để bắt đầu theo dõi.</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-3 gap-3 mb-6">
+              {/* Tổng Thu hộ */}
+              <div className="bg-white dark:bg-slate-900 p-4 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-sm relative overflow-hidden">
+                <div className="absolute -right-4 -top-4 w-14 h-14 bg-emerald-50 dark:bg-emerald-950/30 rounded-full opacity-50" />
+                <p className="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2">Thu hộ</p>
+                <p className="text-base font-black text-emerald-600 dark:text-emerald-400 tabular-nums leading-tight">{formatCurrency(thuHoChiHoData.totalThuHo)}<span className="text-[9px] ml-0.5 opacity-60">₫</span></p>
+              </div>
+
+              {/* Tổng Chi hộ */}
+              <div className="bg-white dark:bg-slate-900 p-4 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-sm relative overflow-hidden">
+                <div className="absolute -right-4 -top-4 w-14 h-14 bg-rose-50 dark:bg-rose-950/30 rounded-full opacity-50" />
+                <p className="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2">Chi hộ</p>
+                <p className="text-base font-black text-rose-600 dark:text-rose-400 tabular-nums leading-tight">{formatCurrency(thuHoChiHoData.totalChiHo)}<span className="text-[9px] ml-0.5 opacity-60">₫</span></p>
+              </div>
+
+              {/* Chênh lệch */}
+              <div className={`p-4 rounded-[2rem] border shadow-sm relative overflow-hidden ${
+                thuHoChiHoData.chenh <= 0
+                  ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-800/30'
+                  : 'bg-orange-50 dark:bg-orange-950/20 border-orange-100 dark:border-orange-800/30'
+              }`}>
+                <p className="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2">Chênh lệch</p>
+                <p className={`text-base font-black tabular-nums leading-tight ${
+                  thuHoChiHoData.chenh <= 0
+                    ? 'text-emerald-700 dark:text-emerald-400'
+                    : 'text-orange-600 dark:text-orange-400'
+                }`}>
+                  {thuHoChiHoData.chenh > 0 ? '+' : ''}{formatCurrency(thuHoChiHoData.chenh)}<span className="text-[9px] ml-0.5 opacity-60">₫</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Chú thích chênh lệch */}
+            {thuHoChiHoData.chenh > 0 && (
+              <div className="flex items-start space-x-2 mb-5 px-1">
+                <Info size={13} className="text-orange-400 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-orange-500 dark:text-orange-400 font-medium">
+                  Chi hộ đang lớn hơn Thu hộ <strong>{formatCurrency(thuHoChiHoData.chenh)}₫</strong> — bạn đang ứng tiền từ tài khoản cá nhân.
+                </p>
+              </div>
+            )}
+            {thuHoChiHoData.chenh < 0 && (
+              <div className="flex items-start space-x-2 mb-5 px-1">
+                <Info size={13} className="text-emerald-400 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                  Thu hộ đang lớn hơn Chi hộ <strong>{formatCurrency(Math.abs(thuHoChiHoData.chenh))}₫</strong> — bạn đang giữ tiền hộ người khác.
+                </p>
+              </div>
+            )}
+
+            {/* Monthly breakdown table */}
+            {thuHoChiHoData.activeMonths.length === 0 ? (
+              <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-gray-100 dark:border-white/5 p-10 text-center">
+                <ArrowLeftRight size={28} className="text-gray-200 dark:text-slate-700 mx-auto mb-3" />
+                <p className="text-sm text-gray-400 dark:text-slate-500 italic">Chưa có giao dịch Thu hộ / Chi hộ trong {selectedYear}</p>
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left tabular-nums">
+                    <thead className="bg-gray-50/50 dark:bg-slate-800/50 text-gray-500 dark:text-slate-500 font-bold uppercase tracking-widest text-[9px]">
+                      <tr>
+                        <th className="px-5 py-4">Tháng</th>
+                        <th className="px-5 py-4 text-emerald-600">Thu hộ</th>
+                        <th className="px-5 py-4 text-rose-500">Chi hộ</th>
+                        <th className="px-5 py-4 text-amber-500">Chênh lệch</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50 dark:divide-white/5 text-gray-700 dark:text-slate-300 font-bold">
+                      {thuHoChiHoData.activeMonths.map((row) => {
+                        const chenh = row.chiHo - row.thuHo;
+                        return (
+                          <tr
+                            key={row.month}
+                            onClick={() => handleOpenDetail(`Chi tiết ${row.month} — Thu hộ/Chi hộ`, {
+                              type: 'thu_chi_ho_monthly',
+                              txs: row.txs
+                            })}
+                            className="hover:bg-amber-50/50 dark:hover:bg-amber-950/20 transition-all cursor-pointer active:scale-[0.98]"
+                          >
+                            <td className="px-5 py-5 font-black dark:text-slate-100 flex items-center">
+                              {row.month}
+                              <ChevronRightIcon size={12} className="ml-1 opacity-20" />
+                            </td>
+                            <td className="px-5 py-5 text-emerald-600 dark:text-emerald-400">{row.thuHo > 0 ? formatCurrency(row.thuHo) : <span className="text-gray-300 dark:text-slate-600">—</span>}</td>
+                            <td className="px-5 py-5 text-rose-500 dark:text-rose-400">{row.chiHo > 0 ? formatCurrency(row.chiHo) : <span className="text-gray-300 dark:text-slate-600">—</span>}</td>
+                            <td className={`px-5 py-5 ${
+                              chenh === 0 ? 'text-gray-400'
+                              : chenh > 0 ? 'text-orange-500 dark:text-orange-400'
+                              : 'text-emerald-600 dark:text-emerald-400'
+                            }`}>
+                              {chenh > 0 ? '+' : ''}{formatCurrency(chenh)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    {/* Footer tổng */}
+                    <tfoot className="bg-gray-50/80 dark:bg-slate-800/80 text-[10px] font-black">
+                      <tr>
+                        <td className="px-5 py-4 text-gray-500 dark:text-slate-400 uppercase tracking-wider">Cả năm</td>
+                        <td className="px-5 py-4 text-emerald-600 dark:text-emerald-400 tabular-nums">{formatCurrency(thuHoChiHoData.totalThuHo)}</td>
+                        <td className="px-5 py-4 text-rose-500 dark:text-rose-400 tabular-nums">{formatCurrency(thuHoChiHoData.totalChiHo)}</td>
+                        <td className={`px-5 py-4 tabular-nums ${
+                          thuHoChiHoData.chenh === 0 ? 'text-gray-400'
+                          : thuHoChiHoData.chenh > 0 ? 'text-orange-500 dark:text-orange-400'
+                          : 'text-emerald-600 dark:text-emerald-400'
+                        }`}>
+                          {thuHoChiHoData.chenh > 0 ? '+' : ''}{formatCurrency(thuHoChiHoData.chenh)}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
       {/* --- SECTION 2: TÀI SẢN & TIẾT KIỆM --- */}
       <div className="mb-12">
         <div className="flex items-center mb-6 px-1">
@@ -711,6 +895,86 @@ export default function Statistics() {
               
               {detailSheet.items.income.length === 0 && detailSheet.items.expense.length === 0 && (!detailSheet.items.transfer || detailSheet.items.transfer.length === 0) && (
                 <div className="text-center py-10 text-gray-400 italic">Không có giao dịch nào trong tháng này</div>
+              )}
+            </div>
+          )}
+
+          {/* Thu hộ / Chi hộ Monthly Detail View */}
+          {detailSheet.items.type === 'thu_chi_ho_monthly' && (
+            <div className="space-y-6">
+              {/* Thu hộ transactions */}
+              {detailSheet.items.txs.filter(tx => tx._kind === 'thu').length > 0 && (
+                <div>
+                  <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-3 px-1">Thu hộ</h4>
+                  <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-100 dark:border-white/5 divide-y divide-gray-50 dark:divide-white/5 shadow-sm">
+                    {detailSheet.items.txs.filter(tx => tx._kind === 'thu').map((tx, idx) => (
+                      <div key={tx.id || idx} className="flex items-center justify-between p-4">
+                        <div className="flex-1 truncate pr-3">
+                          <p className="text-sm font-bold text-gray-800 dark:text-slate-200 truncate">{tx.note || 'Thu hộ'}</p>
+                          <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5">{new Date(tx.date).toLocaleDateString('vi-VN')}</p>
+                        </div>
+                        <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 tabular-nums shrink-0">+{formatCurrency(tx.amount)}₫</span>
+                      </div>
+                    ))}
+                    <div className="flex items-center justify-between px-4 py-3 bg-emerald-50/60 dark:bg-emerald-950/20">
+                      <span className="text-[10px] font-black text-emerald-600 uppercase tracking-wider">Tổng Thu hộ</span>
+                      <span className="text-sm font-black text-emerald-600 tabular-nums">
+                        +{formatCurrency(detailSheet.items.txs.filter(tx => tx._kind === 'thu').reduce((s, tx) => s + tx.amount, 0))}₫
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Chi hộ transactions */}
+              {detailSheet.items.txs.filter(tx => tx._kind === 'chi').length > 0 && (
+                <div>
+                  <h4 className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-3 px-1">Chi hộ</h4>
+                  <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-100 dark:border-white/5 divide-y divide-gray-50 dark:divide-white/5 shadow-sm">
+                    {detailSheet.items.txs.filter(tx => tx._kind === 'chi').map((tx, idx) => (
+                      <div key={tx.id || idx} className="flex items-center justify-between p-4">
+                        <div className="flex-1 truncate pr-3">
+                          <p className="text-sm font-bold text-gray-800 dark:text-slate-200 truncate">{tx.note || 'Chi hộ'}</p>
+                          <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5">{new Date(tx.date).toLocaleDateString('vi-VN')}</p>
+                        </div>
+                        <span className="text-sm font-black text-rose-500 dark:text-rose-400 tabular-nums shrink-0">-{formatCurrency(tx.amount)}₫</span>
+                      </div>
+                    ))}
+                    <div className="flex items-center justify-between px-4 py-3 bg-rose-50/60 dark:bg-rose-950/20">
+                      <span className="text-[10px] font-black text-rose-500 uppercase tracking-wider">Tổng Chi hộ</span>
+                      <span className="text-sm font-black text-rose-500 tabular-nums">
+                        -{formatCurrency(detailSheet.items.txs.filter(tx => tx._kind === 'chi').reduce((s, tx) => s + tx.amount, 0))}₫
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Chênh lệch summary */}
+              {(() => {
+                const totalThu = detailSheet.items.txs.filter(tx => tx._kind === 'thu').reduce((s, tx) => s + (Number(tx.amount) || 0), 0);
+                const totalChi = detailSheet.items.txs.filter(tx => tx._kind === 'chi').reduce((s, tx) => s + (Number(tx.amount) || 0), 0);
+                const diff = totalChi - totalThu;
+                return (
+                  <div className={`flex items-center justify-between px-5 py-4 rounded-3xl border ${
+                    diff > 0 ? 'bg-orange-50 dark:bg-orange-950/20 border-orange-100 dark:border-orange-800/30'
+                    : diff < 0 ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-800/30'
+                    : 'bg-gray-50 dark:bg-slate-800 border-gray-100 dark:border-white/5'
+                  }`}>
+                    <span className="text-xs font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider">Chênh lệch tháng này</span>
+                    <span className={`text-sm font-black tabular-nums ${
+                      diff > 0 ? 'text-orange-600 dark:text-orange-400'
+                      : diff < 0 ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-gray-500'
+                    }`}>
+                      {diff > 0 ? '+' : ''}{formatCurrency(diff)}₫
+                    </span>
+                  </div>
+                );
+              })()}
+
+              {detailSheet.items.txs.length === 0 && (
+                <div className="text-center py-10 text-gray-400 italic">Không có giao dịch nào</div>
               )}
             </div>
           )}

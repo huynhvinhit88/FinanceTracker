@@ -25,7 +25,7 @@ export function SidebarNav() {
   const userName = googleUser?.email?.split('@')[0] || 'Guest';
 
   return (
-    <aside className="hidden lg:flex flex-col w-[280px] h-screen sticky top-0 bg-white dark:bg-slate-950 border-r border-gray-100 dark:border-white/5 z-50 transition-colors duration-300">
+    <aside className="hidden lg:flex flex-col w-[280px] h-screen sticky top-0 bg-white dark:bg-slate-800/70 dark:backdrop-blur-xl border-r border-gray-100 dark:border-white/10 z-50 transition-colors duration-300">
       {/* Brand / Logo */}
       <div className="p-8">
         <div className="flex items-center space-x-3">
@@ -51,8 +51,8 @@ export function SidebarNav() {
                 cn(
                   'flex items-center space-x-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group relative',
                   isActive 
-                    ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400' 
-                    : 'text-gray-500 dark:text-slate-500 hover:bg-gray-50 dark:hover:bg-slate-900'
+                    ? 'bg-indigo-50 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 shadow-sm dark:shadow-indigo-500/10' 
+                    : 'text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700/50'
                 )
               }
             >
@@ -75,15 +75,15 @@ export function SidebarNav() {
       </nav>
 
       {/* User / Profile Section */}
-      <div className="p-6 border-t border-gray-50 dark:border-white/5">
+      <div className="p-6 border-t border-gray-50 dark:border-white/10">
         <div className="mb-6 p-2">
-          <p className="text-[10px] text-gray-400 dark:text-slate-500 font-black uppercase tracking-[0.2em] mb-1">Xác thực bởi</p>
+          <p className="text-[10px] text-gray-400 dark:text-slate-400 font-black uppercase tracking-[0.2em] mb-1">Xác thực bởi</p>
           <p className="text-sm font-black text-gray-900 dark:text-slate-100 truncate">{userName}</p>
         </div>
 
         <button 
           onClick={() => lock()}
-          className="w-full flex items-center justify-center space-x-2 py-3 rounded-2xl bg-gray-50 dark:bg-slate-900 text-gray-600 dark:text-slate-400 text-xs font-bold hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-950/20 transition-all active:scale-95 border border-transparent hover:border-amber-100 dark:hover:border-amber-900/50"
+          className="w-full flex items-center justify-center space-x-2 py-3 rounded-2xl bg-gray-50 dark:bg-slate-700/50 text-gray-600 dark:text-slate-300 text-xs font-bold hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-500/10 dark:hover:text-amber-400 transition-all active:scale-95 border border-transparent hover:border-amber-100 dark:hover:border-amber-500/20"
         >
           <Lock size={16} />
           <span>Khoá ứng dụng</span>

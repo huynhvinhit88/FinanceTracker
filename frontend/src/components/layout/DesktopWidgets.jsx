@@ -87,31 +87,31 @@ export function DesktopWidgets() {
   if (loading) return null;
 
   return (
-    <aside className="hidden xl:flex flex-col w-[320px] h-screen sticky top-0 bg-gray-50/50 dark:bg-slate-900/10 border-l border-gray-100 dark:border-white/5 p-6 overflow-y-auto transition-colors duration-300">
+    <aside className="hidden xl:flex flex-col w-[320px] h-screen sticky top-0 bg-gray-50/50 dark:bg-slate-800/40 dark:backdrop-blur-xl border-l border-gray-100 dark:border-white/10 p-6 overflow-y-auto transition-colors duration-300">
       <div className="space-y-8">
         
 
         {/* Budget Progress Widget */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest flex items-center">
+            <h3 className="text-xs font-black text-gray-400 dark:text-slate-400 uppercase tracking-widest flex items-center">
               <Target size={14} className="mr-2 text-rose-500" /> Ngân sách tháng
             </h3>
             <Link to="/plan" className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 hover:underline">Chi tiết</Link>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 p-4 rounded-[2rem] border border-gray-50 dark:border-white/5 shadow-sm space-y-4">
+          <div className="bg-white dark:bg-slate-800 p-4 rounded-[2rem] border border-gray-50 dark:border-white/10 shadow-sm dark:shadow-slate-950/30 space-y-4">
             {budgetProgress.length === 0 ? (
-              <p className="text-[10px] text-gray-400 text-center italic py-2">Chưa lập kế hoạch chi tiêu</p>
+              <p className="text-[10px] text-gray-400 dark:text-slate-400 text-center italic py-2">Chưa lập kế hoạch chi tiêu</p>
             ) : budgetProgress.map(b => (
               <div key={b.id} className="space-y-2">
                 <div className="flex justify-between items-center text-[10px] font-bold">
-                  <span className="text-gray-700 dark:text-slate-300 flex items-center">
+                  <span className="text-gray-700 dark:text-slate-200 flex items-center">
                     <span className="mr-1">{b.icon}</span> {b.name}
                   </span>
                   <span className={b.percent >= 90 ? 'text-rose-500' : 'text-gray-400'}>{Math.round(b.percent)}%</span>
                 </div>
-                <div className="h-1.5 w-full bg-gray-50 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-gray-50 dark:bg-slate-700 rounded-full overflow-hidden">
                   <div 
                     className={`h-full rounded-full transition-all duration-1000 ${b.percent >= 100 ? 'bg-rose-500' : b.percent >= 80 ? 'bg-orange-500' : 'bg-indigo-500'}`}
                     style={{ width: `${b.percent}%` }}

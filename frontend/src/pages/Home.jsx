@@ -201,11 +201,11 @@ export default function Home() {
 
   return (
     <>
-      <div className="p-4 lg:p-8 safe-top pb-24 transition-colors duration-300 dark:bg-slate-950 max-w-7xl mx-auto">
+      <div className="p-4 lg:p-8 safe-top pb-24 transition-colors duration-300 dark:bg-transparent max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-8 mt-4 px-1">
           <div>
-            <p className="text-sm text-gray-400 dark:text-slate-500 font-bold uppercase tracking-widest">Hôm nay, {new Date().toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+            <p className="text-sm text-gray-400 dark:text-slate-400 font-bold uppercase tracking-widest">Hôm nay, {new Date().toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
             <h1 className="text-3xl lg:text-4xl font-black text-gray-900 dark:text-slate-100 tracking-tight mt-1">Tổng quan</h1>
           </div>
         </div>
@@ -213,26 +213,26 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
           <div className="space-y-6">
             {/* Global Net Worth Card */}
-            <div className="bg-gradient-to-tr from-gray-900 to-gray-800 dark:from-indigo-950 dark:to-slate-900 rounded-2xl lg:rounded-[2.5rem] p-6 lg:p-10 text-white shadow-xl lg:shadow-2xl relative overflow-hidden transition-all duration-500 border border-white/5 h-full flex flex-col justify-center">
+            <div className="bg-gradient-to-tr from-gray-900 to-gray-800 dark:from-indigo-900 dark:to-slate-800 rounded-2xl lg:rounded-[2.5rem] p-6 lg:p-10 text-white shadow-xl lg:shadow-2xl dark:shadow-indigo-950/50 relative overflow-hidden transition-all duration-500 border border-white/5 dark:border-white/10 h-full flex flex-col justify-center">
               <div className="absolute -right-8 -top-8 w-48 h-48 bg-white/5 rounded-full blur-3xl"></div>
               <p className="text-gray-300 dark:text-slate-400 text-sm lg:text-base mb-1 font-medium">Tổng tài sản ròng</p>
               <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-6 tabular-nums">{formatCurrency(globalNetWorth)} ₫</h2>
               
               <div className="grid grid-cols-2 gap-3 mb-8">
-                <div className="bg-white/5 dark:bg-indigo-900/20 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
-                  <p className="text-[10px] lg:text-xs text-emerald-300 dark:text-emerald-400 font-bold uppercase tracking-wider mb-1">Tài sản thanh khoản</p>
+                <div className="bg-white/5 dark:bg-indigo-500/10 p-4 rounded-2xl border border-white/5 dark:border-indigo-400/20 backdrop-blur-sm">
+                  <p className="text-[10px] lg:text-xs text-emerald-300 dark:text-emerald-300 font-bold uppercase tracking-wider mb-1">Tài sản thanh khoản</p>
                   <p className="text-sm lg:text-base font-black text-emerald-400 tabular-nums">+{formatCurrency(totalCashAndReceivable + totalSavings)} đ</p>
                 </div>
-                <div className="bg-white/5 dark:bg-rose-900/20 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
-                  <p className="text-[10px] lg:text-xs text-orange-300 dark:text-orange-400 font-bold uppercase tracking-wider mb-1">Nợ thẻ / Sổ nợ</p>
+                <div className="bg-white/5 dark:bg-rose-500/10 p-4 rounded-2xl border border-white/5 dark:border-rose-400/20 backdrop-blur-sm">
+                  <p className="text-[10px] lg:text-xs text-orange-300 dark:text-orange-300 font-bold uppercase tracking-wider mb-1">Nợ thẻ / Sổ nợ</p>
                   <p className="text-sm lg:text-base font-black text-orange-400 tabular-nums">-{formatCurrency(totalDebtAccounts)} đ</p>
                 </div>
-                <div className="bg-white/5 dark:bg-indigo-900/20 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
-                  <p className="text-[10px] lg:text-xs text-blue-300 dark:text-blue-400 font-bold uppercase tracking-wider mb-1">Tài sản đầu tư</p>
+                <div className="bg-white/5 dark:bg-blue-500/10 p-4 rounded-2xl border border-white/5 dark:border-blue-400/20 backdrop-blur-sm">
+                  <p className="text-[10px] lg:text-xs text-blue-300 dark:text-blue-300 font-bold uppercase tracking-wider mb-1">Tài sản đầu tư</p>
                   <p className="text-sm lg:text-base font-black text-blue-400 tabular-nums">+{formatCurrency(totalInvestmentMarketValue)} đ</p>
                 </div>
-                <div className="bg-white/5 dark:bg-rose-900/20 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
-                  <p className="text-[10px] lg:text-xs text-red-300 dark:text-rose-400 font-bold uppercase tracking-wider mb-1">Tổng nợ vay</p>
+                <div className="bg-white/5 dark:bg-red-500/10 p-4 rounded-2xl border border-white/5 dark:border-red-400/20 backdrop-blur-sm">
+                  <p className="text-[10px] lg:text-xs text-red-300 dark:text-rose-300 font-bold uppercase tracking-wider mb-1">Tổng nợ vay</p>
                   <p className="text-sm lg:text-base font-black text-red-400 dark:text-rose-400 tabular-nums">-{formatCurrency(totalLoanLiabilities)} đ</p>
                 </div>
               </div>
@@ -245,7 +245,7 @@ export default function Home() {
                 {totalSavingsAccounts > 0 && <p>TK Tiết kiệm: {formatCurrency(totalSavingsAccounts)}</p>}
               </div>
               
-              <div className={`flex space-x-8 border-t border-gray-700 dark:border-white/10 pt-6 mt-2`}>
+              <div className={`flex space-x-8 border-t border-gray-700 dark:border-white/15 pt-6 mt-2`}>
                 <div>
                   <div className="flex items-center text-xs text-gray-400 dark:text-slate-500 mb-1 font-bold uppercase tracking-widest">
                     <TrendingUp size={14} className="text-green-400 dark:text-emerald-400 mr-2" /> Tháng này thu
@@ -265,7 +265,7 @@ export default function Home() {
           <div className="space-y-6">
             {/* Expense Chart Mini */}
             {chartData.length > 0 ? (
-              <div className="bg-white dark:bg-slate-900 p-8 lg:p-10 rounded-2xl lg:rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-white/5 h-full flex flex-col transition-colors">
+              <div className="bg-white dark:bg-slate-800 p-8 lg:p-10 rounded-2xl lg:rounded-[2.5rem] shadow-sm dark:shadow-slate-950/50 border border-gray-100 dark:border-white/10 h-full flex flex-col transition-colors">
                 <h3 className="text-sm lg:text-base font-black text-gray-900 dark:text-slate-100 uppercase tracking-widest mb-8 text-center lg:text-left pt-2">Cơ cấu chi tiêu</h3>
                 <div className="flex-1 flex flex-col lg:flex-row items-center justify-center">
                   <div className="w-48 h-48 lg:w-56 lg:h-56 shrink-0 mb-6 lg:mb-0 lg:mr-10">
@@ -302,7 +302,7 @@ export default function Home() {
                           </div>
                           <span className="text-gray-900 dark:text-slate-200 ml-4 font-black">{Math.round((item.value / totalExpenseAmount) * 100)}%</span>
                         </div>
-                        <div className="h-1.5 w-full bg-gray-50 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div className="h-1.5 w-full bg-gray-50 dark:bg-slate-700 rounded-full overflow-hidden">
                           <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${(item.value / totalExpenseAmount) * 100}%`, backgroundColor: item.color }} />
                         </div>
                       </div>
@@ -311,11 +311,11 @@ export default function Home() {
                 </div>
               </div>
             ) : (
-              <div className="bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-white/5 h-full flex flex-col items-center justify-center text-center">
-                 <div className="w-16 h-16 bg-gray-50 dark:bg-slate-800 rounded-3xl flex items-center justify-center mb-4">
-                   <TrendingUp size={32} className="text-gray-300" />
+              <div className="bg-white dark:bg-slate-800 p-10 rounded-[2.5rem] shadow-sm dark:shadow-slate-950/50 border border-gray-100 dark:border-white/10 h-full flex flex-col items-center justify-center text-center">
+                 <div className="w-16 h-16 bg-gray-50 dark:bg-slate-700 rounded-3xl flex items-center justify-center mb-4">
+                   <TrendingUp size={32} className="text-gray-300 dark:text-slate-500" />
                  </div>
-                 <p className="text-sm font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest pr-2 pt-2">Chưa có dữ liệu chi tiêu</p>
+                 <p className="text-sm font-bold text-gray-400 dark:text-slate-400 uppercase tracking-widest pr-2 pt-2">Chưa có dữ liệu chi tiêu</p>
               </div>
             )}
           </div>
@@ -338,11 +338,11 @@ export default function Home() {
               <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
             </div>
           ) : transactions.length === 0 ? (
-            <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-sm mt-4">
-              <div className="w-20 h-20 bg-gray-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
-                <ArrowDownRight className="text-gray-300 dark:text-slate-600" size={40} />
+            <div className="text-center py-20 bg-white dark:bg-slate-800 rounded-[2.5rem] border border-gray-100 dark:border-white/10 shadow-sm mt-4">
+              <div className="w-20 h-20 bg-gray-50 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-6">
+                <ArrowDownRight className="text-gray-300 dark:text-slate-500" size={40} />
               </div>
-              <p className="text-gray-400 dark:text-slate-500 text-sm font-bold uppercase tracking-widest">Chưa có giao dịch hoạt động</p>
+              <p className="text-gray-400 dark:text-slate-400 text-sm font-bold uppercase tracking-widest">Chưa có giao dịch hoạt động</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
@@ -354,7 +354,7 @@ export default function Home() {
                   <div
                     key={tx.id}
                     onClick={() => handleTransactionClick(tx)}
-                    className="bg-white dark:bg-slate-900 p-5 rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 dark:border-white/5 flex items-center justify-between active:scale-[0.98] lg:hover:shadow-md lg:hover:border-indigo-100 dark:lg:hover:border-indigo-900 transition-all cursor-pointer group"
+                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl lg:rounded-3xl shadow-sm dark:shadow-slate-950/30 border border-gray-100 dark:border-white/10 flex items-center justify-between active:scale-[0.98] lg:hover:shadow-md lg:hover:border-indigo-100 dark:lg:hover:border-indigo-500/30 transition-all cursor-pointer group"
                   >
                     <div className="flex items-center space-x-5 pointer-events-none truncate pr-4">
                       {renderTransactionIcon(tx)}
@@ -381,7 +381,7 @@ export default function Home() {
       {/* FAB - Floating Action Button for Transactions */}
       <button
         onClick={() => setIsAddSheetOpen(true)}
-        className="fixed bottom-32 right-6 w-14 h-14 bg-gray-900 dark:bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-gray-400 dark:shadow-indigo-950 active:scale-95 transition-all z-40"
+        className="fixed bottom-32 right-6 w-14 h-14 bg-gray-900 dark:bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-gray-400/50 dark:shadow-indigo-500/40 active:scale-95 transition-all z-40"
       >
         <Plus size={28} />
       </button>

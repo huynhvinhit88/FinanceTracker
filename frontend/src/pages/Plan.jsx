@@ -29,6 +29,7 @@ export default function Plan() {
   
   const [loading, setLoading] = useState(true);
   const [savingsPlan, setSavingsPlan] = useState({});
+  const [expectedTotalSavings, setExpectedTotalSavings] = useState('');
   
   const [isAddPlanOpen, setIsAddPlanOpen] = useState(false);
   const [isEditPlanOpen, setIsEditPlanOpen] = useState(false);
@@ -84,7 +85,20 @@ export default function Plan() {
     if (stored) {
       try { setSavingsPlan(JSON.parse(stored)); } catch (e) {}
     }
+    const etKey = `expected_total_savings_${user.id}`;
+    const storedEt = localStorage.getItem(etKey);
+    if (storedEt) setExpectedTotalSavings(storedEt);
   }, [user]);
+
+  const handleExpectedTotalSavingsChange = (e) => {
+    const raw = e.target.value.replace(/[^\d]/g, '');
+    setExpectedTotalSavings(raw);
+    if (user) {
+      const etKey = `expected_total_savings_${user.id}`;
+      if (raw) localStorage.setItem(etKey, raw);
+      else localStorage.removeItem(etKey);
+    }
+  };
 
   const fetchAllData = async () => {
     if (!user) return;
@@ -589,16 +603,33 @@ export default function Plan() {
                       </tbody>
                     </table>
                   </div>
-                  <div className="p-4 bg-gray-50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-white/5 flex flex-col sm:flex-row justify-between items-center px-6 gap-3">
-                    <p className="text-[10px] text-gray-400 dark:text-slate-500 font-medium">Dư ra = Thu nhập - Chi tiêu</p>
-                    {Object.keys(savingsPlan).length > 0 && (
-                      <button 
-                        onClick={() => { if(window.confirm('Xoá tất cả ghi đè tiết kiệm?')) { setSavingsPlan({}); localStorage.removeItem(`savings_plan_${user?.id || 'guest'}`); } }} 
-                        className="text-[10px] text-red-500 font-black uppercase tracking-tight hover:underline"
-                      >
-                        Xoá ghi đè
-                      </button>
-                    )}
+                  <div className="p-4 bg-gray-50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-white/5 px-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                      <p className="text-[10px] text-gray-400 dark:text-slate-500 font-medium">Dư ra = Thu nhập - Chi tiêu</p>
+                      <div className="flex items-center gap-3 ml-auto">
+                        {Object.keys(savingsPlan).length > 0 && (
+                          <button 
+                            onClick={() => { if(window.confirm('Xoá tất cả ghi đè tiết kiệm?')) { setSavingsPlan({}); localStorage.removeItem(`savings_plan_${user?.id || 'guest'}`); } }} 
+                            className="text-[10px] text-red-500 font-black uppercase tracking-tight hover:underline"
+                          >
+                            Xoá ghi đè
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-white/5">
+                      <label className="text-[10px] font-black text-purple-500 dark:text-purple-400 uppercase tracking-wider">Tổng tích luỹ dự kiến</label>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="text"
+                          placeholder="Nhập mục tiêu..."
+                          value={expectedTotalSavings ? Number(expectedTotalSavings).toLocaleString('vi-VN') : ''}
+                          onChange={handleExpectedTotalSavingsChange}
+                          className="text-right text-xs font-black text-purple-600 dark:text-purple-400 outline-none w-36 py-1 px-2 rounded-lg border border-transparent focus:border-purple-300 dark:focus:border-purple-800 bg-white dark:bg-slate-900 placeholder:text-gray-300 dark:placeholder:text-slate-700 placeholder:font-normal"
+                        />
+                        <span className="text-[10px] text-gray-400 dark:text-slate-600 font-bold">₫</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}

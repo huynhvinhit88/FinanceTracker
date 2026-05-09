@@ -71,34 +71,54 @@ export default function Plan() {
   }, [user, planViewMode, selectedMonth]);
 
   const loadSettings = async () => {
-    const record = await db.settings.get('targetProjectionMonth');
-    if (record && record.value) {
-      setTargetProjectionMonth(record.value);
+    if (!user) return;
+    const targetMonthRec = await db.settings.get('targetProjectionMonth');
+    if (targetMonthRec && targetMonthRec.value) {
+      setTargetProjectionMonth(targetMonthRec.value);
     }
+
+    // Migration & Load: Expected Total Savings Map
+    const etKey = `expected_total_savings_map_${user.id}`;
+    let etData = await db.settings.get(etKey);
+    if (!etData) {
+      // Check legacy localStorage
+      const oldEt = localStorage.getItem(`expected_total_savings_${user.id}`);
+      if (oldEt) {
+        try {
+          const parsed = JSON.parse(oldEt);
+          await db.settings.put({ key: etKey, value: parsed });
+          etData = { value: parsed };
+          localStorage.removeItem(`expected_total_savings_${user.id}`);
+        } catch (e) {}
+      }
+    }
+    if (etData && etData.value) setExpectedTotalSavingsMap(etData.value);
+
+    // Migration & Load: Monthly Savings Plan (Manual Overrides)
+    const spKey = `savings_plan_map_${user.id}`;
+    let spData = await db.settings.get(spKey);
+    if (!spData) {
+      // Check legacy localStorage
+      const oldSp = localStorage.getItem(`savings_plan_${user.id}`);
+      if (oldSp) {
+        try {
+          const parsed = JSON.parse(oldSp);
+          await db.settings.put({ key: spKey, value: parsed });
+          spData = { value: parsed };
+          localStorage.removeItem(`savings_plan_${user.id}`);
+        } catch (e) {}
+      }
+    }
+    if (spData && spData.value) setSavingsPlan(spData.value);
   };
 
-  // Load monthly savings plan from localStorage
-  useEffect(() => {
-    if (!user) return;
-    const planKey = `savings_plan_${user.id}`;
-    const stored = localStorage.getItem(planKey);
-    if (stored) {
-      try { setSavingsPlan(JSON.parse(stored)); } catch (e) {}
-    }
-    const etKey = `expected_total_savings_${user.id}`;
-    const storedEt = localStorage.getItem(etKey);
-    if (storedEt) {
-      try { setExpectedTotalSavingsMap(JSON.parse(storedEt)); } catch (e) { setExpectedTotalSavingsMap({}); }
-    }
-  }, [user]);
-
-  const handleExpectedTotalSavingsChange = (e) => {
+  const handleExpectedTotalSavingsChange = async (e) => {
     const raw = e.target.value.replace(/[^\d]/g, '');
     const updatedMap = { ...expectedTotalSavingsMap, [targetProjectionMonth]: raw };
     setExpectedTotalSavingsMap(updatedMap);
     if (user) {
-      const etKey = `expected_total_savings_${user.id}`;
-      localStorage.setItem(etKey, JSON.stringify(updatedMap));
+      const etKey = `expected_total_savings_map_${user.id}`;
+      await db.settings.put({ key: etKey, value: updatedMap });
     }
   };
 
@@ -296,8 +316,7 @@ export default function Plan() {
     };
   }, [rawBudgets, currentNW, expectedAnnualReturn, projectionMonths, savingsPlan, selectedMonth]);
 
-  const updatePlanMonth = (month, rawInput) => {
-    const planKey = `savings_plan_${user.id}`;
+  const updatePlanMonth = async (month, rawInput) => {
     const newPlan = { ...savingsPlan };
     if (rawInput === '' || rawInput === null) {
       delete newPlan[month];
@@ -306,7 +325,10 @@ export default function Plan() {
       if (!isNaN(val)) newPlan[month] = val;
     }
     setSavingsPlan(newPlan);
-    localStorage.setItem(planKey, JSON.stringify(newPlan));
+    if (user) {
+      const spKey = `savings_plan_map_${user.id}`;
+      await db.settings.put({ key: spKey, value: newPlan });
+    }
   };
 
   const changeMonth = (offset) => {
@@ -611,7 +633,12 @@ export default function Plan() {
                       <div className="flex items-center gap-3 ml-auto">
                         {Object.keys(savingsPlan).length > 0 && (
                           <button 
-                            onClick={() => { if(window.confirm('Xoá tất cả ghi đè tiết kiệm?')) { setSavingsPlan({}); localStorage.removeItem(`savings_plan_${user?.id || 'guest'}`); } }} 
+                            onClick={async () => { 
+                              if(window.confirm('Xoá tất cả ghi đè tiết kiệm?')) { 
+                                setSavingsPlan({}); 
+                                if (user) await db.settings.delete(`savings_plan_map_${user.id}`);
+                              } 
+                            }} 
                             className="text-[10px] text-red-500 font-black uppercase tracking-tight hover:underline"
                           >
                             Xoá ghi đè

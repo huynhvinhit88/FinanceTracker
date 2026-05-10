@@ -4,7 +4,7 @@ import { db } from '../../lib/db';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { useLoans } from '../../hooks/useLoans';
 import { Landmark, Info, Calculator } from 'lucide-react';
-import { formatCurrency } from '../../utils/format';
+import { formatCurrency, formatDate } from '../../utils/format';
 import { calculateLoanSchedule } from '../../utils/loanCalculator';
 
 export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData }) {
@@ -476,11 +476,21 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1 min-w-0">
             <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Ngày thực hiện</label>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full bg-gray-50 dark:bg-slate-800 dark:text-slate-100 border-none rounded-xl px-2 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 text-sm min-w-0 truncate"/>
+            <div className="relative">
+              <div className="w-full bg-gray-50 dark:bg-slate-800 dark:text-slate-100 rounded-xl px-3 py-3 font-semibold text-sm min-w-0 truncate">
+                {formatDate(date)}
+              </div>
+              <input 
+                type="date" 
+                value={date} 
+                onChange={(e) => setDate(e.target.value)} 
+                className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+              />
+            </div>
           </div>
           <div className="space-y-1 min-w-0">
             <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Ghi chú</label>
-            <input type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Tùy chọn..." className="w-full bg-gray-50 dark:bg-slate-800 dark:text-slate-100 border-none rounded-xl px-2 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 text-sm min-w-0 truncate"/>
+            <input type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Tùy chọn..." className="w-full bg-gray-50 dark:bg-slate-800 dark:text-slate-100 border-none rounded-xl px-3 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 text-sm min-w-0 truncate"/>
           </div>
         </div>
 

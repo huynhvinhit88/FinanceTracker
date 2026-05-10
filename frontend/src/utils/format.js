@@ -29,3 +29,10 @@ export const fromViDecimal = (str) => {
   if (str === '' || str === null || str === undefined) return 0;
   return parseFloat(String(str).replace(',', '.')) || 0;
 };
+
+export const formatDate = (dateStr) => {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
+};
+

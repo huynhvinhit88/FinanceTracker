@@ -506,24 +506,24 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
           </div>
         )}
 
-        <div className="flex gap-3 w-full overflow-hidden">
-          <div className="w-1/2 min-w-0 space-y-1">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1 min-w-0">
             <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Ngày thực hiện</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm min-w-0 overflow-hidden truncate"
+              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-2 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm min-w-0 truncate"
             />
           </div>
-          <div className="w-1/2 min-w-0 space-y-1">
+          <div className="space-y-1 min-w-0">
             <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Ghi chú</label>
             <input
               type="text"
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Tùy chọn..."
-              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm min-w-0 overflow-hidden truncate"
+              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-2 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm min-w-0 truncate"
             />
           </div>
         </div>

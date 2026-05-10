@@ -513,7 +513,7 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
+              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm min-w-0 truncate"
             />
           </div>
           <div className="space-y-1 min-w-0">
@@ -523,7 +523,7 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Tùy chọn..."
-              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
+              className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm min-w-0 truncate"
             />
           </div>
         </div>

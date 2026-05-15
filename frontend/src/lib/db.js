@@ -60,6 +60,51 @@ export const DEFAULT_CATEGORIES = [
   { name: 'Thu hồi nợ', type: 'income', icon: '💰', color_hex: '#10B981' },
 ];
 
+export async function updateLastModified() {
+  try {
+    await db.settings.put({ key: 'last_updated_at', value: new Date().toISOString() });
+  } catch (err) {
+    console.error('Failed to update last_updated_at:', err);
+  }
+}
+
+// Add hooks to track changes in all data tables
+const tablesToTrack = [
+  'accounts', 
+  'categories', 
+  'transactions', 
+  'loans', 
+  'budgets', 
+  'investments', 
+  'savings', 
+  'goals'
+];
+
+tablesToTrack.forEach(tableName => {
+  if (db[tableName]) {
+    db[tableName].hook('creating', () => { updateLastModified(); });
+    db[tableName].hook('updating', () => { updateLastModified(); });
+    db[tableName].hook('deleting', () => { updateLastModified(); });
+  }
+});
+
+// Special tracking for settings table to avoid infinite loop
+db.settings.hook('creating', (primKey, obj) => {
+  if (primKey !== 'last_updated_at') {
+    updateLastModified();
+  }
+});
+db.settings.hook('updating', (modifications, primKey) => {
+  if (primKey !== 'last_updated_at') {
+    updateLastModified();
+  }
+});
+db.settings.hook('deleting', (primKey) => {
+  if (primKey !== 'last_updated_at') {
+    updateLastModified();
+  }
+});
+
 export async function seedDefaultData() {
   const seeded = await db.settings.get('has_seeded_categories');
   if (seeded && seeded.value) return;

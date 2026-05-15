@@ -11,7 +11,8 @@ import {
   writeBlobToFolder,
   getValidToken
 } from '../lib/syncService';
-import { RefreshCw, CloudDownload, CloudUpload, FolderTree, Trash2, ChevronRight, Download, ShieldCheck, Lock, FolderOpen } from 'lucide-react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { RefreshCw, CloudDownload, CloudUpload, FolderTree, Trash2, ChevronRight, Download, ShieldCheck, Lock, FolderOpen, Clock } from 'lucide-react';
 import { CategoryManagementSheet } from '../components/settings/CategoryManagementSheet';
 import { ChangePinSheet } from '../components/settings/ChangePinSheet';
 import { DriveFolderPicker } from '../components/settings/DriveFolderPicker';
@@ -42,6 +43,9 @@ export default function Settings() {
     loanProfiles: false,
     projection: false,
   });
+
+  const lastUpdated = useLiveQuery(() => db.settings.get('last_updated_at'));
+
   const [isMobileDevice, setIsMobileDevice] = useState(!window.showDirectoryPicker);
   const [showDrivePicker, setShowDrivePicker] = useState(false);
   const [showDriveFilePicker, setShowDriveFilePicker] = useState(false);
@@ -557,9 +561,24 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Section: Dữ liệu */}
         <div>
-          <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 px-1">Quản lý Dữ liệu</p>
+          <div className="flex items-center justify-between mb-3 px-1">
+            <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Quản lý Dữ liệu</p>
+            {lastUpdated?.value && (
+              <div className="flex items-center space-x-1.5 bg-gray-50 dark:bg-slate-800/50 px-2.5 py-1 rounded-full border border-gray-100 dark:border-white/5">
+                <Clock size={10} className="text-gray-400 dark:text-slate-500" />
+                <span className="text-[9px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-tight">
+                  {new Date(lastUpdated.value).toLocaleString('vi-VN', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: 'numeric', 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  })}
+                </span>
+              </div>
+            )}
+          </div>
           <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden divide-y divide-gray-50 dark:divide-white/5">
             <div>
               <button

@@ -6,6 +6,7 @@ import { Calculator, ChevronRight, Settings2, Save, FilePlus2, Trash2, PlusCircl
 import { useAuth } from '../../contexts/AuthContext';
 import { AddLoanSheet } from '../loans/AddLoanSheet';
 import { calculateLoanSchedule } from '../../utils/loanCalculator';
+import { updateLastModified } from '../../lib/db';
 
 export function LoanCalculatorSheet({ isOpen, onClose }) {
   const { user } = useAuth();
@@ -135,6 +136,7 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
 
     setProfiles(newProfiles);
     localStorage.setItem(storageKey, JSON.stringify(newProfiles));
+    updateLastModified();
     setIsNaming(false);
     setNewName('');
     alert('Đã lưu hồ sơ thành công!');
@@ -146,6 +148,7 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
       const newProfiles = profiles.filter(p => p.id !== activeProfileId);
       setProfiles(newProfiles);
       localStorage.setItem(storageKey, JSON.stringify(newProfiles));
+      updateLastModified();
       loadProfile('');
     }
   };

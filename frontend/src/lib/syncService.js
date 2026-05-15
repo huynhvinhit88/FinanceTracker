@@ -77,6 +77,14 @@ async function importFullBackup(blob) {
     overwriteValues: true 
   });
   
+  // Cập nhật timestamp sau khi import thành công
+  try {
+    const { updateLastModified } = await import('./db');
+    await updateLastModified();
+  } catch (e) {
+    console.error('Failed to update timestamp after import:', e);
+  }
+  
   return true;
 }
 

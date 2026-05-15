@@ -55,6 +55,13 @@ export default function Settings() {
     if (user) {
       loadDirectoryHandle();
       loadDriveFolder();
+      
+      // Initialize last_updated_at if missing
+      db.settings.get('last_updated_at').then(res => {
+        if (!res) {
+          import('../lib/db').then(m => m.updateLastModified());
+        }
+      });
     }
     // Update mobile detection in case it changes (unlikely but good for testing)
     setIsMobileDevice(!window.showDirectoryPicker);
@@ -562,16 +569,15 @@ export default function Settings() {
         </div>
 
         <div>
-          <div className="flex items-center justify-between mb-3 px-1">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 px-1 gap-2">
             <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">Quản lý Dữ liệu</p>
             {lastUpdated?.value && (
-              <div className="flex items-center space-x-1.5 bg-gray-50 dark:bg-slate-800/50 px-2.5 py-1 rounded-full border border-gray-100 dark:border-white/5">
-                <Clock size={10} className="text-gray-400 dark:text-slate-500" />
-                <span className="text-[9px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-tight">
-                  {new Date(lastUpdated.value).toLocaleString('vi-VN', { 
+              <div className="flex items-center space-x-1.5 bg-gray-50 dark:bg-slate-800/50 px-2.5 py-1.5 rounded-xl border border-gray-100 dark:border-white/5 w-fit">
+                <Clock size={10} className="text-indigo-500 dark:text-indigo-400" />
+                <span className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-tight">
+                  Cập nhật: {new Date(lastUpdated.value).toLocaleString('vi-VN', { 
                     day: '2-digit', 
                     month: '2-digit', 
-                    year: 'numeric', 
                     hour: '2-digit', 
                     minute: '2-digit' 
                   })}

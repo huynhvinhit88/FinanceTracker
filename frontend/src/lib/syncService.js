@@ -67,20 +67,47 @@ async function importFullBackup(blob) {
   const dbData = { ...data };
   delete dbData._extra_data;
   
+  // Trích xuất last_updated_at từ file backup
+  let backupLastUpdatedAt = null;
+  try {
+    if (dbData.data && Array.isArray(dbData.data.data)) {
+      const settingsTable = dbData.data.data.find(t => t.tableName === 'settings');
+      if (settingsTable && Array.isArray(settingsTable.rows)) {
+        const lastUpdatedRow = settingsTable.rows.find(r => r.key === 'last_updated_at' || (Array.isArray(r) && r[0] === 'last_updated_at'));
+        if (lastUpdatedRow) {
+          backupLastUpdatedAt = lastUpdatedRow.value || (Array.isArray(lastUpdatedRow) ? lastUpdatedRow[1] : null);
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Lỗi khi trích xuất last_updated_at từ backup:', e);
+  }
+
   const dbBlob = new Blob([JSON.stringify(dbData)], { type: 'application/json' });
   
   // Khôi phục vào DB
-  await db.delete();
-  await db.open();
-  await importInto(db, dbBlob, { 
-    clearTablesBeforeImport: true,
-    overwriteValues: true 
-  });
+  const { setImportingState } = await import('./db');
+  try {
+    setImportingState(true);
+    await db.delete();
+    await db.open();
+    await importInto(db, dbBlob, { 
+      clearTablesBeforeImport: true,
+      overwriteValues: true 
+    });
+  } finally {
+    setImportingState(false);
+  }
   
   // Cập nhật timestamp sau khi import thành công
   try {
-    const { updateLastModified } = await import('./db');
-    await updateLastModified();
+    if (backupLastUpdatedAt) {
+      // Giữ nguyên timestamp từ bản backup
+      await db.settings.put({ key: 'last_updated_at', value: backupLastUpdatedAt });
+    } else {
+      const { updateLastModified } = await import('./db');
+      await updateLastModified();
+    }
   } catch (e) {
     console.error('Failed to update timestamp after import:', e);
   }

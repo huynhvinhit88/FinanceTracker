@@ -60,7 +60,14 @@ export const DEFAULT_CATEGORIES = [
   { name: 'Thu hồi nợ', type: 'income', icon: '💰', color_hex: '#10B981' },
 ];
 
+export let isImporting = false;
+
+export function setImportingState(state) {
+  isImporting = state;
+}
+
 export async function updateLastModified() {
+  if (isImporting) return;
   try {
     await db.settings.put({ key: 'last_updated_at', value: new Date().toISOString() });
   } catch (err) {

@@ -19,6 +19,9 @@ export default function TransactionsList() {
   
   const [filterType, setFilterType] = useState('all'); // 'all', 'income', 'expense', 'transfer'
   
+  const [timeFilterType, setTimeFilterType] = useState('all'); // 'all', 'month', 'date'
+  const [timeFilterValue, setTimeFilterValue] = useState('');
+  
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
 
@@ -41,26 +44,29 @@ export default function TransactionsList() {
     setPage(0);
     setHasMore(true);
     // Explicitly call fetch for page 0 to avoid race conditions
-    fetchTransactions(0, filterType, true);
-  }, [filterType, user]); // Refetch fully when filter changes
+    fetchTransactions(0, filterType, timeFilterType, timeFilterValue, true);
+  }, [filterType, timeFilterType, timeFilterValue, user]); // Refetch fully when filter changes
 
   // Fetch more when page changes (except 0, which is handled above)
   useEffect(() => {
     if (page > 0) {
-      fetchTransactions(page, filterType, false);
+      fetchTransactions(page, filterType, timeFilterType, timeFilterValue, false);
     }
   }, [page]);
 
-  const fetchTransactions = async (pageIndex, currentFilter, isReset) => {
+  const fetchTransactions = async (pageIndex, currentFilter, tFilterType, tFilterValue, isReset) => {
     if (!user) return;
     setLoading(true);
     
     try {
       let collection = db.transactions.orderBy('date').reverse();
       
-      if (currentFilter !== 'all') {
-        collection = collection.filter(tx => tx.type === currentFilter);
-      }
+      collection = collection.filter(tx => {
+        if (currentFilter !== 'all' && tx.type !== currentFilter) return false;
+        if (tFilterType === 'month' && tFilterValue && !tx.date.startsWith(tFilterValue)) return false;
+        if (tFilterType === 'date' && tFilterValue && !tx.date.startsWith(tFilterValue)) return false;
+        return true;
+      });
 
       const txs = await collection.offset(pageIndex * PAGE_SIZE).limit(PAGE_SIZE).toArray();
       
@@ -127,26 +133,71 @@ export default function TransactionsList() {
         <div className="w-8" />
       </div>
 
-      {/* Filter Chips */}
-      <div className="px-4 py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md flex space-x-2 overflow-x-auto hide-scrollbar border-b border-gray-100 dark:border-white/5 sticky top-[60px] z-30 transition-colors duration-300">
-        {[
-          { id: 'all', label: 'Tất cả' },
-          { id: 'expense', label: 'Khoản chi' },
-          { id: 'income', label: 'Khoản thu' },
-          { id: 'transfer', label: 'Chuyển tiền' }
-        ].map(filter => (
-          <button
-            key={filter.id}
-            onClick={() => setFilterType(filter.id)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-              filterType === filter.id 
-                ? 'bg-gray-900 dark:bg-indigo-600 text-white shadow-md' 
-                : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700'
-            }`}
+      {/* Sticky Header Container */}
+      <div className="sticky top-[58px] z-30 flex flex-col bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-gray-100 dark:border-white/5 transition-colors duration-300">
+        
+        {/* Type Filter Chips */}
+        <div className="px-4 py-2 flex space-x-2 overflow-x-auto hide-scrollbar">
+          {[
+            { id: 'all', label: 'Tất cả' },
+            { id: 'expense', label: 'Khoản chi' },
+            { id: 'income', label: 'Khoản thu' },
+            { id: 'transfer', label: 'Chuyển tiền' }
+          ].map(filter => (
+            <button
+              key={filter.id}
+              onClick={() => setFilterType(filter.id)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+                filterType === filter.id 
+                  ? 'bg-gray-900 dark:bg-indigo-600 text-white shadow-md' 
+                  : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700'
+              }`}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Date Filter */}
+        <div className="px-4 pb-3 pt-1 flex items-center space-x-2 overflow-x-auto hide-scrollbar">
+          <select 
+            value={timeFilterType}
+            onChange={e => {
+              setTimeFilterType(e.target.value);
+              if (e.target.value === 'month') {
+                const now = new Date();
+                setTimeFilterValue(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
+              } else if (e.target.value === 'date') {
+                setTimeFilterValue(new Date().toISOString().split('T')[0]);
+              } else {
+                setTimeFilterValue('');
+              }
+            }}
+            className="bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 px-3 py-1.5 rounded-xl text-sm font-medium outline-none border border-transparent focus:border-indigo-500 transition-colors cursor-pointer"
           >
-            {filter.label}
-          </button>
-        ))}
+            <option value="all">Tất cả thời gian</option>
+            <option value="month">Theo tháng</option>
+            <option value="date">Theo ngày</option>
+          </select>
+          
+          {timeFilterType === 'month' && (
+            <input 
+              type="month"
+              value={timeFilterValue}
+              onChange={e => setTimeFilterValue(e.target.value)}
+              className="bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 px-3 py-1.5 rounded-xl text-sm font-medium outline-none border border-transparent focus:border-indigo-500 transition-colors"
+            />
+          )}
+
+          {timeFilterType === 'date' && (
+            <input 
+              type="date"
+              value={timeFilterValue}
+              onChange={e => setTimeFilterValue(e.target.value)}
+              className="bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 px-3 py-1.5 rounded-xl text-sm font-medium outline-none border border-transparent focus:border-indigo-500 transition-colors"
+            />
+          )}
+        </div>
       </div>
 
       {/* List */}
@@ -227,7 +278,9 @@ export default function TransactionsList() {
         onSuccess={() => {
           // Soft-refresh the current list (fetch only page 0 again to reflect latest edits at top, or custom sync)
           setFilterType('all');
-          fetchTransactions(0, 'all', true);
+          setTimeFilterType('all');
+          setTimeFilterValue('');
+          fetchTransactions(0, 'all', 'all', '', true);
         }}
       />
     </div>

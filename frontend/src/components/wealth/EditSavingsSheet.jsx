@@ -28,6 +28,7 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
 
   // Settlement States
   const [isSettling, setIsSettling] = useState(false);
+  const [isReinvesting, setIsReinvesting] = useState(false);
   const [settleAccountId, setSettleAccountId] = useState('');
   const [settleCategoryId, setSettleCategoryId] = useState('');
   const [accounts, setAccounts] = useState([]);
@@ -55,6 +56,7 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
       setStatus(savings.status);
       setError('');
       setIsSettling(false);
+      setIsReinvesting(false);
       setAccountId(savings.account_id || '');
       setCategoryId(savings.category_id || '');
       
@@ -158,44 +160,66 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
     setError('');
 
     try {
-      const totalAmount = savings.principal_amount + actualInterest;
+      const receiveAmount = isReinvesting ? actualInterest : (savings.principal_amount + actualInterest);
       const account = await db.accounts.get(settleAccountId);
 
       if (account) {
         // 1. Cập nhật số dư tài khoản nhận
-        await db.accounts.update(settleAccountId, {
-          balance: account.balance + totalAmount
-        });
+        if (receiveAmount > 0) {
+          await db.accounts.update(settleAccountId, {
+            balance: account.balance + receiveAmount
+          });
+        }
 
         const txDate = new Date().toISOString();
 
-        // 2.a Tạo giao dịch nhận lại gốc (Chuyển tiền)
-        let principalCategoryId = null;
-        const settlementCat = savingsCategories.find(c => c.name === 'Tất toán sổ tiết kiệm' || c.name === 'Rút sổ tiết kiệm');
-        if (settlementCat) {
-          principalCategoryId = settlementCat.id;
-        } else {
-          principalCategoryId = crypto.randomUUID();
-          await db.categories.add({
-            id: principalCategoryId,
-            name: 'Tất toán sổ tiết kiệm',
-            type: 'savings',
-            icon: '💰',
-            color_hex: '#10B981',
-            sort_order: 999
-          });
-          await fetchDependencies();
-        }
+        // 2.a Tạo giao dịch nhận lại gốc (Chuyển tiền) hoặc tái tục (Mở sổ mới)
+        if (!isReinvesting) {
+          let principalCategoryId = null;
+          const settlementCat = savingsCategories.find(c => c.name === 'Tất toán sổ tiết kiệm' || c.name === 'Rút sổ tiết kiệm');
+          if (settlementCat) {
+            principalCategoryId = settlementCat.id;
+          } else {
+            principalCategoryId = crypto.randomUUID();
+            await db.categories.add({
+              id: principalCategoryId,
+              name: 'Tất toán sổ tiết kiệm',
+              type: 'savings',
+              icon: '💰',
+              color_hex: '#10B981',
+              sort_order: 999
+            });
+            await fetchDependencies();
+          }
 
-        await db.transactions.add({
-          id: crypto.randomUUID(),
-          account_id: settleAccountId,
-          category_id: principalCategoryId,
-          amount: savings.principal_amount,
-          date: txDate,
-          type: 'transfer',
-          note: `Nhận gốc tất toán: ${savings.name}`
-        });
+          await db.transactions.add({
+            id: crypto.randomUUID(),
+            account_id: settleAccountId,
+            category_id: principalCategoryId,
+            amount: savings.principal_amount,
+            date: txDate,
+            type: 'transfer',
+            note: `Nhận gốc tất toán: ${savings.name}`
+          });
+        } else {
+          const today = new Date();
+          const newStartDate = today.toISOString().split('T')[0];
+          today.setMonth(today.getMonth() + parseInt(savings.term_months || 0));
+          const newMaturityDate = today.toISOString().split('T')[0];
+
+          await db.savings.add({
+            id: crypto.randomUUID(),
+            account_id: savings.account_id,
+            category_id: savings.category_id || null,
+            name: savings.name,
+            principal_amount: savings.principal_amount,
+            interest_rate: savings.interest_rate,
+            term_months: savings.term_months,
+            start_date: newStartDate,
+            maturity_date: newMaturityDate,
+            status: 'active'
+          });
+        }
 
         // 2.b Tạo giao dịch nhận lãi (Thu nhập) nếu có
         if (actualInterest > 0) {
@@ -417,10 +441,27 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
                   </select>
                 </div>
              </div>
+             
+             <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-indigo-900/20 rounded-xl border border-blue-100 dark:border-indigo-900/30">
+                <div className="space-y-0.5 pr-2">
+                  <p className="text-[11px] font-bold text-blue-700 dark:text-indigo-400">Tái tục lại số tiền gốc</p>
+                  <p className="text-[10px] text-blue-600/80 dark:text-indigo-400/70 font-medium">Tự động mở một sổ mới với tiền gốc ban đầu. Tiền lãi vẫn nhận về tài khoản bình thường.</p>
+                </div>
+                <input 
+                  type="checkbox" 
+                  checked={isReinvesting} 
+                  onChange={e => setIsReinvesting(e.target.checked)}
+                  className="w-5 h-5 rounded border-blue-300 text-blue-600 focus:ring-blue-500 bg-white"
+                />
+             </div>
 
-             <div className="flex items-center space-x-2 text-[10px] text-gray-400 font-medium italic bg-gray-50 dark:bg-slate-800/50 p-3 rounded-xl">
-               <X size={14} className="text-red-400 flex-shrink-0" />
-               <p>Hành động này sẽ cộng <span className="text-emerald-600 dark:text-emerald-400 font-bold">{formatCurrency(principalAmount + actualInterest)}₫</span> vào tài khoản. Trong đó Tiền gốc được tính là "Chuyển tiền", Tiền lãi được tính là "Khoản thu".</p>
+             <div className="flex items-start space-x-2 text-[10px] text-gray-400 font-medium italic bg-gray-50 dark:bg-slate-800/50 p-3 rounded-xl mt-3">
+               <X size={14} className="text-red-400 flex-shrink-0 mt-0.5" />
+               {isReinvesting ? (
+                 <p>Hành động này sẽ cộng <span className="text-emerald-600 dark:text-emerald-400 font-bold">{formatCurrency(actualInterest)}₫</span> (Tiền lãi) vào tài khoản nhận, đồng thời mở một sổ mới với tiền gốc là <span className="text-emerald-600 dark:text-emerald-400 font-bold">{formatCurrency(principalAmount)}₫</span>.</p>
+               ) : (
+                 <p>Hành động này sẽ cộng <span className="text-emerald-600 dark:text-emerald-400 font-bold">{formatCurrency(principalAmount + actualInterest)}₫</span> vào tài khoản. Trong đó Tiền gốc là "Chuyển tiền", Tiền lãi là "Khoản thu".</p>
+               )}
              </div>
           </div>
         )}

@@ -207,11 +207,15 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
           today.setMonth(today.getMonth() + parseInt(savings.term_months || 0));
           const newMaturityDate = today.toISOString().split('T')[0];
 
+          const newName = savings.name.includes('(Tái tục)') 
+            ? savings.name 
+            : `${savings.name} (Tái tục)`;
+
           await db.savings.add({
             id: crypto.randomUUID(),
             account_id: savings.account_id,
             category_id: savings.category_id || null,
-            name: savings.name,
+            name: newName,
             principal_amount: savings.principal_amount,
             interest_rate: savings.interest_rate,
             term_months: savings.term_months,
@@ -230,7 +234,7 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
             amount: actualInterest,
             date: txDate,
             type: 'income',
-            note: `Lãi tất toán: ${savings.name}`
+            note: isReinvesting ? `Lãi tái tục: ${savings.name}` : `Lãi tất toán: ${savings.name}`
           });
         }
       }

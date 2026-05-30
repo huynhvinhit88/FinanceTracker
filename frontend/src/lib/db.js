@@ -1,55 +1,4 @@
-import Dexie from 'dexie';
-
-// Yêu cầu Persistent Storage để tránh trình duyệt tự xóa DB khi thiếu bộ nhớ
-async function persistStorage() {
-  if (navigator.storage && navigator.storage.persist) {
-    const isPersisted = await navigator.storage.persisted();
-    if (!isPersisted) {
-      await navigator.storage.persist();
-    }
-  }
-}
-
-persistStorage().catch(console.error);
-
-export const db = new Dexie('FinanceTrackerDB');
-
-db.version(1).stores({
-  settings: 'key, value',
-  accounts: 'id, name, type, sub_type, balance, currency, icon, color_hex, is_default, include_in_net_worth, status',
-  categories: 'id, name, type, icon, color_hex, parent_id, is_default, is_ui_default, sort_order',
-  transactions: 'id, account_id, category_id, amount, date, type, note, tags',
-  loans: 'id, account_id, name, total_amount, interest_rate, term_months, start_date, type, status, minimum_payment, payment_date, interest_type, next_payment_amount',
-  budgets: 'id, category_id, amount, month, type',
-  investments: 'id, account_id, symbol, name, type, buy_price, quantity, purchase_date, current_price, initial_amount, maturity_date, interest_rate, interest_type, auto_renew, status, return_rate, loan_amount',
-  savings: 'id, account_id, name, principal_amount, interest_rate, term_months, term_unit, start_date, maturity_date, interest_type, auto_renew, status',
-  goals: 'id, name, target_amount, current_amount, deadline, icon, color_hex, status'
-});
-
-db.version(2).stores({}).upgrade(async (tx) => {
-  // Migration: Update 'Phải thu' sub_type from 'debt' to 'receivable'
-  await tx.table('accounts')
-    .filter(acc => acc.type === 'Phải thu' && acc.sub_type === 'debt')
-    .modify({ sub_type: 'receivable' });
-});
-
-db.version(3).stores({
-  savings: 'id, account_id, category_id, name, principal_amount, interest_rate, term_months, term_unit, start_date, maturity_date, interest_type, auto_renew, status',
-});
-
-db.version(4).stores({}).upgrade(async (tx) => {
-  const categoriesToRemove = ['Ăn uống', 'Di chuyển', 'Mua sắm', 'Hóa đơn'];
-  await tx.table('categories')
-    .filter(cat => categoriesToRemove.includes(cat.name) && cat.is_default === true)
-    .delete();
-});
-
-db.version(5).stores({}).upgrade(async (tx) => {
-  // Migration: Remove default 'Khác' transfer category (no longer needed)
-  await tx.table('categories')
-    .filter(cat => cat.name === 'Khác' && cat.type === 'transfer' && cat.is_default === true)
-    .delete();
-});
+import { supabase } from './supabaseClient';
 
 export const DEFAULT_CATEGORIES = [
   { name: 'Trả nợ vay', type: 'expense', icon: '🏦', color_hex: '#EF4444' },
@@ -60,69 +9,219 @@ export const DEFAULT_CATEGORIES = [
   { name: 'Thu hồi nợ', type: 'income', icon: '💰', color_hex: '#10B981' },
 ];
 
-export let isImporting = false;
+class SupabaseTableWrapper {
+  constructor(tableName) {
+    this.tableName = tableName;
+  }
 
-export function setImportingState(state) {
-  isImporting = state;
+  async toArray() {
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
+    if (!user) return [];
+    
+    const { data, error } = await supabase
+      .from(this.tableName)
+      .select('*')
+      .eq('user_id', user.id);
+    if (error) {
+      console.error(`Error querying ${this.tableName} from Supabase:`, error);
+      throw error;
+    }
+    return data || [];
+  }
+
+  async get(idOrQuery) {
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
+    if (!user) return null;
+    
+    let query = supabase.from(this.tableName).select('*');
+    if (typeof idOrQuery === 'object') {
+      Object.entries(idOrQuery).forEach(([key, val]) => {
+        query = query.eq(key, val);
+      });
+    } else {
+      query = query.eq(this.tableName === 'settings' ? 'key' : 'id', idOrQuery);
+    }
+    
+    query = query.eq('user_id', user.id);
+    const { data, error } = await query.maybeSingle();
+    if (error) {
+      console.error(`Error get in ${this.tableName}:`, error);
+      throw error;
+    }
+    return data || null;
+  }
+
+  async add(item) {
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
+    if (!user) throw new Error('Not authenticated');
+    
+    const record = { ...item, user_id: user.id };
+    const { data, error } = await supabase
+      .from(this.tableName)
+      .insert(record)
+      .select()
+      .single();
+    if (error) {
+      console.error(`Error adding to ${this.tableName}:`, error);
+      throw error;
+    }
+    return data;
+  }
+
+  async put(item) {
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
+    if (!user) throw new Error('Not authenticated');
+    
+    const record = { ...item, user_id: user.id };
+    
+    const upsertOptions = {};
+    if (this.tableName === 'settings') {
+      upsertOptions.onConflict = 'key,user_id';
+    } else {
+      upsertOptions.onConflict = 'id';
+    }
+    
+    const { data, error } = await supabase
+      .from(this.tableName)
+      .upsert(record, upsertOptions)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error(`Error putting into ${this.tableName}:`, error);
+      throw error;
+    }
+    return data;
+  }
+
+  async update(id, updates) {
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
+    if (!user) throw new Error('Not authenticated');
+    
+    const { data, error } = await supabase
+      .from(this.tableName)
+      .update(updates)
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error(`Error updating ${this.tableName}:`, error);
+      throw error;
+    }
+    return data;
+  }
+
+  async delete(id) {
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
+    if (!user) throw new Error('Not authenticated');
+    
+    const { error } = await supabase
+      .from(this.tableName)
+      .delete()
+      .eq(this.tableName === 'settings' ? 'key' : 'id', id)
+      .eq('user_id', user.id);
+      
+    if (error) {
+      console.error(`Error deleting from ${this.tableName}:`, error);
+      throw error;
+    }
+    return true;
+  }
+
+  async clear() {
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
+    if (!user) throw new Error('Not authenticated');
+    
+    const { error } = await supabase
+      .from(this.tableName)
+      .delete()
+      .eq('user_id', user.id);
+      
+    if (error) {
+      console.error(`Error clearing ${this.tableName}:`, error);
+      throw error;
+    }
+    return true;
+  }
+
+  async bulkAdd(items) {
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
+    if (!user) throw new Error('Not authenticated');
+    
+    const records = items.map(item => ({ ...item, user_id: user.id }));
+    const { data, error } = await supabase
+      .from(this.tableName)
+      .insert(records)
+      .select();
+      
+    if (error) {
+      console.error(`Error bulk adding to ${this.tableName}:`, error);
+      throw error;
+    }
+    return data || [];
+  }
+
+  filter(fn) {
+    return {
+      toArray: async () => {
+        const all = await this.toArray();
+        return all.filter(fn);
+      }
+    };
+  }
+
+  async count() {
+    const all = await this.toArray();
+    return all.length;
+  }
 }
+
+export const db = {
+  settings: new SupabaseTableWrapper('settings'),
+  accounts: new SupabaseTableWrapper('accounts'),
+  categories: new SupabaseTableWrapper('categories'),
+  transactions: new SupabaseTableWrapper('transactions'),
+  loans: new SupabaseTableWrapper('loans'),
+  budgets: new SupabaseTableWrapper('budgets'),
+  investments: new SupabaseTableWrapper('investments'),
+  savings: new SupabaseTableWrapper('savings'),
+  goals: new SupabaseTableWrapper('goals')
+};
 
 export async function updateLastModified() {
-  if (isImporting) return;
   try {
-    await db.settings.put({ key: 'last_updated_at', value: new Date().toISOString() });
+    const now = new Date().toISOString();
+    await db.settings.put({ key: 'last_updated_at', value: now });
   } catch (err) {
-    console.error('Failed to update last_updated_at:', err);
+    console.error('Failed to update last_updated_at on Supabase:', err);
   }
 }
 
-// Add hooks to track changes in all data tables
-const tablesToTrack = [
-  'accounts', 
-  'categories', 
-  'transactions', 
-  'loans', 
-  'budgets', 
-  'investments', 
-  'savings', 
-  'goals'
-];
-
-tablesToTrack.forEach(tableName => {
-  if (db[tableName]) {
-    db[tableName].hook('creating', () => { updateLastModified(); });
-    db[tableName].hook('updating', () => { updateLastModified(); });
-    db[tableName].hook('deleting', () => { updateLastModified(); });
-  }
-});
-
-// Special tracking for settings table to avoid infinite loop
-db.settings.hook('creating', (primKey, obj) => {
-  if (primKey !== 'last_updated_at') {
-    updateLastModified();
-  }
-});
-db.settings.hook('updating', (modifications, primKey) => {
-  if (primKey !== 'last_updated_at') {
-    updateLastModified();
-  }
-});
-db.settings.hook('deleting', (primKey) => {
-  if (primKey !== 'last_updated_at') {
-    updateLastModified();
-  }
-});
-
 export async function seedDefaultData() {
-  const seeded = await db.settings.get('has_seeded_categories');
-  if (seeded && seeded.value) return;
+  try {
+    const seeded = await db.settings.get('has_seeded_categories');
+    if (seeded && seeded.value === 'true') return;
 
-  const count = await db.categories.count();
-  if (count === 0) {
-    await db.categories.bulkAdd(DEFAULT_CATEGORIES.map(c => ({
-      ...c,
-      id: crypto.randomUUID(),
-      is_default: true
-    })));
+    const count = await db.categories.count();
+    if (count === 0) {
+      await db.categories.bulkAdd(DEFAULT_CATEGORIES.map(c => ({
+        ...c,
+        id: crypto.randomUUID(),
+        is_default: true
+      })));
+    }
+    await db.settings.put({ key: 'has_seeded_categories', value: 'true' });
+  } catch (err) {
+    console.error('Failed to seed default categories on Supabase:', err);
   }
-  await db.settings.put({ key: 'has_seeded_categories', value: true });
 }

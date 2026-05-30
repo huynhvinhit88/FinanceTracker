@@ -11,7 +11,6 @@ import {
   writeBlobToFolder,
   getValidToken
 } from '../lib/syncService';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { RefreshCw, CloudDownload, CloudUpload, FolderTree, Trash2, ChevronRight, Download, ShieldCheck, Lock, FolderOpen, Clock } from 'lucide-react';
 import { CategoryManagementSheet } from '../components/settings/CategoryManagementSheet';
 import { ChangePinSheet } from '../components/settings/ChangePinSheet';
@@ -44,7 +43,7 @@ export default function Settings() {
     projection: false,
   });
 
-  const lastUpdated = useLiveQuery(() => db.settings.get('last_updated_at'));
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   const [isMobileDevice, setIsMobileDevice] = useState(!window.showDirectoryPicker);
   const [showDrivePicker, setShowDrivePicker] = useState(false);
@@ -59,7 +58,13 @@ export default function Settings() {
       // Initialize last_updated_at if missing
       db.settings.get('last_updated_at').then(res => {
         if (!res) {
-          import('../lib/db').then(m => m.updateLastModified());
+          import('../lib/db').then(m => {
+            m.updateLastModified().then(() => {
+              db.settings.get('last_updated_at').then(setLastUpdated);
+            });
+          });
+        } else {
+          setLastUpdated(res);
         }
       });
     }

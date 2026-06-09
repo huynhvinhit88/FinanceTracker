@@ -232,7 +232,7 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
       const payload = {
         account_id: accountId,
         category_id: categoryId || null,
-        to_account_id: type === 'transfer' ? toAccountId : null,
+        to_account_id: type === 'transfer' ? (toAccountId || null) : null,
         amount: rawAmount,
         type: type === 'repayment' ? 'expense' : type,
         date: transactionDate.toISOString(),

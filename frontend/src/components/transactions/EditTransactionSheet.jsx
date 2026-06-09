@@ -196,7 +196,10 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
     e.preventDefault();
     if (rawAmount <= 0) { setError('Số tiền phải lớn hơn 0'); return; }
     if (!accountId) { setError('Vui lòng chọn tài khoản nguồn'); return; }
-    if (type === 'transfer' && (!toAccountId || accountId === toAccountId)) {
+    // Giao dịch chuyển khoản sang sổ tiết kiệm (savings category) không cần tài khoản đích
+    const selectedCategory = categories.find(c => c.id === categoryId);
+    const isSavingsTransfer = selectedCategory?.type === 'savings';
+    if (type === 'transfer' && !isSavingsTransfer && (!toAccountId || accountId === toAccountId)) {
       setError('Tài khoản nhận không hợp lệ');
       return;
     }

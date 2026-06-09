@@ -193,7 +193,7 @@ export default function Statistics() {
     return {
       totalThuHo,
       totalChiHo,
-      chenh: totalChiHo - totalThuHo,
+      chenh: totalThuHo - totalChiHo,
       activeMonths,
       hasThuHoCat: !!thuHoCat,
       hasChiHoCat: !!chiHoCat,
@@ -454,13 +454,13 @@ export default function Statistics() {
 
               {/* Chênh lệch */}
               <div className={`p-4 rounded-[2rem] border shadow-sm relative overflow-hidden ${
-                thuHoChiHoData.chenh <= 0
+                thuHoChiHoData.chenh >= 0
                   ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-800/30'
                   : 'bg-orange-50 dark:bg-orange-950/20 border-orange-100 dark:border-orange-800/30'
               }`}>
                 <p className="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2">Chênh lệch</p>
                 <p className={`text-base font-black tabular-nums leading-tight ${
-                  thuHoChiHoData.chenh <= 0
+                  thuHoChiHoData.chenh >= 0
                     ? 'text-emerald-700 dark:text-emerald-400'
                     : 'text-orange-600 dark:text-orange-400'
                 }`}>
@@ -470,19 +470,19 @@ export default function Statistics() {
             </div>
 
             {/* Chú thích chênh lệch */}
-            {thuHoChiHoData.chenh > 0 && (
+            {thuHoChiHoData.chenh < 0 && (
               <div className="flex items-start space-x-2 mb-5 px-1">
                 <Info size={13} className="text-orange-400 shrink-0 mt-0.5" />
                 <p className="text-[11px] text-orange-500 dark:text-orange-400 font-medium">
-                  Chi hộ đang lớn hơn Thu hộ <strong>{formatCurrency(thuHoChiHoData.chenh)}₫</strong> — bạn đang ứng tiền từ tài khoản cá nhân.
+                  Chi hộ đang lớn hơn Thu hộ <strong>{formatCurrency(Math.abs(thuHoChiHoData.chenh))}₫</strong> — bạn đang ứng tiền từ tài khoản cá nhân.
                 </p>
               </div>
             )}
-            {thuHoChiHoData.chenh < 0 && (
+            {thuHoChiHoData.chenh > 0 && (
               <div className="flex items-start space-x-2 mb-5 px-1">
                 <Info size={13} className="text-emerald-400 shrink-0 mt-0.5" />
                 <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-                  Thu hộ đang lớn hơn Chi hộ <strong>{formatCurrency(Math.abs(thuHoChiHoData.chenh))}₫</strong> — bạn đang giữ tiền hộ người khác.
+                  Thu hộ đang lớn hơn Chi hộ <strong>{formatCurrency(thuHoChiHoData.chenh)}₫</strong> — bạn đang giữ tiền hộ người khác.
                 </p>
               </div>
             )}
@@ -507,7 +507,7 @@ export default function Statistics() {
                     </thead>
                     <tbody className="divide-y divide-gray-50 dark:divide-white/5 text-gray-700 dark:text-slate-300 font-bold">
                       {thuHoChiHoData.activeMonths.map((row) => {
-                        const chenh = row.chiHo - row.thuHo;
+                        const chenh = row.thuHo - row.chiHo;
                         return (
                           <tr
                             key={row.month}
@@ -525,8 +525,8 @@ export default function Statistics() {
                             <td className="px-5 py-5 text-rose-500 dark:text-rose-400">{row.chiHo > 0 ? formatCurrency(row.chiHo) : <span className="text-gray-300 dark:text-slate-600">—</span>}</td>
                             <td className={`px-5 py-5 ${
                               chenh === 0 ? 'text-gray-400'
-                              : chenh > 0 ? 'text-orange-500 dark:text-orange-400'
-                              : 'text-emerald-600 dark:text-emerald-400'
+                              : chenh > 0 ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-orange-500 dark:text-orange-400'
                             }`}>
                               {chenh > 0 ? '+' : ''}{formatCurrency(chenh)}
                             </td>
@@ -542,8 +542,8 @@ export default function Statistics() {
                         <td className="px-5 py-4 text-rose-500 dark:text-rose-400 tabular-nums">{formatCurrency(thuHoChiHoData.totalChiHo)}</td>
                         <td className={`px-5 py-4 tabular-nums ${
                           thuHoChiHoData.chenh === 0 ? 'text-gray-400'
-                          : thuHoChiHoData.chenh > 0 ? 'text-orange-500 dark:text-orange-400'
-                          : 'text-emerald-600 dark:text-emerald-400'
+                          : thuHoChiHoData.chenh > 0 ? 'text-emerald-600 dark:text-emerald-400'
+                          : 'text-orange-500 dark:text-orange-400'
                         }`}>
                           {thuHoChiHoData.chenh > 0 ? '+' : ''}{formatCurrency(thuHoChiHoData.chenh)}
                         </td>
@@ -681,17 +681,17 @@ export default function Statistics() {
               {(() => {
                 const totalThu = detailSheet.items.txs.filter(tx => tx._kind === 'thu').reduce((s, tx) => s + (Number(tx.amount) || 0), 0);
                 const totalChi = detailSheet.items.txs.filter(tx => tx._kind === 'chi').reduce((s, tx) => s + (Number(tx.amount) || 0), 0);
-                const diff = totalChi - totalThu;
+                const diff = totalThu - totalChi;
                 return (
                   <div className={`flex items-center justify-between px-5 py-4 rounded-3xl border ${
-                    diff > 0 ? 'bg-orange-50 dark:bg-orange-950/20 border-orange-100 dark:border-orange-800/30'
-                    : diff < 0 ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-800/30'
+                    diff > 0 ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-800/30'
+                    : diff < 0 ? 'bg-orange-50 dark:bg-orange-950/20 border-orange-100 dark:border-orange-800/30'
                     : 'bg-gray-50 dark:bg-slate-800 border-gray-100 dark:border-white/5'
                   }`}>
                     <span className="text-xs font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider">Chênh lệch tháng này</span>
                     <span className={`text-sm font-black tabular-nums ${
-                      diff > 0 ? 'text-orange-600 dark:text-orange-400'
-                      : diff < 0 ? 'text-emerald-600 dark:text-emerald-400'
+                      diff > 0 ? 'text-emerald-600 dark:text-emerald-400'
+                      : diff < 0 ? 'text-orange-600 dark:text-orange-400'
                       : 'text-gray-500'
                     }`}>
                       {diff > 0 ? '+' : ''}{formatCurrency(diff)}₫

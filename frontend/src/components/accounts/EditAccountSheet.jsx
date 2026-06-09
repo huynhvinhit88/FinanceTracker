@@ -23,7 +23,8 @@ export function EditAccountSheet({ isOpen, onClose, onSuccess, account }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState('');
   
-  const { displayValue, value: rawBalance, handleInputChange, setExternalValue, suffix } = useCurrencyInput('');
+  // allowNegative: cho phép nhập số dư âm (ví Nợ/thẻ tín dụng đang nợ → balance âm).
+  const { displayValue, value: rawBalance, handleInputChange, setExternalValue, suffix } = useCurrencyInput('', { allowNegative: true });
 
   useEffect(() => {
     if (isOpen && account) {
@@ -124,6 +125,11 @@ export function EditAccountSheet({ isOpen, onClose, onSuccess, account }) {
               <span className="text-xl font-bold text-gray-400">{suffix}</span>
             </div>
           </div>
+          {selectedType.sub_type === 'debt' && (
+            <p className="text-xs text-gray-500 dark:text-slate-500 mt-2">
+              Đây là số dư thực: nhập <span className="font-semibold text-red-500 dark:text-rose-400">số âm</span> nếu đang nợ (vd <span className="font-mono">-500.000</span>).
+            </p>
+          )}
         </div>
 
         <div>

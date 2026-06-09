@@ -12,13 +12,9 @@ import Settings from './pages/Settings';
 import TransactionsList from './pages/TransactionsList';
 import Login from './pages/auth/Login';
 
-import { seedDefaultData } from './lib/db';
-
 function App() {
-  React.useEffect(() => {
-    seedDefaultData().catch(console.error);
-  }, []);
-
+  // Lưu ý: việc seed danh mục mặc định đã được chuyển vào AuthContext (initUserData),
+  // chạy sau khi có phiên đăng nhập để tránh race gây nhân đôi danh mục.
   return (
     <ThemeProvider>
       <AuthProvider>

@@ -59,10 +59,15 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
   useEffect(() => {
     if (isOpen) {
       const stored = localStorage.getItem(storageKey);
-      if (stored) {
-        setProfiles(JSON.parse(stored));
-      }
+      setProfiles(stored ? JSON.parse(stored) : []);
+      // Mỗi lần mở: bắt đầu ở trạng thái sạch để không giữ lại các giá trị nhập dở
+      // chưa lưu của lần mở trước (đóng bằng dấu X = huỷ, không lưu).
+      loadProfile('');
+      setIsNaming(false);
+      setNewName('');
     }
+    // loadProfile chỉ reset form nội bộ, không cần đưa vào deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, storageKey]);
 
   const loadProfile = (id) => {
@@ -82,7 +87,10 @@ export function LoanCalculatorSheet({ isOpen, onClose }) {
       setPenaltyConfig('3, 3, 3, 1, 0');
       setPeriods([]);
       setResult(null);
+      setSchedule([]);
       setShowAdvanced(false);
+      setShowPeriods(false);
+      setShowSchedule(false);
       return;
     }
     const p = profiles.find(x => x.id === id);

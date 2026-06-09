@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   Home, Wallet, PieChart, BarChart3, User, 
-  ChevronRight, Lock, ShieldCheck 
+  ChevronRight, LogOut, ShieldCheck 
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { clsx } from 'clsx';
@@ -19,10 +19,9 @@ const TABS = [
   { name: 'Thống kê', path: '/statistics', icon: BarChart3, desc: 'Báo cáo chi tiết' },
   { name: 'Cài đặt', path: '/settings', icon: User, desc: 'Cấu hình ứng dụng' },
 ];
-
 export function SidebarNav() {
-  const { googleUser, lock } = useAuth();
-  const userName = googleUser?.email?.split('@')[0] || 'Guest';
+  const { user, signOut } = useAuth();
+  const userName = user?.user_metadata?.username || user?.email?.split('@')[0] || 'Guest';
 
   return (
     <aside className="hidden lg:flex flex-col w-[280px] h-screen sticky top-0 bg-white dark:bg-slate-800/70 dark:backdrop-blur-xl border-r border-gray-100 dark:border-white/10 z-50 transition-colors duration-300">
@@ -82,11 +81,11 @@ export function SidebarNav() {
         </div>
 
         <button 
-          onClick={() => lock()}
+          onClick={() => signOut()}
           className="w-full flex items-center justify-center space-x-2 py-3 rounded-2xl bg-gray-50 dark:bg-slate-700/50 text-gray-600 dark:text-slate-300 text-xs font-bold hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-500/10 dark:hover:text-amber-400 transition-all active:scale-95 border border-transparent hover:border-amber-100 dark:hover:border-amber-500/20"
         >
-          <Lock size={16} />
-          <span>Khoá ứng dụng</span>
+          <LogOut size={16} />
+          <span>Đăng xuất</span>
         </button>
       </div>
     </aside>

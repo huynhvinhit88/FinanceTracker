@@ -5,14 +5,15 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, 
   PieChart, Pie, Cell, AreaChart, Area 
 } from 'recharts';
-import { 
-  TrendingUp, TrendingDown, PiggyBank, Calendar, 
-  ChevronLeft, ChevronRight, Filter, Download,
-  Wallet, PieChart as PieChartIcon, Clock, ChevronRight as ChevronRightIcon,
-  Info, Landmark, ArrowLeftRight, AlertCircle
+import {
+  TrendingUp, TrendingDown, PiggyBank,
+  ChevronLeft, ChevronRight,
+  PieChart as PieChartIcon, ChevronRight as ChevronRightIcon,
+  Info, ArrowLeftRight, AlertCircle
 } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 import { BottomSheet } from '../components/ui/BottomSheet';
+import { useGlobalRefresh } from '../hooks/useGlobalRefresh';
 
 const COLORS = ['#6366F1', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
 
@@ -22,8 +23,6 @@ export default function Statistics() {
   const [loading, setLoading] = useState(true);
   
   const [transactions, setTransactions] = useState([]);
-  const [accounts, setAccounts] = useState([]);
-  const [savingsBooks, setSavingsBooks] = useState([]);
   const [categories, setCategories] = useState([]);
 
   // State for detail sheet
@@ -32,6 +31,9 @@ export default function Statistics() {
   useEffect(() => {
     fetchData();
   }, [user, selectedYear]);
+
+  // Tự fetch lại khi thêm giao dịch từ nút "+" toàn cục
+  useGlobalRefresh(() => fetchData());
 
   const fetchData = async () => {
     if (!user) return;
@@ -44,16 +46,12 @@ export default function Statistics() {
         .filter(tx => tx.date >= startOfYear && tx.date <= endOfYear)
         .toArray();
 
-      const accData = await db.accounts.toArray();
-      const savData = await db.savings.toArray();
       const catData = await db.categories.toArray();
 
       // Sort transactions by date ascending
       allTxRaw.sort((a, b) => new Date(a.date) - new Date(b.date));
 
       setTransactions(allTxRaw);
-      setAccounts(accData);
-      setSavingsBooks(savData);
       setCategories(catData);
     } catch (err) {
       console.error('Error fetching statistics data:', err);
@@ -106,18 +104,13 @@ export default function Statistics() {
   const totalSummary = useMemo(() => {
     const income = transactions.filter(tx => tx.type === 'income').reduce((s, tx) => s + tx.amount, 0);
     const expense = transactions.filter(tx => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0);
-    
-    // Total current savings (current balance, not flow)
-    const accSavings = accounts.filter(a => a.sub_type === 'savings').reduce((s, a) => s + (a.balance || 0), 0);
-    const bookSavings = savingsBooks.filter(b => b.status === 'active').reduce((s, b) => s + (b.principal_amount || 0), 0);
 
     return {
       income,
       expense,
-      net: income - expense,
-      totalSavingsBalance: accSavings + bookSavings
+      net: income - expense
     };
-  }, [transactions, accounts, savingsBooks]);
+  }, [transactions]);
 
   const monthlyCategoryData = useMemo(() => {
     const data = Array.from({ length: 12 }, (_, i) => ({
@@ -208,114 +201,11 @@ export default function Statistics() {
     };
   }, [transactions, categories]);
 
-  // --- SAVINGS SPECIFIC AGGREGATION ---
-
-  const activeSavingsAnalysis = useMemo(() => {
-    const activeBooks = savingsBooks.filter(b => b.status === 'active');
-    
-    // 1. Calculate Interest for each book
-    const enrichedBooks = activeBooks.map(b => {
-      const interest = Math.round(b.principal_amount * (b.interest_rate / 100) * ((b.term_months || 0) / 12));
-      return { ...b, expected_interest: interest };
-    });
-
-    const totalPrincipal = enrichedBooks.reduce((sum, b) => sum + b.principal_amount, 0);
-    const totalInterest = enrichedBooks.reduce((sum, b) => sum + b.expected_interest, 0);
-
-    // 2. By Category
-    const byCategoryMap = {};
-    enrichedBooks.forEach(b => {
-      const catId = b.category_id || 'unclassified';
-      if (!byCategoryMap[catId]) {
-        const cat = categories.find(c => c.id === catId);
-        byCategoryMap[catId] = {
-          name: cat ? cat.name : 'Khác',
-          icon: cat ? cat.icon : '📌',
-          amount: 0,
-          interest: 0,
-          books: []
-        };
-      }
-      byCategoryMap[catId].amount += b.principal_amount;
-      byCategoryMap[catId].interest += b.expected_interest;
-      byCategoryMap[catId].books.push(b);
-    });
-
-    const byCategory = Object.values(byCategoryMap).sort((a, b) => b.amount - a.amount);
-
-    // 3. By Source Account
-    const byAccountMap = {};
-    enrichedBooks.forEach(b => {
-      const accId = b.account_id || 'unclassified';
-      if (!byAccountMap[accId]) {
-        const acc = accounts.find(a => a.id === accId);
-        byAccountMap[accId] = {
-          name: acc ? acc.name : 'Không rõ source',
-          amount: 0,
-          interest: 0,
-          books: []
-        };
-      }
-      byAccountMap[accId].amount += b.principal_amount;
-      byAccountMap[accId].interest += b.expected_interest;
-      byAccountMap[accId].books.push(b);
-    });
-
-    const byAccount = Object.values(byAccountMap).sort((a, b) => b.amount - a.amount);
-
-    // 4. Maturity Schedule (Timeline)
-    const maturityMap = {};
-    enrichedBooks.forEach(b => {
-      if (!b.maturity_date) return;
-      const date = new Date(b.maturity_date);
-      const mmYyyy = `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
-      const sortKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-      
-      if (!maturityMap[sortKey]) {
-        maturityMap[sortKey] = {
-          label: mmYyyy,
-          principal: 0,
-          interest: 0,
-          books: []
-        };
-      }
-      maturityMap[sortKey].principal += b.principal_amount;
-      maturityMap[sortKey].interest += b.expected_interest;
-      maturityMap[sortKey].books.push(b);
-    });
-
-    const timeline = Object.entries(maturityMap)
-      .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
-      .map(([_, val]) => val);
-
-    return {
-      totalPrincipal,
-      totalInterest,
-      byCategory,
-      byAccount,
-      timeline
-    };
-  }, [savingsBooks, categories, accounts]);
-
   const handleOpenDetail = (title, data) => {
-    let normalizedItems = data;
-    
-    // If it's the new object structure with books, sort them
-    if (data && data.type === 'savings_books' && Array.isArray(data.books)) {
-      normalizedItems = {
-        ...data,
-        books: [...data.books].sort((a, b) => new Date(a.maturity_date) - new Date(b.maturity_date))
-      };
-    } 
-    // Fallback for direct array (if any legacy calls exist)
-    else if (Array.isArray(data)) {
-      normalizedItems = [...data].sort((a, b) => new Date(a.maturity_date) - new Date(b.maturity_date));
-    }
-
     setDetailSheet({
       isOpen: true,
       title,
-      items: normalizedItems
+      items: data
     });
   };
 
@@ -497,14 +387,16 @@ export default function Statistics() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 dark:divide-white/5 text-gray-700 dark:text-slate-300 font-bold">
-                  {monthlyData.filter(m => m.income > 0 || m.expense > 0).map((row, idx) => (
-                    <tr 
-                      key={row.month} 
-                      onClick={() => handleOpenDetail(`Chi tiết ${row.month}`, { 
-                        type: 'monthly_category', 
-                        income: monthlyCategoryData[idx].income, 
-                        expense: monthlyCategoryData[idx].expense,
-                        transfer: monthlyCategoryData[idx].transfer
+                  {monthlyData.filter(m => m.income > 0 || m.expense > 0).map((row) => {
+                    const catData = monthlyCategoryData.find(m => m.month === row.month);
+                    return (
+                    <tr
+                      key={row.month}
+                      onClick={() => handleOpenDetail(`Chi tiết ${row.month}`, {
+                        type: 'monthly_category',
+                        income: catData?.income || [],
+                        expense: catData?.expense || [],
+                        transfer: catData?.transfer || []
                       })}
                       className="hover:bg-blue-50/50 dark:hover:bg-indigo-950/20 transition-all cursor-pointer active:scale-[0.98]"
                     >
@@ -518,7 +410,8 @@ export default function Statistics() {
                         {row.net > 0 ? '+' : ''}{formatCurrency(row.net)}
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -662,172 +555,6 @@ export default function Statistics() {
             )}
           </>
         )}
-      </div>
-
-      {/* --- SECTION 2: TÀI SẢN & TIẾT KIỆM --- */}
-      <div className="mb-12">
-        <div className="flex items-center mb-6 px-1">
-          <div className="w-1.5 h-6 bg-indigo-500 rounded-full mr-3 shadow-sm shadow-indigo-500/40" />
-          <h2 className="text-xl font-black text-gray-900 dark:text-slate-100 tracking-tight">Tài sản & Tiết kiệm</h2>
-        </div>
-
-        {/* Wealth Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 lg:gap-8 mb-10">
-          <div className="bg-white dark:bg-slate-900 p-8 lg:p-12 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-sm shadow-indigo-500/5 flex flex-col justify-center">
-            <p className="text-[10px] lg:text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-3 flex items-center">
-              <Wallet size={16} className="mr-2 text-indigo-500" /> Tổng vốn gửi tiết kiệm
-            </p>
-            <p className="text-3xl lg:text-5xl font-black text-gray-900 dark:text-slate-100 tracking-tight">
-              {formatCurrency(activeSavingsAnalysis.totalPrincipal)}<span className="text-base lg:text-lg ml-1 opacity-50">₫</span>
-            </p>
-          </div>
-          <div className="bg-gradient-to-br from-indigo-600 to-blue-700 p-8 lg:p-12 rounded-[2.5rem] border border-transparent shadow-xl shadow-indigo-500/20 flex flex-col justify-center">
-            <p className="text-[10px] lg:text-xs font-bold text-white/70 uppercase tracking-widest mb-3 flex items-center">
-              <TrendingUp size={16} className="mr-2" /> Tổng lãi dự kiến (Tất cả sổ)
-            </p>
-            <p className="text-3xl lg:text-5xl font-black text-white tracking-tight">
-              +{formatCurrency(activeSavingsAnalysis.totalInterest)}<span className="text-base lg:text-lg ml-1 opacity-50">₫</span>
-            </p>
-          </div>
-        </div>
-
-        {/* Savings Components Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
-          {/* Category Distribution */}
-          <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden transition-colors">
-            <div className="p-6">
-              <h3 className="font-bold text-gray-900 dark:text-slate-100 flex items-center mb-6 text-sm">
-                <PieChartIcon size={16} className="mr-2 text-indigo-500" /> Cơ cấu theo Hạng mục
-              </h3>
-              <div className="space-y-4">
-                {activeSavingsAnalysis.byCategory.map((cat, idx) => (
-                  <div
-                    key={cat.name}
-                    onClick={() => handleOpenDetail(`Sổ tiết kiệm: ${cat.name}`, { type: 'savings_books', books: cat.books })}
-                    className="group flex items-center justify-between p-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-white/5"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg" style={{ backgroundColor: (COLORS[idx % COLORS.length]) + '20', color: COLORS[idx % COLORS.length] }}>
-                        {cat.icon || '📌'}
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-gray-900 dark:text-slate-100">{cat.name}</p>
-                        <p className="text-[10px] font-medium text-gray-400 dark:text-slate-500">{Math.round((cat.amount / activeSavingsAnalysis.totalPrincipal) * 100)}% tổng vốn</p>
-                      </div>
-                    </div>
-                    <div className="text-right flex items-center">
-                      <div className="mr-3">
-                        <p className="text-sm font-black text-gray-900 dark:text-slate-100 tabular-nums">{formatCurrency(cat.amount)}₫</p>
-                        <p className="text-[10px] font-bold text-emerald-500 tabular-nums">+{formatCurrency(cat.interest)}₫ lãi</p>
-                      </div>
-                      <ChevronRightIcon size={16} className="text-gray-300 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </div>
-                ))}
-                {activeSavingsAnalysis.byCategory.length === 0 && (
-                  <div className="text-center py-8 text-gray-400 dark:text-slate-500 text-sm italic">
-                    Chưa có sổ nào được phân loại danh mục
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Account Distribution */}
-          <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden transition-colors">
-            <div className="p-6">
-              <h3 className="font-bold text-gray-900 dark:text-slate-100 flex items-center mb-6 text-sm">
-                <Landmark size={16} className="mr-2 text-blue-500" /> Cơ cấu theo Tài khoản
-              </h3>
-              <div className="space-y-4">
-                {activeSavingsAnalysis.byAccount.map((acc, idx) => (
-                  <div 
-                    key={acc.name} 
-                    onClick={() => handleOpenDetail(`Tài khoản: ${acc.name}`, { type: 'savings_books', books: acc.books })}
-                    className="group flex items-center justify-between p-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-white/5"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
-                        <Landmark size={20} className="text-blue-500" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-gray-900 dark:text-slate-100">{acc.name}</p>
-                        <p className="text-[10px] font-medium text-gray-400 dark:text-slate-500">{Math.round((acc.amount / activeSavingsAnalysis.totalPrincipal) * 100)}% tổng vốn</p>
-                      </div>
-                    </div>
-                    <div className="text-right flex items-center">
-                      <div className="mr-3">
-                        <p className="text-sm font-black text-gray-900 dark:text-slate-100">{formatCurrency(acc.amount)}₫</p>
-                        <p className="text-[10px] font-bold text-emerald-500">+{formatCurrency(acc.interest)}₫ lãi</p>
-                      </div>
-                      <ChevronRightIcon size={16} className="text-gray-300 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Maturity Schedule Timeline */}
-          <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden transition-colors">
-            <div className="p-6">
-              <h3 className="font-bold text-gray-900 dark:text-slate-100 flex items-center mb-6 text-sm">
-                <Clock size={16} className="mr-2 text-orange-500" /> Lịch trình nhận tiền (Gốc + Lãi)
-              </h3>
-              
-              {/* Timeline Chart */}
-              <div className="h-40 w-full mb-8">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={activeSavingsAnalysis.timeline} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
-                    <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b' }} />
-                    <Tooltip 
-                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '11px' }}
-                      formatter={(val) => [`${formatCurrency(val)} ₫`]}
-                    />
-                    <Bar dataKey="principal" fill="#6366F1" radius={[4, 4, 0, 0]} barSize={15} stackId="a" />
-                    <Bar dataKey="interest" fill="#10B981" radius={[4, 4, 0, 0]} barSize={15} stackId="a" />
-                  </BarChart>
-                </ResponsiveContainer>
-                <div className="flex justify-center space-x-6 mt-2">
-                  <div className="flex items-center space-x-1.5">
-                    <div className="w-2 h-2 rounded-full bg-indigo-500" />
-                    <span className="text-[9px] font-bold text-gray-400">Gốc</span>
-                  </div>
-                  <div className="flex items-center space-x-1.5">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span className="text-[9px] font-bold text-gray-400">Lãi dự kiến</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Timeline List */}
-              <div className="space-y-3">
-                {activeSavingsAnalysis.timeline.map((item, idx) => (
-                  <div 
-                    key={item.label} 
-                    onClick={() => handleOpenDetail(`Đáo hạn: ${item.label}`, { type: 'savings_books', books: item.books })}
-                    className="flex items-center p-4 rounded-3xl bg-gray-50 dark:bg-slate-800/50 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all cursor-pointer border border-transparent hover:border-indigo-100 dark:hover:border-indigo-900/30"
-                  >
-                    <div className="w-12 text-center border-r border-gray-200 dark:border-white/5 mr-4">
-                      <p className="text-[8px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-tighter">Tháng</p>
-                      <p className="text-sm font-black text-indigo-600 dark:text-indigo-400">{item.label}</p>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-center">
-                        <p className="text-sm font-black text-gray-900 dark:text-slate-100 tabular-nums">{formatCurrency(item.principal + item.interest)}₫</p>
-                        <ChevronRightIcon size={14} className="text-gray-300 opacity-50" />
-                      </div>
-                      <div className="flex justify-between mt-1">
-                        <p className="text-[9px] font-medium text-gray-500 tabular-nums">Gốc: {formatCurrency(item.principal)}</p>
-                        <p className="text-[9px] text-emerald-600 font-bold tabular-nums">Lãi: +{formatCurrency(item.interest)}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Detail BottomSheet Component */}
@@ -975,42 +702,6 @@ export default function Statistics() {
 
               {detailSheet.items.txs.length === 0 && (
                 <div className="text-center py-10 text-gray-400 italic">Không có giao dịch nào</div>
-              )}
-            </div>
-          )}
-
-          {/* Savings Books Detail View */}
-          {detailSheet.items.type === 'savings_books' && (
-            <div className="space-y-4">
-              {detailSheet.items.books.map((book, idx) => (
-                <div key={book.id || idx} className="p-4 bg-gray-50 dark:bg-slate-800 rounded-2xl border border-transparent dark:border-white/5">
-                  <div className="flex justify-between items-start mb-3">
-                    <h4 className="font-bold text-gray-900 dark:text-slate-100 text-sm">{book.name}</h4>
-                    <div className="bg-blue-50 dark:bg-blue-900/40 px-2 py-1 rounded-lg text-[9px] font-black text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800">
-                      {book.interest_rate}% / năm
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 text-[11px]">
-                    <div>
-                      <p className="font-black text-gray-900 dark:text-slate-100 tabular-nums">{formatCurrency(book.principal_amount)}₫</p>
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Lãi nhận được</p>
-                      <p className="font-black text-emerald-600 tabular-nums">+{formatCurrency(book.expected_interest)}₫</p>
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Ngày gửi</p>
-                      <p className="font-bold text-gray-600 dark:text-slate-400">{new Date(book.start_date).toLocaleDateString('vi-VN')}</p>
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Ngày đáo hạn</p>
-                      <p className="font-bold text-indigo-600 dark:text-indigo-400">{new Date(book.maturity_date).toLocaleDateString('vi-VN')}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {detailSheet.items.books.length === 0 && (
-                <div className="text-center py-10 text-gray-400 italic">Không có dữ liệu sổ tiết kiệm</div>
               )}
             </div>
           )}

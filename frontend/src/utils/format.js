@@ -32,7 +32,8 @@ export const fromViDecimal = (str) => {
 
 export const formatDate = (dateStr) => {
   if (!dateStr) return '';
-  const [y, m, d] = dateStr.split('-');
+  // Chỉ lấy phần ngày (YYYY-MM-DD) — chịu được cả chuỗi date-only lẫn timestamp đầy đủ.
+  const [y, m, d] = String(dateStr).slice(0, 10).split('-');
   return `${d}/${m}/${y}`;
 };
 

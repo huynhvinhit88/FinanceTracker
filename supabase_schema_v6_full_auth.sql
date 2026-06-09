@@ -75,7 +75,7 @@ CREATE TABLE categories (
   id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id uuid REFERENCES auth.users ON DELETE CASCADE NOT NULL,
   name text NOT NULL,
-  type text NOT NULL CHECK (type IN ('income', 'expense', 'transfer')),
+  type text NOT NULL CHECK (type IN ('income', 'expense', 'transfer', 'savings')),
   icon text,
   color_hex text,
   parent_id uuid REFERENCES categories(id) ON DELETE SET NULL,

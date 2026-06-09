@@ -48,6 +48,7 @@ Tài liệu này quy định các tiêu chuẩn về giao diện (UI) và trải
 
 ## 5. Trạng thái và Phản hồi
 
-- **Số âm**: Hiển thị màu đỏ (ví dụ: dư nợ, chi phí).
+- **Số âm**: Hiển thị màu đỏ (ví dụ: chi phí).
 - **Số dương**: Hiển thị màu xanh lá hoặc xanh dương (ví dụ: thu nhập, lợi nhuận).
+- **Tài khoản loại Nợ (`sub_type='debt'`)**: `balance` là **số dư thực, ÂM khi đang nợ** (chi tiêu từ thẻ làm số dư âm thêm; trả nợ làm tăng về 0). Hiển thị **đúng giá trị thực** qua `formatCurrency` (số âm sẽ tự có dấu `-`, vd `-5.000.000 đ`), **KHÔNG gắn thêm dấu `-` cứng** (tránh `--`), và **tô màu đỏ** như nhãn phân loại "khoản nợ". Trong Net Worth, số dư âm này được **cộng thẳng** (tự khấu trừ), không trừ riêng. Khi nhập/sửa số dư tài khoản Nợ, ô nhập hỗ trợ **số âm** (`useCurrencyInput({ allowNegative: true })`). Tài khoản "Phải thu" (`receivable`) hiển thị giá trị dương có dấu `+` màu xanh.
 - **Xác nhận**: Khi áp dụng các hồ sơ tính toán, luôn có thông báo hoặc biểu tượng (CheckCircle) để xác nhận thông tin đã được điền tự động.

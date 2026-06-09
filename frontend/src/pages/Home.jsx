@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../lib/db';
-import { Plus, ArrowDownRight, ArrowRightLeft, TrendingUp, TrendingDown } from 'lucide-react';
+import { ArrowDownRight, ArrowRightLeft, TrendingUp, TrendingDown } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
-import { AddTransactionSheet } from '../components/transactions/AddTransactionSheet';
 import { EditTransactionSheet } from '../components/transactions/EditTransactionSheet';
+import { useGlobalRefresh } from '../hooks/useGlobalRefresh';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 export default function Home() {
@@ -20,13 +20,15 @@ export default function Home() {
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
 
   useEffect(() => {
     fetchDashboardData();
   }, [user]);
+
+  // Tự fetch lại khi thêm giao dịch từ nút "+" toàn cục
+  useGlobalRefresh(() => fetchDashboardData());
 
   const fetchDashboardData = async () => {
     try {
@@ -136,14 +138,17 @@ export default function Home() {
     return sum;
   }, 0);
 
-  const totalAllLiabilities = totalDebtAccounts + totalLoanLiabilities + investments.reduce((sum, inv) => {
+  // Nợ thẻ/Sổ nợ (debt accounts) nay là SỐ DƯ THỰC âm → đã nằm trong số dư tài khoản,
+  // KHÔNG cộng vào liabilities nữa (tránh trừ hai lần). Chỉ còn nợ vay + nợ đầu tư chưa gắn loan.
+  const totalAllLiabilities = totalLoanLiabilities + investments.reduce((sum, inv) => {
     const hasLinkedLoan = loans.some(l => l.linked_investment_id === inv.id);
     if (!hasLinkedLoan && inv.loan_amount > 0) return sum + inv.loan_amount;
     return sum;
   }, 0);
 
   const totalAssetsGross = totalCashAndReceivable + totalSavings + totalInvestmentMarketValue;
-  const globalNetWorth = totalAssetsGross - totalAllLiabilities;
+  // totalDebtAccounts đã âm (đang nợ) nên cộng vào = tự khấu trừ phần nợ thẻ.
+  const globalNetWorth = totalAssetsGross + totalDebtAccounts - totalAllLiabilities;
 
   // Chart Data: Expense breakdown for current month
   const currentMonthExpenses = thisMonthTransactions.filter(tx => tx.type === 'expense');
@@ -225,7 +230,9 @@ export default function Home() {
                 </div>
                 <div className="bg-white/5 dark:bg-rose-500/10 p-4 rounded-2xl border border-white/5 dark:border-rose-400/20 backdrop-blur-sm">
                   <p className="text-[10px] lg:text-xs text-orange-300 dark:text-orange-300 font-bold uppercase tracking-wider mb-1">Nợ thẻ / Sổ nợ</p>
-                  <p className="text-sm lg:text-base font-black text-orange-400 tabular-nums">-{formatCurrency(totalDebtAccounts)} đ</p>
+                  <p className={`text-sm lg:text-base font-black tabular-nums ${totalDebtAccounts < 0 ? 'text-rose-400' : totalDebtAccounts > 0 ? 'text-emerald-400' : 'text-orange-400'}`}>
+                    {totalDebtAccounts > 0 ? '+' : ''}{formatCurrency(totalDebtAccounts)} đ
+                  </p>
                 </div>
                 <div className="bg-white/5 dark:bg-blue-500/10 p-4 rounded-2xl border border-white/5 dark:border-blue-400/20 backdrop-blur-sm">
                   <p className="text-[10px] lg:text-xs text-blue-300 dark:text-blue-300 font-bold uppercase tracking-wider mb-1">Tài sản đầu tư</p>
@@ -378,22 +385,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* FAB - Floating Action Button for Transactions */}
-      <button
-        onClick={() => setIsAddSheetOpen(true)}
-        className="fixed bottom-32 right-6 w-14 h-14 bg-gray-900 dark:bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-gray-400/50 dark:shadow-indigo-500/40 active:scale-95 transition-all z-40"
-      >
-        <Plus size={28} />
-      </button>
-
-      <AddTransactionSheet
-        isOpen={isAddSheetOpen}
-        onClose={() => setIsAddSheetOpen(false)}
-        onSuccess={() => {
-          setLoading(true);
-          fetchDashboardData();
-        }}
-      />
+      {/* Nút "+" thêm giao dịch đã chuyển thành FAB toàn cục ở AppLayout */}
 
       <EditTransactionSheet
         isOpen={isEditSheetOpen}

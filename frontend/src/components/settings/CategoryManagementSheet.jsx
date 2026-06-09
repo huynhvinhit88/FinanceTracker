@@ -64,7 +64,9 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
     try {
       // 1. Xóa các ngân sách liên quan đến danh mục này
       const relatedBudgets = await db.budgets.filter(b => b.category_id === catId).toArray();
-      await db.budgets.bulkDelete(relatedBudgets.map(b => b.id));
+      for (const b of relatedBudgets) {
+        await db.budgets.delete(b.id);
+      }
 
       // 2. Gỡ danh mục khỏi các giao dịch liên quan (set null)
       const relatedTxs = await db.transactions.filter(t => t.category_id === catId).toArray();
@@ -86,10 +88,10 @@ export function CategoryManagementSheet({ isOpen, onClose }) {
   const handleSetDefault = async (cat) => {
     try {
       // 1. Clear current default for this type
-      await db.categories
-        .where('type')
-        .equals(cat.type)
-        .modify({ is_ui_default: false });
+      const sameType = await db.categories.filter(c => c.type === cat.type && c.is_ui_default).toArray();
+      for (const c of sameType) {
+        await db.categories.update(c.id, { is_ui_default: false });
+      }
       
       // 2. Set this one as default
       await db.categories.update(cat.id, { is_ui_default: true });

@@ -6,6 +6,15 @@ import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { Trash2, CheckCircle2, X, Landmark, List, Calculator, ArrowLeft } from 'lucide-react';
 import { formatCurrency, toViDecimal, fromViDecimal } from '../../utils/format';
 
+// <input type="date"> chỉ hiểu định dạng "yyyy-MM-dd". Cột start_date/maturity_date trong
+// Supabase là timestamptz nên đọc về là chuỗi ISO đầy đủ ("2026-06-01T00:00:00+00:00"),
+// khiến input không hiển thị được và hiện trống → bấm Lưu sẽ ghi đè rỗng, mất ngày.
+// Cắt lấy phần ngày để input render đúng. Hỗ trợ cả chuỗi đã ở dạng "yyyy-MM-dd".
+function toDateInput(value) {
+  if (!value) return '';
+  return String(value).slice(0, 10);
+}
+
 export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
   const { user } = useAuth();
   
@@ -25,10 +34,14 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
   const [categoryId, setCategoryId] = useState('');
   const [accountId, setAccountId] = useState('');
   const [savingsCategories, setSavingsCategories] = useState([]);
+  const [autoRenew, setAutoRenew] = useState(false);
+  const [autoRenewCompound, setAutoRenewCompound] = useState(false);
 
   // Settlement States
   const [isSettling, setIsSettling] = useState(false);
   const [isReinvesting, setIsReinvesting] = useState(false);
+  // Khi tái tục: true = gộp cả tiền lãi vào sổ mới (lãi kép); false = chỉ tái tục tiền gốc, lãi nhận về tài khoản.
+  const [reinvestIncludeInterest, setReinvestIncludeInterest] = useState(false);
   const [settleAccountId, setSettleAccountId] = useState('');
   const [settleCategoryId, setSettleCategoryId] = useState('');
   const [accounts, setAccounts] = useState([]);
@@ -51,14 +64,17 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
       setInterestRate(savings.interest_rate);
       setInterestRateDisplay(toViDecimal(savings.interest_rate));
       setTermMonths(savings.term_months?.toString() || '');
-      setStartDate(savings.start_date || '');
-      setMaturityDate(savings.maturity_date || '');
+      setStartDate(toDateInput(savings.start_date));
+      setMaturityDate(toDateInput(savings.maturity_date));
       setStatus(savings.status);
       setError('');
       setIsSettling(false);
       setIsReinvesting(false);
+      setReinvestIncludeInterest(false);
       setAccountId(savings.account_id || '');
       setCategoryId(savings.category_id || '');
+      setAutoRenew(savings.auto_renew || false);
+      setAutoRenewCompound(savings.auto_renew_compound || false);
       
       if (savings.account_id) {
         db.accounts.get(savings.account_id).then(acc => {
@@ -129,7 +145,9 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
         term_months: parseInt(termMonths),
         start_date: startDate,
         maturity_date: maturityDate,
-        status: status
+        status: status,
+        auto_renew: autoRenew,
+        auto_renew_compound: autoRenew ? autoRenewCompound : false
       });
       
       onSuccess();
@@ -160,7 +178,16 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
     setError('');
 
     try {
-      const receiveAmount = isReinvesting ? actualInterest : (savings.principal_amount + actualInterest);
+      // Gộp lãi vào sổ mới chỉ áp dụng khi đang tái tục.
+      const includeInterestInNewBook = isReinvesting && reinvestIncludeInterest;
+      // Số tiền cộng vào tài khoản nhận:
+      //  - Không tái tục: nhận cả gốc + lãi.
+      //  - Tái tục chỉ gốc: chỉ nhận lãi về tài khoản.
+      //  - Tái tục cả gốc + lãi (lãi kép): không cộng gì vào tài khoản (toàn bộ chuyển sang sổ mới).
+      let receiveAmount;
+      if (!isReinvesting) receiveAmount = savings.principal_amount + actualInterest;
+      else if (includeInterestInNewBook) receiveAmount = 0;
+      else receiveAmount = actualInterest;
       const account = await db.accounts.get(settleAccountId);
 
       if (account) {
@@ -207,16 +234,21 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
           today.setMonth(today.getMonth() + parseInt(savings.term_months || 0));
           const newMaturityDate = today.toISOString().split('T')[0];
 
-          const newName = savings.name.includes('(Tái tục)') 
-            ? savings.name 
+          const newName = savings.name.includes('(Tái tục)')
+            ? savings.name
             : `${savings.name} (Tái tục)`;
+
+          // Lãi kép: gộp cả tiền lãi vào gốc sổ mới; ngược lại chỉ tái tục tiền gốc.
+          const newPrincipal = includeInterestInNewBook
+            ? savings.principal_amount + actualInterest
+            : savings.principal_amount;
 
           await db.savings.add({
             id: crypto.randomUUID(),
             account_id: savings.account_id,
             category_id: savings.category_id || null,
             name: newName,
-            principal_amount: savings.principal_amount,
+            principal_amount: newPrincipal,
             interest_rate: savings.interest_rate,
             term_months: savings.term_months,
             start_date: newStartDate,
@@ -225,8 +257,8 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
           });
         }
 
-        // 2.b Tạo giao dịch nhận lãi (Thu nhập) nếu có
-        if (actualInterest > 0) {
+        // 2.b Tạo giao dịch nhận lãi (Thu nhập) nếu có — bỏ qua khi lãi đã được gộp vào sổ mới.
+        if (actualInterest > 0 && !includeInterestInNewBook) {
           await db.transactions.add({
             id: crypto.randomUUID(),
             account_id: settleAccountId,
@@ -392,6 +424,38 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
                 <option value="settled">Đã tất toán</option>
               </select>
             </div>
+
+            {/* Tái tục tự động khi đáo hạn */}
+            <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-indigo-900/20 rounded-xl border border-blue-100 dark:border-indigo-900/30">
+              <div className="space-y-0.5 pr-2">
+                <p className="text-[11px] font-bold text-blue-700 dark:text-indigo-400">Tái tục tự động khi đáo hạn</p>
+                <p className="text-[10px] text-blue-600/80 dark:text-indigo-400/70 font-medium">Khi đến hạn, hệ thống tự mở một sổ mới (xử lý khi mở lại ứng dụng).</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={autoRenew}
+                onChange={e => {
+                  setAutoRenew(e.target.checked);
+                  if (!e.target.checked) setAutoRenewCompound(false);
+                }}
+                className="w-5 h-5 rounded border-blue-300 text-blue-600 focus:ring-blue-500 bg-white"
+              />
+            </div>
+
+            {autoRenew && (
+              <div className="flex items-center justify-between p-3 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl border border-indigo-100 dark:border-indigo-900/30 ml-4">
+                <div className="space-y-0.5 pr-2">
+                  <p className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300">Gộp cả tiền lãi vào sổ mới</p>
+                  <p className="text-[10px] text-indigo-600/80 dark:text-indigo-400/70 font-medium">Tái tục cả gốc + lãi (lãi kép). Nếu tắt, lãi dự kiến nhận về tài khoản nguồn.</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={autoRenewCompound}
+                  onChange={e => setAutoRenewCompound(e.target.checked)}
+                  className="w-5 h-5 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500 bg-white"
+                />
+              </div>
+            )}
           </>
         ) : (
           <div className="space-y-6 animate-in slide-in-from-right duration-300">
@@ -448,23 +512,44 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
              
              <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-indigo-900/20 rounded-xl border border-blue-100 dark:border-indigo-900/30">
                 <div className="space-y-0.5 pr-2">
-                  <p className="text-[11px] font-bold text-blue-700 dark:text-indigo-400">Tái tục lại số tiền gốc</p>
-                  <p className="text-[10px] text-blue-600/80 dark:text-indigo-400/70 font-medium">Tự động mở một sổ mới với tiền gốc ban đầu. Tiền lãi vẫn nhận về tài khoản bình thường.</p>
+                  <p className="text-[11px] font-bold text-blue-700 dark:text-indigo-400">Tái tục sang sổ mới</p>
+                  <p className="text-[10px] text-blue-600/80 dark:text-indigo-400/70 font-medium">Tự động mở một sổ mới khi tất toán (cùng lãi suất & kỳ hạn).</p>
                 </div>
-                <input 
-                  type="checkbox" 
-                  checked={isReinvesting} 
-                  onChange={e => setIsReinvesting(e.target.checked)}
+                <input
+                  type="checkbox"
+                  checked={isReinvesting}
+                  onChange={e => {
+                    setIsReinvesting(e.target.checked);
+                    if (!e.target.checked) setReinvestIncludeInterest(false);
+                  }}
                   className="w-5 h-5 rounded border-blue-300 text-blue-600 focus:ring-blue-500 bg-white"
                 />
              </div>
 
+             {/* Lựa chọn phạm vi tái tục: chỉ gốc hay cả gốc + lãi (lãi kép) */}
+             {isReinvesting && (
+               <div className="flex items-center justify-between p-3 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl border border-indigo-100 dark:border-indigo-900/30 ml-4">
+                  <div className="space-y-0.5 pr-2">
+                    <p className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300">Gộp cả tiền lãi vào sổ mới</p>
+                    <p className="text-[10px] text-indigo-600/80 dark:text-indigo-400/70 font-medium">Chuyển toàn bộ gốc + lãi sang sổ mới (lãi kép), không nhận lãi về tài khoản.</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={reinvestIncludeInterest}
+                    onChange={e => setReinvestIncludeInterest(e.target.checked)}
+                    className="w-5 h-5 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500 bg-white"
+                  />
+               </div>
+             )}
+
              <div className="flex items-start space-x-2 text-[10px] text-gray-400 font-medium italic bg-gray-50 dark:bg-slate-800/50 p-3 rounded-xl mt-3">
                <X size={14} className="text-red-400 flex-shrink-0 mt-0.5" />
-               {isReinvesting ? (
-                 <p>Hành động này sẽ cộng <span className="text-emerald-600 dark:text-emerald-400 font-bold">{formatCurrency(actualInterest)}₫</span> (Tiền lãi) vào tài khoản nhận, đồng thời mở một sổ mới với tiền gốc là <span className="text-emerald-600 dark:text-emerald-400 font-bold">{formatCurrency(principalAmount)}₫</span>.</p>
+               {isReinvesting && reinvestIncludeInterest ? (
+                 <p>Hành động này sẽ <span className="font-bold">không cộng tiền vào tài khoản</span>, đồng thời mở một sổ mới với tiền gốc là <span className="text-emerald-600 dark:text-emerald-400 font-bold">{formatCurrency(savings.principal_amount + actualInterest)}₫</span> (gốc + lãi).</p>
+               ) : isReinvesting ? (
+                 <p>Hành động này sẽ cộng <span className="text-emerald-600 dark:text-emerald-400 font-bold">{formatCurrency(actualInterest)}₫</span> (Tiền lãi) vào tài khoản nhận, đồng thời mở một sổ mới với tiền gốc là <span className="text-emerald-600 dark:text-emerald-400 font-bold">{formatCurrency(savings.principal_amount)}₫</span>.</p>
                ) : (
-                 <p>Hành động này sẽ cộng <span className="text-emerald-600 dark:text-emerald-400 font-bold">{formatCurrency(principalAmount + actualInterest)}₫</span> vào tài khoản. Trong đó Tiền gốc là "Chuyển tiền", Tiền lãi là "Khoản thu".</p>
+                 <p>Hành động này sẽ cộng <span className="text-emerald-600 dark:text-emerald-400 font-bold">{formatCurrency(savings.principal_amount + actualInterest)}₫</span> vào tài khoản. Trong đó Tiền gốc là "Chuyển tiền", Tiền lãi là "Khoản thu".</p>
                )}
              </div>
           </div>

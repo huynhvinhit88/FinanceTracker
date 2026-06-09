@@ -25,7 +25,7 @@ export default function Login() {
         if (signUpError) {
           setError(signUpError.message);
         } else {
-          setMessage('Đăng ký thành công! Vui lòng kiểm tra email của bạn để xác nhận (hoặc đăng nhập nếu email confirmation đã tắt).');
+          setMessage('Đăng ký thành công! Vui lòng kiểm tra email của bạn để xác nhận.');
           setIsSignUp(false);
         }
       } else {
@@ -55,7 +55,7 @@ export default function Login() {
           {isSignUp ? 'Đăng ký tài khoản' : 'Đăng nhập ứng dụng'}
         </h2>
         <p className="text-sm text-gray-500 dark:text-slate-400 font-medium mb-10 max-w-xs mx-auto leading-relaxed">
-          Quản lý tài chính cá nhân thông minh và đồng bộ hóa qua Supabase Cloud
+          Quản lý tài chính cá nhân
         </p>
 
         <div className="bg-white dark:bg-slate-900 py-10 px-8 shadow-2xl shadow-slate-200/50 dark:shadow-none rounded-[2.5rem] border border-gray-100 dark:border-white/10 text-left">

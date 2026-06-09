@@ -6,6 +6,7 @@ import { formatCurrency } from '../utils/format';
 import { AddBudgetSheet } from '../components/budgets/AddBudgetSheet';
 import { EditBudgetSheet } from '../components/budgets/EditBudgetSheet';
 import { useCurrencyInput } from '../hooks/useCurrencyInput';
+import { useGlobalRefresh } from '../hooks/useGlobalRefresh';
 
 // Helper hiển thị số lớn dạng tỷ/triệu
 function fmtLarge(val) {
@@ -69,6 +70,11 @@ export default function Plan() {
       loadSettings();
     }
   }, [user, planViewMode, selectedMonth]);
+
+  // Tự fetch lại khi thêm giao dịch từ nút "+" toàn cục
+  useGlobalRefresh(() => {
+    if (user) fetchAllData();
+  });
 
   const loadSettings = async () => {
     if (!user) return;
@@ -212,10 +218,8 @@ export default function Plan() {
       setActualExpenses(spentByCat);
       setActualIncome(earnedByCat);
 
-      const accNW = allAccounts.reduce((s, a) => {
-        const bal = parseFloat(a.balance) || 0;
-        return a.sub_type === 'debt' ? s - bal : s + bal;
-      }, 0);
+      // balance là số dư thực của mọi tài khoản (ví Nợ âm = đang nợ) → cộng thẳng.
+      const accNW = allAccounts.reduce((s, a) => s + (parseFloat(a.balance) || 0), 0);
       const savTotal = activeSavings.reduce((s, x) => s + (parseFloat(x.principal_amount) || 0), 0);
       
       const specificSavingsTotal = activeSavings.reduce((s, x) => {
@@ -582,7 +586,15 @@ export default function Plan() {
                       </thead>
                       <tbody className="divide-y divide-gray-50 dark:divide-white/5">
                         {(() => {
-                          let cumulativeSavings = currentTotalSavings;
+                          // Tháng hiện tại theo thời gian thực (khớp hàng i=0 của bảng).
+                          const baseD = new Date(); baseD.setDate(1);
+                          const currentMonthKey = baseD.toISOString().slice(0, 7);
+                          const curOverride = savingsPlan[currentMonthKey];
+                          // Tích luỹ DỰ KIẾN của tháng hiện tại = thu dự kiến − chi dự kiến (hoặc giá trị ghi đè).
+                          const currentMonthProjected = curOverride !== undefined ? curOverride : calculateMonthlyStats(currentMonthKey).surplus;
+                          // Base = tổng tích luỹ thực ĐẾN TRƯỚC tháng hiện tại = tổng tích luỹ thực − tích luỹ dự kiến tháng hiện tại.
+                          // Nhờ vậy hàng tháng hiện tại (i=0) = base + dự kiến tháng hiện tại = đúng tổng tích luỹ thực hiện có.
+                          let cumulativeSavings = currentTotalSavings - currentMonthProjected;
                           return Array.from({ length: Math.min(60, projectionMonths + 1) }).map((_, i) => {
                             const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + i);
                             const m = d.toISOString().slice(0, 7);

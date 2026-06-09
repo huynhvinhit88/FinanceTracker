@@ -96,7 +96,7 @@ Each settings section follows this pattern:
 3. Quản lý Dữ liệu (Export, Import, Wipe)
 4. **Giao diện** (Dark mode toggle) ← intentionally placed here
 5. Lưu trữ Đám mây (Google Drive)
-6. Bảo mật & Quyền riêng tư (PIN)
+6. Bảo mật & Quyền riêng tư (Đổi mật khẩu)
 
 ### Theme Toggle (Correct Implementation)
 ```jsx
@@ -115,6 +115,7 @@ Each settings section follows this pattern:
 - **Already dark-mode ready**: Uses `dark:bg-slate-900`, `dark:border-white/5`
 - **Animation**: Framer Motion spring (`damping: 30, stiffness: 300, mass: 0.8`)
 - **Max height**: `max-h-[82vh]` — content scrollable via `overflow-y-auto`
+- **⚠️ State does NOT reset on close**: `BottomSheet` only unmounts its *children* (via `AnimatePresence` + `{isOpen && …}`), but the **parent sheet component is usually always-mounted** (e.g. `<LoanCalculatorSheet isOpen={…} />` lives permanently in `Settings.jsx`). So a form's `useState` persists after closing with the X/backdrop — reopening shows the half-edited, never-saved values, which reads as "it saved my changes". **Fix pattern**: reset the form in a `useEffect(..., [isOpen])` when `isOpen` becomes true (reset on open, not on close, to avoid flicker during the exit animation), or wrap `onClose` to clear unsaved state.
 
 ```jsx
 <BottomSheet isOpen={isOpen} onClose={onClose} title="Sheet Title">
@@ -200,13 +201,67 @@ Standard for interest rates and percentages:
 </button>
 ```
 
+### Filter / Group Chips (pill toggles)
+Horizontal scrollable row of pill buttons for switching a view filter or grouping mode.
+The active chip is filled with a solid accent (gray-900/indigo for neutral filters, emerald for
+savings-related views); inactive chips are muted surfaces. Used by `TransactionsList.jsx` (type
+filter) and the **Tiết kiệm** tab grouping selector in `Accounts.jsx`.
+```jsx
+<div className="flex space-x-2 overflow-x-auto hide-scrollbar mb-5">
+  {options.map(opt => (
+    <button
+      key={opt.id}
+      onClick={() => setValue(opt.id)}
+      className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+        value === opt.id
+          ? 'bg-emerald-600 text-white shadow-md'           // accent for savings; use bg-gray-900 dark:bg-indigo-600 for neutral
+          : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700'
+      }`}
+    >
+      {opt.label}
+    </button>
+  ))}
+</div>
+```
+
+### Grouped List Section (header + subtotal)
+When a card list is grouped (e.g. savings books by account or by maturity month), each group is a
+block with a bold heading on the left and a muted summary on the right (count + subtotal), above the
+normal responsive card grid. Subtotals aggregate only the relevant subset (e.g. **active** books).
+```jsx
+<div className="mb-8">
+  <div className="flex items-baseline justify-between mb-3 px-1">
+    <h4 className="font-black text-gray-900 dark:text-slate-100 text-base lg:text-lg">{group.label}</h4>
+    <span className="text-xs font-bold text-gray-400 dark:text-slate-500">
+      {group.items.length} sổ · Gốc: {formatCurrency(group.totalPrincipal)} ₫
+    </span>
+  </div>
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 lg:gap-8">
+    {group.items.map(renderCard)}
+  </div>
+</div>
+```
+
 ---
 
-## MobileLayout Constraints
-- **Max width**: `max-w-md` (centered on wide screens)
-- **Safe area**: Uses `pb-[calc(80px+env(safe-area-inset-bottom,0px))]` for bottom tabs
-- **Bottom tab height**: `h-16` (64px) + safe area
-- **Page padding**: Pages use `px-4 pt-safe pb-32`
+## AppLayout Constraints (`components/layout/AppLayout.jsx`)
+> Renamed from the old `MobileLayout`. `AppLayout` is now a **3-column responsive** shell.
+
+- **Mobile**: single centered column (`max-w-md`) + `BottomTabBar` (hidden on `lg`).
+- **Desktop (`lg`)**: `SidebarNav` (left) + main content (`lg:max-w-none`) + `DesktopWidgets` (right). Bottom tab bar hidden.
+- **Safe area**: main uses `pb-[calc(80px+env(safe-area-inset-bottom,0px))]` on mobile, `lg:pb-0` on desktop.
+- **Bottom tab height**: `h-16` (64px) + safe area.
+- **Page padding**: Pages use `px-4 pt-safe pb-32`.
+
+---
+
+## Global Add-Transaction FAB (`components/layout/GlobalAddTransactionFab.jsx`)
+> Nút "+" thêm giao dịch là **FAB toàn cục**, hiển thị cố định trên **mọi trang**. Được gắn một lần trong `AppLayout` (áp dụng cho Tổng quan / Tài khoản / Kế hoạch / Thống kê / Cài đặt) và gắn lại trong `TransactionsList.jsx` vì trang đó nằm ngoài `AppLayout`. Không đặt FAB riêng trong từng page.
+
+- **Vị trí**: `fixed bottom-24 lg:bottom-8 right-6` — mobile cao hơn `BottomTabBar`, desktop hạ thấp (không có tab dưới).
+- **Hình dạng**: `w-14 h-14 rounded-full`, nền `bg-gray-900 dark:bg-indigo-600`, icon `Plus size={28}`, `active:scale-95`.
+- **Z-index**: `z-40` — dưới `BottomTabBar` (`z-[100]`) và `BottomSheet` (`z-[200]`) nên không che các lớp đó khi mở.
+- **Đồng bộ dữ liệu**: thêm giao dịch thành công → `emitDataChanged()` (event `ft:data-changed`). Các page dùng hook `useGlobalRefresh(callback)` để tự fetch lại số liệu mà không cần điều hướng.
 
 ---
 

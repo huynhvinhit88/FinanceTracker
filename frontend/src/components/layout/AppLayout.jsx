@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { BottomTabBar } from './BottomTabBar';
 import { SidebarNav } from './SidebarNav';
 import { DesktopWidgets } from './DesktopWidgets';
+import { GlobalAddTransactionFab } from './GlobalAddTransactionFab';
 
 /**
  * AppLayout handles the 3-column responsive structure:
@@ -34,6 +35,9 @@ export function AppLayout() {
 
       {/* 3. Widgets Panel (Desktop Only) */}
       <DesktopWidgets />
+
+      {/* Nút "+" thêm giao dịch toàn cục (hiển thị ở mọi trang trong layout) */}
+      <GlobalAddTransactionFab />
 
     </div>
   );

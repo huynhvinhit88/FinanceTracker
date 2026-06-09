@@ -1,6 +1,23 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { migrateLocalDataToSupabase } from '../lib/migrationService';
+import { seedDefaultData } from '../lib/db';
+import { processAutoRenewals } from '../lib/savingsService';
+
+// Khởi tạo/đồng bộ danh mục mặc định + tái tục tự động sổ tiết kiệm tới hạn.
+// Chạy SAU khi đã chắc chắn có phiên đăng nhập để tránh race gây nhân đôi danh mục.
+const initUserData = async () => {
+  try {
+    await seedDefaultData();
+  } catch (err) {
+    console.error('Seeding default categories failed:', err);
+  }
+  try {
+    // Tự quét và tái tục các sổ tiết kiệm bật auto_renew đã quá ngày đáo hạn.
+    await processAutoRenewals();
+  } catch (err) {
+    console.error('Auto-renew savings failed:', err);
+  }
+};
 
 const AuthContext = createContext({});
 
@@ -16,7 +33,7 @@ export const AuthProvider = ({ children }) => {
         const currentUser = session?.user ?? null;
         setUser(currentUser);
         if (currentUser) {
-          migrateLocalDataToSupabase();
+          initUserData();
         }
       } catch (err) {
         console.error('Error getting initial Supabase session:', err);
@@ -33,7 +50,7 @@ export const AuthProvider = ({ children }) => {
       setUser(currentUser);
       setLoading(false);
       if (currentUser && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
-        migrateLocalDataToSupabase();
+        initUserData();
       }
     });
 
@@ -62,6 +79,26 @@ export const AuthProvider = ({ children }) => {
     signOut: async () => {
       const { error } = await supabase.auth.signOut();
       return { error };
+    },
+    updatePassword: async (currentPassword, newPassword) => {
+      // Xác minh mật khẩu hiện tại bằng cách đăng nhập lại (Supabase không có API verify riêng)
+      const email = user?.email;
+      if (!email) {
+        return { error: 'Không tìm thấy phiên đăng nhập. Vui lòng đăng nhập lại.' };
+      }
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email,
+        password: currentPassword,
+      });
+      if (verifyError) {
+        return { error: 'Mật khẩu hiện tại không đúng.' };
+      }
+      // Cập nhật mật khẩu mới
+      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+      if (updateError) {
+        return { error: updateError.message };
+      }
+      return { error: null };
     }
   };
 

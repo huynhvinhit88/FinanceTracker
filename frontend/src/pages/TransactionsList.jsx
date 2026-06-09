@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowDownRight, ArrowRightLeft } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 import { EditTransactionSheet } from '../components/transactions/EditTransactionSheet';
+import { GlobalAddTransactionFab } from '../components/layout/GlobalAddTransactionFab';
+import { useGlobalRefresh } from '../hooks/useGlobalRefresh';
 
 const PAGE_SIZE = 20;
 
@@ -18,9 +20,12 @@ export default function TransactionsList() {
   const [page, setPage] = useState(0);
   
   const [filterType, setFilterType] = useState('all'); // 'all', 'income', 'expense', 'transfer'
-  
+
   const [timeFilterType, setTimeFilterType] = useState('all'); // 'all', 'month', 'date'
   const [timeFilterValue, setTimeFilterValue] = useState('');
+
+  const [accountFilter, setAccountFilter] = useState('all'); // 'all' hoặc account_id
+  const [accounts, setAccounts] = useState([]); // danh sách tài khoản cho dropdown lọc
   
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
@@ -38,33 +43,47 @@ export default function TransactionsList() {
     if (node) observer.current.observe(node);
   }, [loading, hasMore]);
 
+  // Tải danh sách tài khoản (một lần) cho dropdown lọc theo tài khoản
+  useEffect(() => {
+    if (!user) return;
+    db.accounts.orderBy('name').toArray().then(setAccounts).catch(err => console.error(err));
+  }, [user]);
+
   // Reset and Refetch when filter changes
   useEffect(() => {
     setTransactions([]);
     setPage(0);
     setHasMore(true);
     // Explicitly call fetch for page 0 to avoid race conditions
-    fetchTransactions(0, filterType, timeFilterType, timeFilterValue, true);
-  }, [filterType, timeFilterType, timeFilterValue, user]); // Refetch fully when filter changes
+    fetchTransactions(0, filterType, timeFilterType, timeFilterValue, accountFilter, true);
+  }, [filterType, timeFilterType, timeFilterValue, accountFilter, user]); // Refetch fully when filter changes
 
   // Fetch more when page changes (except 0, which is handled above)
   useEffect(() => {
     if (page > 0) {
-      fetchTransactions(page, filterType, timeFilterType, timeFilterValue, false);
+      fetchTransactions(page, filterType, timeFilterType, timeFilterValue, accountFilter, false);
     }
   }, [page]);
 
-  const fetchTransactions = async (pageIndex, currentFilter, tFilterType, tFilterValue, isReset) => {
+  // Tự fetch lại trang đầu khi thêm giao dịch từ nút "+" toàn cục
+  useGlobalRefresh(() => {
+    setPage(0);
+    fetchTransactions(0, filterType, timeFilterType, timeFilterValue, accountFilter, true);
+  });
+
+  const fetchTransactions = async (pageIndex, currentFilter, tFilterType, tFilterValue, accFilter, isReset) => {
     if (!user) return;
     setLoading(true);
-    
+
     try {
       let collection = db.transactions.orderBy('date').reverse();
-      
+
       collection = collection.filter(tx => {
         if (currentFilter !== 'all' && tx.type !== currentFilter) return false;
         if (tFilterType === 'month' && tFilterValue && !tx.date.startsWith(tFilterValue)) return false;
         if (tFilterType === 'date' && tFilterValue && !tx.date.startsWith(tFilterValue)) return false;
+        // Lọc theo tài khoản: với chuyển tiền, khớp cả tài khoản nguồn lẫn đích.
+        if (accFilter !== 'all' && tx.account_id !== accFilter && tx.to_account_id !== accFilter) return false;
         return true;
       });
 
@@ -190,13 +209,29 @@ export default function TransactionsList() {
           )}
 
           {timeFilterType === 'date' && (
-            <input 
+            <input
               type="date"
               value={timeFilterValue}
               onChange={e => setTimeFilterValue(e.target.value)}
               className="bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 px-3 py-1.5 rounded-xl text-sm font-medium outline-none border border-transparent focus:border-indigo-500 transition-colors"
             />
           )}
+
+          {/* Lọc theo tài khoản */}
+          <select
+            value={accountFilter}
+            onChange={e => setAccountFilter(e.target.value)}
+            className={`px-3 py-1.5 rounded-xl text-sm font-medium outline-none border transition-colors cursor-pointer flex-shrink-0 ${
+              accountFilter !== 'all'
+                ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/40'
+                : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 border-transparent focus:border-indigo-500'
+            }`}
+          >
+            <option value="all" className="bg-white text-gray-900 dark:bg-slate-800 dark:text-slate-100">Tất cả tài khoản</option>
+            {accounts.map(acc => (
+              <option key={acc.id} value={acc.id} className="bg-white text-gray-900 dark:bg-slate-800 dark:text-slate-100">{acc.name}</option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -280,9 +315,13 @@ export default function TransactionsList() {
           setFilterType('all');
           setTimeFilterType('all');
           setTimeFilterValue('');
-          fetchTransactions(0, 'all', 'all', '', true);
+          setAccountFilter('all');
+          fetchTransactions(0, 'all', 'all', '', 'all', true);
         }}
       />
+
+      {/* Nút "+" thêm giao dịch toàn cục (page này nằm ngoài AppLayout) */}
+      <GlobalAddTransactionFab />
     </div>
   );
 }

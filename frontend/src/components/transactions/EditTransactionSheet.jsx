@@ -3,7 +3,7 @@ import { BottomSheet } from '../ui/BottomSheet';
 import { db } from '../../lib/db';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { useLoans } from '../../hooks/useLoans';
-import { Trash2, Landmark, Info, Calculator } from 'lucide-react';
+import { Trash2, Landmark, Info, Calculator, Calendar } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../utils/format';
 import { calculateLoanSchedule } from '../../utils/loanCalculator';
 
@@ -170,17 +170,14 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
   const updateAccountBalances = async (payload, direction = 1) => {
     const { account_id, to_account_id, amount, type } = payload;
     
+    // Mô hình số dư: balance là SỐ DƯ THỰC của mọi tài khoản (ví Nợ âm = đang nợ),
+    // nên mọi loại ví cộng/trừ giống nhau (không đảo dấu cho debt).
     // 1. Cập nhật tài khoản nguồn (hoặc duy nhất)
     const fromAcc = await db.accounts.get(account_id);
     if (fromAcc) {
-      let diff = 0;
-      if (type === 'income') {
-        diff = fromAcc.sub_type === 'debt' ? -amount : amount;
-      } else {
-        diff = fromAcc.sub_type === 'debt' ? amount : -amount;
-      }
-      await db.accounts.update(account_id, { 
-        balance: (fromAcc.balance || 0) + (diff * direction) 
+      const diff = type === 'income' ? amount : -amount;
+      await db.accounts.update(account_id, {
+        balance: (fromAcc.balance || 0) + (diff * direction)
       });
     }
 
@@ -188,9 +185,8 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
     if (type === 'transfer' && to_account_id) {
        const toAcc = await db.accounts.get(to_account_id);
        if (toAcc) {
-         const diff = toAcc.sub_type === 'debt' ? -amount : amount;
-         await db.accounts.update(to_account_id, { 
-           balance: (toAcc.balance || 0) + (diff * direction) 
+         await db.accounts.update(to_account_id, {
+           balance: (toAcc.balance || 0) + (amount * direction)
          });
        }
     }
@@ -510,8 +506,9 @@ export function EditTransactionSheet({ isOpen, onClose, onSuccess, transaction }
           <div className="space-y-1">
             <label className="block text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Ngày thực hiện</label>
             <div className="relative">
-              <div className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 font-semibold text-sm">
+              <div className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 border-none rounded-xl px-4 py-3 pr-10 font-semibold text-sm">
                 {formatDate(date)}
+                <Calendar size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 pointer-events-none" />
               </div>
               <input
                 type="date"

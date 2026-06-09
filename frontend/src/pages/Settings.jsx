@@ -2,18 +2,20 @@ import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { db } from '../lib/db';
+import { db, seedDefaultData } from '../lib/db';
+import { getLocalHandle } from '../lib/localHandleStore';
 import { 
   exportDatabaseToJSON, 
   importDatabaseFromJSON,
   selectDirectoryHandle,
   verifyDirectoryPermission,
   writeBlobToFolder,
-  getValidToken
+  getValidToken,
+  uploadFileToDrive
 } from '../lib/syncService';
-import { RefreshCw, CloudDownload, CloudUpload, FolderTree, Trash2, ChevronRight, Download, ShieldCheck, Lock, FolderOpen, Clock } from 'lucide-react';
+import { RefreshCw, CloudDownload, CloudUpload, FolderTree, Trash2, ChevronRight, Download, ShieldCheck, Lock, FolderOpen, Clock, LogOut } from 'lucide-react';
 import { CategoryManagementSheet } from '../components/settings/CategoryManagementSheet';
-import { ChangePinSheet } from '../components/settings/ChangePinSheet';
+import { ChangePasswordSheet } from '../components/settings/ChangePasswordSheet';
 import { DriveFolderPicker } from '../components/settings/DriveFolderPicker';
 import { DriveFilePicker } from '../components/settings/DriveFilePicker';
 import { LoanCalculatorSheet } from '../components/tools/LoanCalculatorSheet';
@@ -21,11 +23,11 @@ import { CompoundInterestSheet } from '../components/tools/CompoundInterestSheet
 import { calculateLoanSchedule } from '../utils/loanCalculator';
 
 export default function Settings() {
-  const { user, signOut, lock } = useAuth();
+  const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   const [showCategorySheet, setShowCategorySheet] = useState(false);
-  const [showChangePinSheet, setShowChangePinSheet] = useState(false);
+  const [showChangePasswordSheet, setShowChangePasswordSheet] = useState(false);
   const [showLoanSheet, setShowLoanSheet] = useState(false);
   const [showCompoundSheet, setShowCompoundSheet] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
@@ -74,18 +76,30 @@ export default function Settings() {
 
   const loadDriveFolder = async () => {
     const record = await db.settings.get('googleDriveFolder');
-    if (record) {
-      setDriveFolder(record.value);
+    if (record?.value) {
+      try {
+        // Cột settings.value là TEXT nên thư mục (object {id, name}) được lưu dạng
+        // chuỗi JSON; parse lại khi đọc. Giữ tương thích nếu giá trị cũ là object.
+        const folder = typeof record.value === 'string' ? JSON.parse(record.value) : record.value;
+        if (folder && folder.id) setDriveFolder(folder);
+      } catch (err) {
+        console.error('Không đọc được thư mục Google Drive đã lưu:', err);
+      }
     }
   };
 
   const loadDirectoryHandle = async () => {
-    const record = await db.settings.get('localDirectoryHandle');
-    if (record) {
-      setFolderHandle(record.value);
-      // Check permission but don't prompt immediately
-      const granted = await verifyDirectoryPermission(record.value, false);
-      setHasFolderPermission(granted);
+    try {
+      // Handle được lưu trong IndexedDB cục bộ (xem localHandleStore), không phải Supabase.
+      const handle = await getLocalHandle('localDirectoryHandle');
+      if (handle) {
+        setFolderHandle(handle);
+        // Kiểm tra quyền nhưng không yêu cầu cấp lại ngay (tránh prompt khi vừa tải trang)
+        const granted = await verifyDirectoryPermission(handle, false);
+        setHasFolderPermission(granted);
+      }
+    } catch (err) {
+      console.error('Không khôi phục được thư mục đã chọn:', err);
     }
   };
 
@@ -101,11 +115,16 @@ export default function Settings() {
 
   const handleDriveFolderSelect = async (folder) => {
     setDriveFolder(folder);
-    
-    // Lưu cấu hình vào DB
-    await db.settings.put({ key: 'googleDriveFolder', value: folder });
-    
-    alert(`Đã chọn thư mục Google Drive: ${folder.name}`);
+
+    // Lưu cấu hình vào DB. Object được tầng SupabaseTableWrapper tự stringify thành JSON
+    // (cột settings.value là TEXT) — nếu không sẽ lỗi kiểu dữ liệu và mất sau khi reload.
+    try {
+      await db.settings.put({ key: 'googleDriveFolder', value: folder });
+      alert(`Đã chọn thư mục Google Drive: ${folder.name}`);
+    } catch (err) {
+      console.error('Không lưu được thư mục Google Drive:', err);
+      alert('Không lưu được lựa chọn thư mục. Vui lòng thử lại.');
+    }
   };
 
   const handleVerifyFolder = async () => {
@@ -117,6 +136,27 @@ export default function Settings() {
     }
   };
 
+  // Tạo thông điệp cảnh báo nếu quá trình khôi phục bỏ sót dòng nào (mồ côi khóa ngoại
+  // hoặc lỗi chèn). Trả về null nếu khôi phục đầy đủ.
+  const RESTORE_TABLE_LABELS = {
+    transactions: 'Giao dịch', accounts: 'Tài khoản', categories: 'Danh mục',
+    loans: 'Khoản vay', budgets: 'Ngân sách', investments: 'Đầu tư',
+    savings: 'Tiết kiệm', goals: 'Mục tiêu', settings: 'Cài đặt',
+  };
+  const formatRestoreWarning = (result) => {
+    const summary = result?.summary;
+    if (!summary) return null;
+    const lines = [];
+    for (const [table, stat] of Object.entries(summary)) {
+      const missing = (stat.skipped || 0) + (stat.failed || 0);
+      if (missing > 0) {
+        const label = RESTORE_TABLE_LABELS[table] || table;
+        lines.push(`• ${label}: bỏ sót ${missing} dòng (đã khôi phục ${stat.inserted}).`);
+      }
+    }
+    return lines.length ? lines.join('\n') : null;
+  };
+
   const handleDriveFileSelect = async (file) => {
     if (!window.confirm(`Bạn có chắc muốn khôi phục dữ liệu từ bản sao lưu "${file.name}"? Dữ liệu hiện tại sẽ bị ghi đè.`)) {
       return;
@@ -125,9 +165,14 @@ export default function Settings() {
     setExportLoading(true);
     try {
       const { downloadFromDrive } = await import('../lib/syncService');
-      await downloadFromDrive(file.id);
-      
-      alert('Khôi phục dữ liệu từ Google Drive thành công! Ứng dụng sẽ tải lại.');
+      const result = await downloadFromDrive(file.id);
+
+      const warning = formatRestoreWarning(result);
+      if (warning) {
+        alert(`Khôi phục từ Google Drive hoàn tất, nhưng có dữ liệu bị bỏ sót:\n\n${warning}\n\nỨng dụng sẽ tải lại.`);
+      } else {
+        alert('Khôi phục dữ liệu từ Google Drive thành công! Ứng dụng sẽ tải lại.');
+      }
       window.location.reload();
     } catch (err) {
       alert('Lỗi khôi phục: ' + err.message);
@@ -151,7 +196,18 @@ export default function Settings() {
 
   const downloadCSV = async (content, filename) => {
     const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' });
-    
+
+    // \u01AFu ti\u00EAn 1: Google Drive (gi\u1ED1ng lu\u1ED3ng backup JSON) n\u1EBFu \u0111\u00E3 ch\u1ECDn th\u01B0 m\u1EE5c Drive.
+    if (driveFolder) {
+      try {
+        await uploadFileToDrive(driveFolder.id, filename, blob, 'text/csv');
+        return true;
+      } catch (err) {
+        console.warn("Drive save failed, falling back", err);
+      }
+    }
+
+    // \u01AFu ti\u00EAn 2: Th\u01B0 m\u1EE5c local (t\u01B0\u01A1ng th\u00EDch ng\u01B0\u1EE3c).
     if (folderHandle && hasFolderPermission) {
       try {
         await writeBlobToFolder(folderHandle, filename, blob);
@@ -174,8 +230,19 @@ export default function Settings() {
 
   const downloadXLSX = async (workbook, filename) => {
     const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    
+    const xlsxMime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    const blob = new Blob([wbout], { type: xlsxMime });
+
+    // Ưu tiên 1: Google Drive (giống luồng backup JSON) nếu đã chọn thư mục Drive.
+    if (driveFolder) {
+      try {
+        await uploadFileToDrive(driveFolder.id, filename, blob, xlsxMime);
+        return true;
+      } catch (err) {
+        console.warn("Drive save failed, falling back", err);
+      }
+    }
+
     if (folderHandle && hasFolderPermission) {
       try {
         await writeBlobToFolder(folderHandle, filename, blob);
@@ -197,6 +264,10 @@ export default function Settings() {
   };
 
   const handleExportData = async () => {
+    if (!Object.values(exportSelections).some(Boolean)) {
+      alert('Vui lòng chọn ít nhất một loại báo cáo để xuất.');
+      return;
+    }
     setExportLoading(true);
     try {
       const results = [];
@@ -218,7 +289,12 @@ export default function Settings() {
       }
 
       await Promise.all(results);
-      alert(hasFolderPermission ? `Đã xuất toàn bộ báo cáo vào thư mục ${folderHandle.name}` : 'Đã tải xuống các tệp báo cáo.');
+      const destMsg = driveFolder
+        ? `Đã xuất toàn bộ báo cáo lên Google Drive: ${driveFolder.name}`
+        : (folderHandle && hasFolderPermission
+            ? `Đã xuất toàn bộ báo cáo vào thư mục ${folderHandle.name}`
+            : 'Đã tải xuống các tệp báo cáo.');
+      alert(destMsg);
     } catch (err) {
       alert('Lỗi khi xuất dữ liệu: ' + err.message);
     } finally {
@@ -280,7 +356,9 @@ export default function Settings() {
       'Tài khoản': accs.find(a => a.id === t.account_id)?.name || 'N/A',
       'Số tiền': t.amount,
       'Ghi chú': t.note || '',
-      'Tags': (t.tags || []).join(', ')
+      // tags là cột TEXT trên Supabase (chuỗi), nhưng dữ liệu cũ/khôi phục có thể là mảng.
+      // Chuẩn hóa cả hai để tránh `.join is not a function` làm hỏng toàn bộ export.
+      'Tags': Array.isArray(t.tags) ? t.tags.join(', ') : (t.tags || '')
     }));
     
     return downloadCSV(toCSV(['Ngày', 'Loại', 'Hạng mục', 'Tài khoản', 'Số tiền', 'Ghi chú', 'Tags'], rows), isAll ? 'Giao_dich_Tat_ca.csv' : `Giao_dich_${year}.csv`);
@@ -384,7 +462,8 @@ export default function Settings() {
     const allInv = await db.investments.toArray();
     const allBudgets = await db.budgets.toArray();
     
-    const accNW = allAccs.reduce((s, a) => s + (a.sub_type === 'debt' ? -a.balance : a.balance), 0);
+    // balance là số dư thực của mọi tài khoản (ví Nợ âm = đang nợ) → cộng thẳng.
+    const accNW = allAccs.reduce((s, a) => s + (Number(a.balance) || 0), 0);
     const savNW = allSav.reduce((s, x) => s + x.principal_amount, 0);
     const invNW = allInv.reduce((s, i) => s + (i.type === 'real_estate' ? (i.current_price - i.loan_amount) : (i.current_price * i.quantity)), 0);
     let currentNWVal = accNW + savNW + invNW;
@@ -436,8 +515,13 @@ export default function Settings() {
     if (!file) return;
     if (window.confirm('Cảnh báo: Nhập file sao lưu sẽ ĐÈ lên toàn bộ dữ liệu hiện tại. Tiếp tục?')) {
       try {
-         await importDatabaseFromJSON(file);
-         alert('Khôi phục dữ liệu thành công! Ứng dụng sẽ tải lại.');
+         const result = await importDatabaseFromJSON(file);
+         const warning = formatRestoreWarning(result);
+         if (warning) {
+           alert(`Khôi phục hoàn tất, nhưng có dữ liệu bị bỏ sót:\n\n${warning}\n\nỨng dụng sẽ tải lại.`);
+         } else {
+           alert('Khôi phục dữ liệu thành công! Ứng dụng sẽ tải lại.');
+         }
          window.location.reload();
       } catch (err) {
          alert('Lỗi khôi phục: ' + err.message);
@@ -468,7 +552,7 @@ export default function Settings() {
 
   const handleWipeData = async () => {
     const confirmed1 = window.confirm(
-      '⚠️ CẢNH BÁO: Hành động này sẽ XÓA VĨNH VIỄN toàn bộ dữ liệu của bạn (Giao dịch, Tài khoản, Mục tiêu...). Không thể khôi phục!\n\nBạn có chắc chắn muốn tiếp tục?'
+      '⚠️ CẢNH BÁO: Hành động này sẽ XÓA VĨNH VIỄN toàn bộ dữ liệu của bạn (Giao dịch, Tài khoản, Mục tiêu...). Chỉ giữ lại bộ danh mục mặc định của app. Không thể khôi phục!\n\nBạn có chắc chắn muốn tiếp tục?'
     );
     if (!confirmed1) return;
 
@@ -479,7 +563,7 @@ export default function Settings() {
 
     setWipeLoading(true);
     try {
-      // Delete all Dexie Tables
+      // Xóa toàn bộ dữ liệu tài chính của người dùng
       await db.transactions.clear();
       await db.budgets.clear();
       await db.goals.clear();
@@ -487,14 +571,20 @@ export default function Settings() {
       await db.investments.clear();
       await db.loans.clear();
       await db.accounts.clear();
+
+      // Đặt lại danh mục về đúng bộ MẶC ĐỊNH của app:
+      // xóa sạch mọi danh mục (kể cả danh mục tự tạo/lạ/trùng) và settings,
+      // sau đó tạo lại bộ DEFAULT_CATEGORIES. Việc xóa settings cũng xóa
+      // 'category_seed_version' nên seedDefaultData() sẽ tạo lại defaults từ đầu.
       await db.categories.clear();
       await db.settings.clear();
-      
+      await seedDefaultData();
+
       // Clear localStorage data (Loan profiles, Savings Plan, etc.)
       localStorage.removeItem(`loan_profiles_${user?.id || 'guest'}`);
       localStorage.removeItem(`savings_plan_${user?.id || 'guest'}`);
 
-      alert('✅ Đã xóa toàn bộ dữ liệu thành công. Ứng dụng sẽ tải lại.');
+      alert('✅ Đã xóa toàn bộ dữ liệu (giữ lại danh mục mặc định). Ứng dụng sẽ tải lại.');
       window.location.href = '/';
     } catch (err) {
       alert('Lỗi khi xóa dữ liệu: ' + err.message);
@@ -760,7 +850,7 @@ export default function Settings() {
               </div>
               <div className="text-left">
                 <p className="font-black text-red-600 dark:text-red-400">Xóa toàn bộ dữ liệu</p>
-                <p className="text-[11px] text-red-400 dark:text-red-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Đặt lại tài khoản từ đầu</p>
+                <p className="text-[11px] text-red-400 dark:text-red-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Đặt lại từ đầu, giữ danh mục mặc định</p>
               </div>
             </button>
           </div>
@@ -794,23 +884,23 @@ export default function Settings() {
           <p className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 px-1">Bảo mật & Quyền riêng tư</p>
           <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden divide-y divide-gray-50 dark:divide-white/5 transition-colors">
             <button
-              onClick={() => lock()}
+              onClick={() => signOut()}
               className="w-full flex items-center justify-between p-5 hover:bg-gray-50 dark:hover:bg-slate-800/20 active:bg-gray-100 dark:active:bg-slate-800/40 transition-colors group text-left"
             >
               <div className="flex items-center space-x-4 flex-1">
                 <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 shadow-sm border border-amber-100/50 dark:border-amber-900/50">
-                  <Lock size={20} />
+                  <LogOut size={20} />
                 </div>
                 <div>
-                  <p className="font-black text-gray-900 dark:text-slate-100 group-active:text-amber-600 transition-colors">Khoá ứng dụng</p>
-                  <p className="text-[11px] text-gray-500 dark:text-slate-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Yêu cầu mã PIN ngay lập tức</p>
+                  <p className="font-black text-gray-900 dark:text-slate-100 group-active:text-amber-600 transition-colors">Đăng xuất</p>
+                  <p className="text-[11px] text-gray-500 dark:text-slate-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Đăng xuất khỏi tài khoản đang dùng</p>
                 </div>
               </div>
               <ChevronRight className="text-gray-300 group-hover:text-gray-400 shrink-0 ml-4" size={18} />
             </button>
 
             <button
-              onClick={() => setShowChangePinSheet(true)}
+              onClick={() => setShowChangePasswordSheet(true)}
               className="w-full flex items-center justify-between p-5 hover:bg-gray-50 dark:hover:bg-slate-800/20 active:bg-gray-100 dark:active:bg-slate-800/40 transition-colors group text-left"
             >
               <div className="flex items-center space-x-4 flex-1">
@@ -818,8 +908,8 @@ export default function Settings() {
                   <ShieldCheck size={20} />
                 </div>
                 <div>
-                  <p className="font-black text-gray-900 dark:text-slate-100 group-active:text-blue-600 transition-colors">Đổi mã PIN</p>
-                  <p className="text-[11px] text-gray-500 dark:text-slate-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Thay đổi mật khẩu mở khóa ứng dụng</p>
+                  <p className="font-black text-gray-900 dark:text-slate-100 group-active:text-blue-600 transition-colors">Đổi mật khẩu</p>
+                  <p className="text-[11px] text-gray-500 dark:text-slate-500 font-medium mt-0.5 leading-relaxed italic opacity-70 line-clamp-1">Thay đổi mật khẩu đăng nhập tài khoản</p>
                 </div>
               </div>
               <ChevronRight className="text-gray-300 group-hover:text-gray-400 shrink-0 ml-4" size={18} />
@@ -839,9 +929,9 @@ export default function Settings() {
         isOpen={showCategorySheet}
         onClose={() => setShowCategorySheet(false)}
       />
-      <ChangePinSheet
-        isOpen={showChangePinSheet}
-        onClose={() => setShowChangePinSheet(false)}
+      <ChangePasswordSheet
+        isOpen={showChangePasswordSheet}
+        onClose={() => setShowChangePasswordSheet(false)}
       />
       <LoanCalculatorSheet
         isOpen={showLoanSheet}

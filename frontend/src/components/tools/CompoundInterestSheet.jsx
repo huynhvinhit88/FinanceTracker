@@ -42,14 +42,14 @@ export function CompoundInterestSheet({ isOpen, onClose }) {
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title="Sức mạnh Lãi kép">
       <div className="space-y-6">
-        <div className="bg-orange-50 text-orange-800 p-4 rounded-xl text-sm border border-orange-100 flex items-start space-x-3">
-          <LineChart className="mt-0.5 shrink-0 text-orange-600" size={20} />
+        <div className="bg-orange-50 dark:bg-orange-900/10 text-orange-800 dark:text-orange-400 p-4 rounded-xl text-sm border border-orange-100 dark:border-orange-900/20 flex items-start space-x-3 transition-colors">
+          <LineChart className="mt-0.5 shrink-0 text-orange-600 dark:text-orange-400" size={20} />
           <p>Kỳ quan thứ 8 của thế giới! Xem dòng tiền của bạn bung nở thế nào sau 10, 20 năm kiên trì tích lũy liên tục.</p>
         </div>
 
         <form onSubmit={calculateCompoundInterest} className="space-y-5">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Số vốn ban đầu (Tùy chọn)</label>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 mb-2">Số vốn ban đầu (Tùy chọn)</label>
             <div className="relative">
               <input
                 type="text"
@@ -57,16 +57,14 @@ export function CompoundInterestSheet({ isOpen, onClose }) {
                 value={displayInitial}
                 onChange={handleInitialChange}
                 placeholder="VD: 100.000.000"
-                className="w-full bg-gray-50 text-gray-900 font-bold py-3 pr-24 pl-4 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none"
+                className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white font-bold py-3 pr-16 pl-4 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all"
               />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
-                <span className="text-xl font-bold text-gray-400">{monSuffix}</span>
-              </div>
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-400 dark:text-slate-600 pointer-events-none">{initSuffix}</span>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Góp thêm HẰNG THÁNG</label>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 mb-2">Góp thêm HẰNG THÁNG</label>
             <div className="relative">
               <input
                 type="text"
@@ -74,59 +72,57 @@ export function CompoundInterestSheet({ isOpen, onClose }) {
                 value={displayMonthly}
                 onChange={handleMonthlyChange}
                 placeholder="VD: 5.000.000"
-                className="w-full bg-gray-50 text-gray-900 font-bold py-3 pr-24 pl-4 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none"
+                className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white font-bold py-3 pr-16 pl-4 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all"
               />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
-                <span className="text-xl font-bold text-gray-400">{monSuffix}</span>
-              </div>
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-400 dark:text-slate-600 pointer-events-none">{monSuffix}</span>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Lãi suất (%/năm)</label>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 mb-2">Lãi suất (%/năm)</label>
               <input
                 type="number"
                 step="0.01"
                 value={interestRate}
                 onChange={e => setInterestRate(e.target.value)}
                 placeholder="VD: 10"
-                className="w-full bg-gray-50 border border-transparent focus:border-orange-500 rounded-xl px-4 py-3 outline-none font-medium text-lg"
+                className="w-full bg-gray-50 dark:bg-slate-800 border border-transparent focus:border-orange-500 rounded-xl px-4 py-3 outline-none font-medium text-lg text-gray-900 dark:text-white transition-all"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Thời gian (Năm)</label>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-slate-400 mb-2">Thời gian (Năm)</label>
               <input
                 type="number"
                 value={years}
                 onChange={e => setYears(e.target.value)}
                 placeholder="VD: 20"
-                className="w-full bg-gray-50 border border-transparent focus:border-orange-500 rounded-xl px-4 py-3 outline-none font-medium text-lg"
+                className="w-full bg-gray-50 dark:bg-slate-800 border border-transparent focus:border-orange-500 rounded-xl px-4 py-3 outline-none font-medium text-lg text-gray-900 dark:text-white transition-all"
               />
             </div>
           </div>
 
           <button
             type="submit"
-            className="w-full py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-2xl shadow-lg shadow-orange-200 mt-2 active:scale-95 transition-transform"
+            className="w-full py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-2xl shadow-lg shadow-orange-200 dark:shadow-none mt-2 active:scale-95 transition-transform"
           >
             Tính toán
           </button>
         </form>
 
         {result && (
-          <div className="mt-8 p-6 bg-white border border-gray-100 rounded-3xl shadow-sm animate-in fade-in slide-in-from-bottom-2">
-            <h3 className="text-gray-500 text-sm font-semibold mb-1 text-center">Tổng tài sản thu được</h3>
+          <div className="mt-8 p-6 bg-white dark:bg-slate-800 border border-gray-100 dark:border-white/5 rounded-3xl shadow-sm animate-in fade-in slide-in-from-bottom-2 transition-colors">
+            <h3 className="text-gray-500 dark:text-slate-400 text-sm font-semibold mb-1 text-center">Tổng tài sản thu được</h3>
             <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600 text-center mb-6">{formatCurrency(result.totalFutureValue)} ₫</p>
-            
-            <div className="space-y-3 border-t border-gray-100 pt-5">
+
+            <div className="space-y-3 border-t border-gray-100 dark:border-white/5 pt-5">
               <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600 font-medium">Tổng vốn tự đút lợn:</span>
-                <span className="font-bold text-gray-500">{formatCurrency(result.totalInvested)} ₫</span>
+                <span className="text-gray-600 dark:text-slate-400 font-medium">Tổng vốn tự đút lợn:</span>
+                <span className="font-bold text-gray-500 dark:text-slate-300">{formatCurrency(result.totalInvested)} ₫</span>
               </div>
               <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600 font-medium">Lãi kép tự đẻ ra:</span>
-                <span className="font-bold text-green-600">+{formatCurrency(result.totalInterestGained)} ₫</span>
+                <span className="text-gray-600 dark:text-slate-400 font-medium">Lãi kép tự đẻ ra:</span>
+                <span className="font-bold text-green-600 dark:text-green-400">+{formatCurrency(result.totalInterestGained)} ₫</span>
               </div>
             </div>
           </div>

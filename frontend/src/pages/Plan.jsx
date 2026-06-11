@@ -26,7 +26,10 @@ export default function Plan() {
   const [actualIncome, setActualIncome] = useState({});
   
   const [planViewMode, setPlanViewMode] = useState('monthly'); // 'monthly' or 'default'
-  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  });
   
   const [loading, setLoading] = useState(true);
   const [savingsPlan, setSavingsPlan] = useState({});
@@ -299,7 +302,7 @@ export default function Plan() {
     const baseDate = new Date(); baseDate.setDate(1);
     for (let i = 1; i <= (projectionMonths || 12); i++) {
       const d = new Date(baseDate); d.setMonth(d.getMonth() + i);
-      const key = d.toISOString().slice(0, 7);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       const override = savingsPlan[key];
       
       const monthData = getStatsForMonth(key);
@@ -338,7 +341,7 @@ export default function Plan() {
   const changeMonth = (offset) => {
     const d = new Date(selectedMonth + '-02');
     d.setMonth(d.getMonth() + offset);
-    setSelectedMonth(d.toISOString().slice(0, 7));
+    setSelectedMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
   };
 
   const renderPlanList = (plans, actuals, type) => {
@@ -588,16 +591,15 @@ export default function Plan() {
                         {(() => {
                           // Tháng hiện tại theo thời gian thực (khớp hàng i=0 của bảng).
                           const baseD = new Date(); baseD.setDate(1);
-                          const currentMonthKey = baseD.toISOString().slice(0, 7);
+                          const currentMonthKey = `${baseD.getFullYear()}-${String(baseD.getMonth() + 1).padStart(2, '0')}`;
                           const curOverride = savingsPlan[currentMonthKey];
                           // Tích luỹ DỰ KIẾN của tháng hiện tại = thu dự kiến − chi dự kiến (hoặc giá trị ghi đè).
                           const currentMonthProjected = curOverride !== undefined ? curOverride : calculateMonthlyStats(currentMonthKey).surplus;
-                          // Base = tổng tích luỹ thực ĐẾN TRƯỚC tháng hiện tại = tổng tích luỹ thực − tích luỹ dự kiến tháng hiện tại.
-                          // Nhờ vậy hàng tháng hiện tại (i=0) = base + dự kiến tháng hiện tại = đúng tổng tích luỹ thực hiện có.
-                          let cumulativeSavings = currentTotalSavings - currentMonthProjected;
+                          
+                          let cumulativeSavings = currentTotalSavings;
                           return Array.from({ length: Math.min(60, projectionMonths + 1) }).map((_, i) => {
                             const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + i);
-                            const m = d.toISOString().slice(0, 7);
+                            const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
                             const overrideVal = savingsPlan[m];
                             const stats = calculateMonthlyStats(m);
                             

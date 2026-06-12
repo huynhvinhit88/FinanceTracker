@@ -34,6 +34,8 @@ export default function Plan() {
   const [loading, setLoading] = useState(true);
   const [savingsPlan, setSavingsPlan] = useState({});
   const [expectedTotalSavingsMap, setExpectedTotalSavingsMap] = useState({});
+  const [actualTotalSavingsMap, setActualTotalSavingsMap] = useState({});
+  const [fallbackValueA, setFallbackValueA] = useState(0);
   
   const [isAddPlanOpen, setIsAddPlanOpen] = useState(false);
   const [isEditPlanOpen, setIsEditPlanOpen] = useState(false);
@@ -150,6 +152,45 @@ export default function Plan() {
       const allAccounts = await db.accounts.toArray();
       const activeSavings = await db.savings.filter(s => s.status === 'active').toArray();
       const allInvestments = await db.investments.toArray();
+
+      // Load actualTotalSavingsMap
+      const actualMapKey = `actual_total_savings_map_${user.id}`;
+      const actualMapData = await db.settings.get(actualMapKey);
+      let currentSavingsMap = {};
+      if (actualMapData && actualMapData.value) {
+        currentSavingsMap = actualMapData.value;
+        setActualTotalSavingsMap(currentSavingsMap);
+      } else {
+        setActualTotalSavingsMap({});
+      }
+
+      // Calculate fallback Value A if previous month snapshot doesn't exist
+      const baseD = new Date(); baseD.setDate(1);
+      const prevD = new Date(baseD); prevD.setMonth(prevD.getMonth() - 1);
+      const prevMonthKey = `${prevD.getFullYear()}-${String(prevD.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!currentSavingsMap[prevMonthKey]) {
+        const D_end = new Date(baseD.getFullYear(), baseD.getMonth(), 0, 23, 59, 59, 999).toISOString();
+        const pastTxs = await db.transactions
+          .filter(tx => tx.date <= D_end)
+          .toArray();
+          
+        const savingsCats = allCategories.filter(c => c.type === 'savings');
+        const savingsCatIds = new Set(savingsCats.map(c => c.id));
+        const withdrawCats = new Set(savingsCats.filter(c => c.name.includes('Tất toán') || c.name.includes('Rút')).map(c => c.id));
+        
+        let netFlow = 0;
+        pastTxs.forEach(tx => {
+           if (savingsCatIds.has(tx.category_id)) {
+              if (withdrawCats.has(tx.category_id)) {
+                 netFlow -= parseFloat(tx.amount) || 0;
+              } else {
+                 netFlow += parseFloat(tx.amount) || 0;
+              }
+           }
+        });
+        setFallbackValueA(netFlow);
+      }
 
       setRawBudgets(allBudgets);
 
@@ -596,7 +637,12 @@ export default function Plan() {
                           // Tích luỹ DỰ KIẾN của tháng hiện tại = thu dự kiến − chi dự kiến (hoặc giá trị ghi đè).
                           const currentMonthProjected = curOverride !== undefined ? curOverride : calculateMonthlyStats(currentMonthKey).surplus;
                           
-                          let cumulativeSavings = currentTotalSavings;
+                          const prevD = new Date(baseD); prevD.setMonth(prevD.getMonth() - 1);
+                          const prevMonthKey = `${prevD.getFullYear()}-${String(prevD.getMonth() + 1).padStart(2, '0')}`;
+                          const prevSnapshot = actualTotalSavingsMap[prevMonthKey];
+                          const valueA = prevSnapshot ? prevSnapshot.amount : fallbackValueA;
+                          
+                          let cumulativeSavings = valueA;
                           return Array.from({ length: Math.min(60, projectionMonths + 1) }).map((_, i) => {
                             const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + i);
                             const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;

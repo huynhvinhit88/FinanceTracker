@@ -24,6 +24,9 @@ export default function Statistics() {
   
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [savingsMap, setSavingsMap] = useState({});
+  const [editingSavingsMonth, setEditingSavingsMonth] = useState(null);
+  const [editSavingsValue, setEditSavingsValue] = useState('');
 
   // State for detail sheet
   const [detailSheet, setDetailSheet] = useState({ isOpen: false, title: '', items: [] });
@@ -48,6 +51,15 @@ export default function Statistics() {
 
       const catData = await db.categories.toArray();
 
+      // Fetch savings map
+      const mapKey = `actual_total_savings_map_${user.id}`;
+      const setting = await db.settings.get(mapKey);
+      if (setting && setting.value) {
+        setSavingsMap(setting.value);
+      } else {
+        setSavingsMap({});
+      }
+
       // Sort transactions by date ascending
       allTxRaw.sort((a, b) => new Date(a.date) - new Date(b.date));
 
@@ -57,6 +69,32 @@ export default function Statistics() {
       console.error('Error fetching statistics data:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveSavings = async (monthKey) => {
+    try {
+      const numValue = parseFloat(editSavingsValue.replace(/,/g, ''));
+      if (isNaN(numValue)) {
+        setEditingSavingsMonth(null);
+        return;
+      }
+
+      const mapKey = `actual_total_savings_map_${user.id}`;
+      const newMap = { ...savingsMap, [monthKey]: { amount: numValue, isManual: true } };
+      
+      const setting = await db.settings.get(mapKey);
+      if (setting) {
+        await db.settings.update(mapKey, { value: newMap });
+      } else {
+        await db.settings.add({ id: mapKey, value: newMap });
+      }
+      
+      setSavingsMap(newMap);
+    } catch (err) {
+      console.error('Error saving savings override:', err);
+    } finally {
+      setEditingSavingsMonth(null);
     }
   };
 
@@ -384,30 +422,77 @@ export default function Statistics() {
                     <th className="px-5 py-4 text-emerald-600">Thu nhập</th>
                     <th className="px-5 py-4 text-rose-500">Chi tiêu</th>
                     <th className="px-5 py-4 text-blue-600">Tích lũy</th>
+                    <th className="px-5 py-4 text-indigo-500">Tổng tiết kiệm</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 dark:divide-white/5 text-gray-700 dark:text-slate-300 font-bold">
                   {monthlyData.filter(m => m.income > 0 || m.expense > 0).map((row) => {
                     const catData = monthlyCategoryData.find(m => m.month === row.month);
+                    const monthKey = `${selectedYear}-${row.month.replace('T', '').padStart(2, '0')}`;
+                    const savingsData = savingsMap[monthKey];
+                    
                     return (
                     <tr
                       key={row.month}
-                      onClick={() => handleOpenDetail(`Chi tiết ${row.month}`, {
+                      className="hover:bg-blue-50/50 dark:hover:bg-indigo-950/20 transition-all cursor-pointer active:scale-[0.98]"
+                    >
+                      <td className="px-5 py-5 font-black dark:text-slate-100 flex items-center" onClick={() => handleOpenDetail(`Chi tiết ${row.month}`, {
                         type: 'monthly_category',
                         income: catData?.income || [],
                         expense: catData?.expense || [],
                         transfer: catData?.transfer || []
-                      })}
-                      className="hover:bg-blue-50/50 dark:hover:bg-indigo-950/20 transition-all cursor-pointer active:scale-[0.98]"
-                    >
-                      <td className="px-5 py-5 font-black dark:text-slate-100 flex items-center">
+                      })}>
                         {row.month}
                         <ChevronRightIcon size={12} className="ml-1 opacity-20" />
                       </td>
-                      <td className="px-5 py-5 text-emerald-600 dark:text-emerald-400">{formatCurrency(row.income)}</td>
-                      <td className="px-5 py-5 text-rose-500 dark:text-rose-400">{formatCurrency(row.expense)}</td>
-                      <td className={`px-5 py-5 ${row.net >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-orange-500 dark:text-orange-400'}`}>
+                      <td className="px-5 py-5 text-emerald-600 dark:text-emerald-400" onClick={() => handleOpenDetail(`Chi tiết ${row.month}`, {
+                        type: 'monthly_category',
+                        income: catData?.income || [],
+                        expense: catData?.expense || [],
+                        transfer: catData?.transfer || []
+                      })}>{formatCurrency(row.income)}</td>
+                      <td className="px-5 py-5 text-rose-500 dark:text-rose-400" onClick={() => handleOpenDetail(`Chi tiết ${row.month}`, {
+                        type: 'monthly_category',
+                        income: catData?.income || [],
+                        expense: catData?.expense || [],
+                        transfer: catData?.transfer || []
+                      })}>{formatCurrency(row.expense)}</td>
+                      <td className={`px-5 py-5 ${row.net >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-orange-500 dark:text-orange-400'}`} onClick={() => handleOpenDetail(`Chi tiết ${row.month}`, {
+                        type: 'monthly_category',
+                        income: catData?.income || [],
+                        expense: catData?.expense || [],
+                        transfer: catData?.transfer || []
+                      })}>
                         {row.net > 0 ? '+' : ''}{formatCurrency(row.net)}
+                      </td>
+                      <td className="px-5 py-5 text-indigo-500 font-black">
+                        {editingSavingsMonth === monthKey ? (
+                          <div className="flex items-center">
+                            <input
+                              type="text"
+                              autoFocus
+                              className="w-24 px-2 py-1 text-xs border rounded-lg dark:bg-slate-800 dark:border-slate-700 outline-none focus:border-indigo-500 tabular-nums"
+                              value={editSavingsValue}
+                              onChange={(e) => {
+                                const val = e.target.value.replace(/[^0-9]/g, '');
+                                setEditSavingsValue(val ? new Intl.NumberFormat('vi-VN').format(val) : '');
+                              }}
+                              onBlur={() => handleSaveSavings(monthKey)}
+                              onKeyDown={(e) => e.key === 'Enter' && handleSaveSavings(monthKey)}
+                            />
+                          </div>
+                        ) : (
+                          <span 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingSavingsMonth(monthKey);
+                              setEditSavingsValue(savingsData ? formatCurrency(savingsData.amount) : '');
+                            }}
+                            className={`border-b border-dashed cursor-text pb-0.5 ${savingsData?.isManual ? 'border-indigo-300 text-indigo-600 dark:text-indigo-400' : 'border-gray-300 text-gray-500 dark:text-gray-400'}`}
+                          >
+                            {savingsData ? formatCurrency(savingsData.amount) : '0'}
+                          </span>
+                        )}
                       </td>
                     </tr>
                     );

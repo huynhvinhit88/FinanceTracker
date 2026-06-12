@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { db } from '../../lib/db';
 import { BottomTabBar } from './BottomTabBar';
 import { SidebarNav } from './SidebarNav';
 import { DesktopWidgets } from './DesktopWidgets';
@@ -11,6 +13,53 @@ import { GlobalAddTransactionFab } from './GlobalAddTransactionFab';
  * - Desktop: Sidebar (Left) + Main Content (Center) + Widgets (Right)
  */
 export function AppLayout() {
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user) return;
+    const captureSnapshot = async () => {
+      try {
+        const allSavings = await db.savings.toArray();
+        const allCategories = await db.categories.toArray();
+        const activeSavings = allSavings.filter(s => s.status === 'active');
+        
+        // Cùng logic với Plan.jsx: Chỉ lấy các sổ thuộc danh mục "Tiết kiệm"
+        const currentTotalSavings = activeSavings.reduce((s, x) => {
+          const cat = allCategories.find(c => c.id === x.category_id);
+          if (cat && cat.name.toLowerCase() === 'tiết kiệm') {
+            return s + (parseFloat(x.principal_amount) || 0);
+          }
+          return s;
+        }, 0);
+
+        const now = new Date();
+        const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        const key = `actual_total_savings_map_${user.id}`;
+        
+        const setting = await db.settings.get(key);
+        let map = setting ? setting.value : {};
+
+        // Nếu tháng này chưa được set hoặc đang là auto (không bị khóa bởi user)
+        if (!map[currentMonth] || !map[currentMonth].isManual) {
+          map[currentMonth] = {
+            amount: currentTotalSavings,
+            isManual: false
+          };
+          
+          if (setting) {
+            await db.settings.update(key, { value: map });
+          } else {
+            await db.settings.add({ id: key, value: map });
+          }
+        }
+      } catch (err) {
+        console.error('Error capturing savings snapshot:', err);
+      }
+    };
+
+    captureSnapshot();
+  }, [user]);
+
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 flex transition-colors duration-300">
       

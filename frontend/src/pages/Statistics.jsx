@@ -487,7 +487,7 @@ export default function Statistics() {
                           </div>
                         ) : (
                           <span 
-                            className={`border-b border-dashed pb-0.5 ${savingsData?.isManual ? 'border-indigo-300 text-indigo-600 dark:text-indigo-400' : 'border-gray-300 text-gray-500 dark:text-gray-400'}`}
+                            className={`${savingsData?.isManual ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400'}`}
                           >
                             {savingsData ? formatCurrency(savingsData.amount) : '0'}
                           </span>

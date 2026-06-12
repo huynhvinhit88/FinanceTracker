@@ -83,12 +83,7 @@ export default function Statistics() {
       const mapKey = `actual_total_savings_map_${user.id}`;
       const newMap = { ...savingsMap, [monthKey]: { amount: numValue, isManual: true } };
       
-      const setting = await db.settings.get(mapKey);
-      if (setting) {
-        await db.settings.update(mapKey, { value: newMap });
-      } else {
-        await db.settings.add({ id: mapKey, value: newMap });
-      }
+      await db.settings.put({ key: mapKey, value: newMap });
       
       setSavingsMap(newMap);
     } catch (err) {
@@ -465,9 +460,18 @@ export default function Statistics() {
                       })}>
                         {row.net > 0 ? '+' : ''}{formatCurrency(row.net)}
                       </td>
-                      <td className="px-5 py-5 text-indigo-500 font-black">
+                      <td 
+                        className="px-5 py-5 text-indigo-500 font-black cursor-text"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (editingSavingsMonth !== monthKey) {
+                            setEditingSavingsMonth(monthKey);
+                            setEditSavingsValue(savingsData ? formatCurrency(savingsData.amount) : '');
+                          }
+                        }}
+                      >
                         {editingSavingsMonth === monthKey ? (
-                          <div className="flex items-center">
+                          <div className="flex items-center" onClick={e => e.stopPropagation()}>
                             <input
                               type="text"
                               autoFocus
@@ -483,12 +487,7 @@ export default function Statistics() {
                           </div>
                         ) : (
                           <span 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingSavingsMonth(monthKey);
-                              setEditSavingsValue(savingsData ? formatCurrency(savingsData.amount) : '');
-                            }}
-                            className={`border-b border-dashed cursor-text pb-0.5 ${savingsData?.isManual ? 'border-indigo-300 text-indigo-600 dark:text-indigo-400' : 'border-gray-300 text-gray-500 dark:text-gray-400'}`}
+                            className={`border-b border-dashed pb-0.5 ${savingsData?.isManual ? 'border-indigo-300 text-indigo-600 dark:text-indigo-400' : 'border-gray-300 text-gray-500 dark:text-gray-400'}`}
                           >
                             {savingsData ? formatCurrency(savingsData.amount) : '0'}
                           </span>

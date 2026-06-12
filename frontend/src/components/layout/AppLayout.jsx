@@ -46,11 +46,7 @@ export function AppLayout() {
             isManual: false
           };
           
-          if (setting) {
-            await db.settings.update(key, { value: map });
-          } else {
-            await db.settings.add({ id: key, value: map });
-          }
+          await db.settings.put({ key: key, value: map });
         }
       } catch (err) {
         console.error('Error capturing savings snapshot:', err);

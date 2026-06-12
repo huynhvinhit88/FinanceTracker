@@ -74,7 +74,7 @@ export default function Statistics() {
 
   const handleSaveSavings = async (monthKey) => {
     try {
-      const numValue = parseFloat(editSavingsValue.replace(/,/g, ''));
+      const numValue = parseFloat(String(editSavingsValue).replace(/[^0-9]/g, ''));
       if (isNaN(numValue)) {
         setEditingSavingsMonth(null);
         return;

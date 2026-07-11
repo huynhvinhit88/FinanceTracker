@@ -25,7 +25,7 @@ export default function Accounts() {
   const [activeTab, setActiveTab] = useState('cash'); // 'cash', 'savings', 'invest', 'loans'
   // Danh sách tiêu chí gom nhóm sổ tiết kiệm, CÓ THỨ TỰ (thứ tự chọn = thứ tự lồng nhóm).
   // Mảng rỗng = không nhóm (hiển thị phẳng). Giá trị hợp lệ: 'account' | 'category' | 'maturity'.
-  const [savingsGroupBy, setSavingsGroupBy] = useState([]);
+  const [savingsGroupBy, setSavingsGroupBy] = useState(['maturity']);
 
   const [accounts, setAccounts] = useState([]);
   const [savings, setSavings] = useState([]);

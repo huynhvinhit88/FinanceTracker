@@ -60,7 +60,10 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
     try {
       const accData = await db.accounts.orderBy('name').toArray();
       setAccounts(accData);
-      if (accData.length > 0) setAccountId(accData[0].id);
+      if (accData.length > 0) {
+        const cashAcc = accData.find(acc => acc.name?.trim().toLowerCase() === 'tiền mặt');
+        setAccountId(cashAcc ? cashAcc.id : accData[0].id);
+      }
 
       const catData = await db.categories.toArray();
       const typeOrder = { expense: 1, income: 2, savings: 3 };

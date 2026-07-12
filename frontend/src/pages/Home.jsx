@@ -59,12 +59,19 @@ export default function Home() {
         .limit(20)
         .toArray();
 
-      const txData = txRaw.map(tx => ({
-        ...tx,
-        account: accData.find(a => a.id === tx.account_id),
-        to_account: accData.find(a => a.id === tx.to_account_id),
-        category: catData.find(c => c.id === tx.category_id)
-      }));
+      const txData = txRaw.map(tx => {
+        const sourceAccount = accData.find(a => a.id === tx.account_id);
+        const destAccount   = accData.find(a => a.id === tx.to_account_id);
+        return {
+          ...tx,
+          account: sourceAccount,
+          to_account: destAccount,
+          category: catData.find(c => c.id === tx.category_id),
+          // Số dư hiện tại trong DB đã phản ánh giao dịch này (sau giao dịch)
+          balance_after_source: sourceAccount?.balance ?? null,
+          balance_after_dest: (tx.type === 'transfer' && destAccount) ? (destAccount?.balance ?? null) : null,
+        };
+      });
 
       setTransactions(txData);
 
@@ -193,6 +200,18 @@ export default function Home() {
         <div className="truncate pr-4">
           <p className="font-semibold text-gray-900 dark:text-slate-100">Chuyển tiền</p>
           <p className="text-xs text-gray-500 dark:text-slate-400 truncate">{tx.account?.name} → {tx.to_account?.name}</p>
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+            {tx.balance_after_source !== null && (
+              <p className="text-[10px] text-gray-400 dark:text-slate-500 tabular-nums">
+                {tx.account?.name}: <span className="font-semibold">{formatCurrency(tx.balance_after_source)}đ</span>
+              </p>
+            )}
+            {tx.balance_after_dest !== null && (
+              <p className="text-[10px] text-gray-400 dark:text-slate-500 tabular-nums">
+                {tx.to_account?.name}: <span className="font-semibold">{formatCurrency(tx.balance_after_dest)}đ</span>
+              </p>
+            )}
+          </div>
         </div>
       );
     }
@@ -200,6 +219,13 @@ export default function Home() {
       <div className="truncate pr-4">
         <p className="font-semibold text-gray-900 dark:text-slate-100 truncate">{tx.category?.name || 'Chưa phân loại'}</p>
         <p className="text-xs text-gray-500 dark:text-slate-400 truncate">{tx.account?.name} {tx.note && `• ${tx.note}`}</p>
+        {tx.balance_after_source !== null && (
+          <p className="text-[10px] text-gray-400 dark:text-slate-500 tabular-nums mt-0.5">
+            Số dư: <span className={`font-semibold ${
+              tx.balance_after_source < 0 ? 'text-red-400 dark:text-rose-500' : ''
+            }`}>{formatCurrency(tx.balance_after_source)}đ</span>
+          </p>
+        )}
       </div>
     );
   };

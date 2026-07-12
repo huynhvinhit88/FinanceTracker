@@ -92,32 +92,18 @@ export default function TransactionsList() {
       const allAccounts = await db.accounts.toArray();
       const allCategories = await db.categories.toArray();
 
-      // Dùng công thức đơn giản balance ± amount, chỉ hiển thị cho GD hôm nay
-      const today = new Date().toISOString().split('T')[0];
-
+      // Số dư hiện tại trong DB đã phản ánh tất cả giao dịch (là số dư sau giao dịch)
       const data = txs.map(tx => {
         const sourceAccount = allAccounts.find(a => a.id === tx.account_id);
         const destAccount   = allAccounts.find(a => a.id === tx.to_account_id);
-        const isToday       = tx.date?.slice(0, 10) === today;
-
-        let balanceAfterSource = null;
-        if (isToday && sourceAccount) {
-          const diff = tx.type === 'income' ? tx.amount : -tx.amount;
-          balanceAfterSource = (sourceAccount.balance || 0) - diff;
-        }
-
-        let balanceAfterDest = null;
-        if (isToday && destAccount && tx.type === 'transfer') {
-          balanceAfterDest = (destAccount.balance || 0) - tx.amount;
-        }
 
         return {
           ...tx,
           account: sourceAccount,
           to_account: destAccount,
           category: allCategories.find(c => c.id === tx.category_id),
-          balance_after_source: balanceAfterSource,
-          balance_after_dest: balanceAfterDest,
+          balance_after_source: sourceAccount?.balance ?? null,
+          balance_after_dest: (tx.type === 'transfer' && destAccount) ? (destAccount?.balance ?? null) : null,
         };
       });
 

@@ -92,12 +92,35 @@ export default function TransactionsList() {
       const allAccounts = await db.accounts.toArray();
       const allCategories = await db.categories.toArray();
 
-      const data = txs.map(tx => ({
-        ...tx,
-        account: allAccounts.find(a => a.id === tx.account_id),
-        to_account: allAccounts.find(a => a.id === tx.to_account_id),
-        category: allCategories.find(c => c.id === tx.category_id)
-      }));
+      // Dùng công thức đơn giản balance ± amount, chỉ hiển thị cho GD hôm nay
+      const today = new Date().toISOString().split('T')[0];
+
+      const data = txs.map(tx => {
+        const sourceAccount = allAccounts.find(a => a.id === tx.account_id);
+        const destAccount   = allAccounts.find(a => a.id === tx.to_account_id);
+        const isToday       = tx.date?.slice(0, 10) === today;
+
+        let balanceAfterSource = null;
+        if (isToday && sourceAccount) {
+          const diff = tx.type === 'income' ? tx.amount : -tx.amount;
+          balanceAfterSource = (sourceAccount.balance || 0) - diff;
+        }
+
+        let balanceAfterDest = null;
+        if (isToday && destAccount && tx.type === 'transfer') {
+          balanceAfterDest = (destAccount.balance || 0) - tx.amount;
+        }
+
+        return {
+          ...tx,
+          account: sourceAccount,
+          to_account: destAccount,
+          category: allCategories.find(c => c.id === tx.category_id),
+          balance_after_source: balanceAfterSource,
+          balance_after_dest: balanceAfterDest,
+        };
+      });
+
       
       const newTxs = data || [];
       if (newTxs.length < PAGE_SIZE) setHasMore(false);
@@ -109,6 +132,7 @@ export default function TransactionsList() {
       setLoading(false);
     }
   };
+
 
   // Group transactions by date
   const groupedTransactions = transactions.reduce((acc, tx) => {
@@ -260,9 +284,34 @@ export default function TransactionsList() {
                           {tx.type === 'transfer' ? (tx.note?.includes('tiết kiệm') ? 'Gửi tiết kiệm' : 'Chuyển tiền') : (tx.category?.name || 'Chưa phân loại')}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-slate-500 truncate">
-                          {tx.type === 'transfer' ? (tx.to_account?.name ? `${tx.account?.name} → ${tx.to_account?.name}` : tx.account?.name) : tx.account?.name}
+                          {tx.type === 'transfer'
+                            ? (tx.to_account?.name ? `${tx.account?.name} → ${tx.to_account?.name}` : tx.account?.name)
+                            : tx.account?.name}
                           {tx.note && ` • ${tx.note}`}
                         </p>
+                        {/* Số dư sau giao dịch */}
+                        {tx.type === 'transfer' ? (
+                          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                            {tx.balance_after_source !== null && (
+                              <p className="text-[10px] text-gray-400 dark:text-slate-600 tabular-nums">
+                                {tx.account?.name}: <span className="font-semibold">{formatCurrency(tx.balance_after_source)}đ</span>
+                              </p>
+                            )}
+                            {tx.balance_after_dest !== null && (
+                              <p className="text-[10px] text-gray-400 dark:text-slate-600 tabular-nums">
+                                {tx.to_account?.name}: <span className="font-semibold">{formatCurrency(tx.balance_after_dest)}đ</span>
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          tx.balance_after_source !== null && (
+                            <p className="text-[10px] text-gray-400 dark:text-slate-600 tabular-nums mt-0.5">
+                              Số dư: <span className={`font-semibold ${
+                                tx.balance_after_source < 0 ? 'text-red-400 dark:text-rose-500' : 'text-gray-500 dark:text-slate-500'
+                              }`}>{formatCurrency(tx.balance_after_source)}đ</span>
+                            </p>
+                          )
+                        )}
                       </div>
                     </div>
                     <div className="text-right shrink-0">

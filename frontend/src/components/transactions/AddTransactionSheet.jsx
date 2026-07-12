@@ -61,8 +61,8 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
       const accData = await db.accounts.orderBy('name').toArray();
       setAccounts(accData);
       if (accData.length > 0) {
-        const cashAcc = accData.find(acc => acc.name?.trim().toLowerCase() === 'tiền mặt');
-        setAccountId(cashAcc ? cashAcc.id : accData[0].id);
+        const defaultAcc = accData.find(acc => acc.is_default);
+        setAccountId(defaultAcc ? defaultAcc.id : accData[0].id);
       }
 
       const catData = await db.categories.toArray();

@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { db } from '../../lib/db';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
-import { Wallet, BriefcaseBusiness, PiggyBank, CreditCard, HandCoins } from 'lucide-react';
+import { Wallet, BriefcaseBusiness, PiggyBank, CreditCard, HandCoins, Star } from 'lucide-react';
 
 const ACCOUNT_TYPES = [
   { id: 'Ví/Tiền mặt', label: 'Tiền mặt', icon: Wallet, sub_type: 'payment', color: '#10B981' },
@@ -21,6 +21,7 @@ export function AddAccountSheet({ isOpen, onClose, onSuccess }) {
   const { theme } = useTheme();
   const [name, setName] = useState('');
   const [selectedType, setSelectedType] = useState(ACCOUNT_TYPES[0]);
+  const [isDefault, setIsDefault] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
@@ -30,8 +31,24 @@ export function AddAccountSheet({ isOpen, onClose, onSuccess }) {
   const resetForm = () => {
     setName('');
     setSelectedType(ACCOUNT_TYPES[0]);
+    setIsDefault(false);
     resetCurrency();
     setError('');
+  };
+
+  const handleDefaultChange = async (checked) => {
+    if (checked) {
+      // Kiểm tra xem đã có tài khoản mặc định chưa
+      const allAccounts = await db.accounts.toArray();
+      const currentDefault = allAccounts.find(acc => acc.is_default);
+      if (currentDefault) {
+        const confirmed = window.confirm(
+          `Tài khoản "${currentDefault.name}" đang được đặt làm tài khoản nguồn mặc định.\nBạn có muốn thay thế bằng tài khoản mới này không?`
+        );
+        if (!confirmed) return;
+      }
+    }
+    setIsDefault(checked);
   };
 
   const handleSubmit = async (e) => {
@@ -49,6 +66,16 @@ export function AddAccountSheet({ isOpen, onClose, onSuccess }) {
     if (dbType === 'Tiết kiệm') dbType = 'Ngân hàng';
 
     try {
+      // Nếu đặt làm mặc định, xóa is_default của tất cả tài khoản khác trước
+      if (isDefault) {
+        const allAccounts = await db.accounts.toArray();
+        for (const acc of allAccounts) {
+          if (acc.is_default) {
+            await db.accounts.update(acc.id, { is_default: false });
+          }
+        }
+      }
+
       await db.accounts.add({
         id: crypto.randomUUID(),
         name: name.trim(),
@@ -56,7 +83,8 @@ export function AddAccountSheet({ isOpen, onClose, onSuccess }) {
         sub_type: selectedType.sub_type,
         balance: rawBalance, 
         icon: 'Wallet', // Could be dynamic based on user selection in future
-        color_hex: selectedType.color
+        color_hex: selectedType.color,
+        is_default: isDefault,
       });
       
       resetForm();
@@ -141,6 +169,41 @@ export function AddAccountSheet({ isOpen, onClose, onSuccess }) {
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        {/* Checkbox đặt làm tài khoản mặc định */}
+        <div
+          onClick={() => handleDefaultChange(!isDefault)}
+          className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all select-none ${
+            isDefault
+              ? 'bg-amber-50 dark:bg-amber-900/15 border-amber-300 dark:border-amber-700/50'
+              : 'bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-white/5 hover:bg-gray-100 dark:hover:bg-slate-700'
+          }`}
+        >
+          <div className="flex items-center space-x-3">
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+              isDefault ? 'bg-amber-400 dark:bg-amber-500' : 'bg-gray-200 dark:bg-slate-700'
+            }`}>
+              <Star size={16} color="white" fill={isDefault ? 'white' : 'none'} />
+            </div>
+            <div>
+              <p className={`text-sm font-semibold ${
+                isDefault ? 'text-amber-800 dark:text-amber-300' : 'text-gray-700 dark:text-slate-300'
+              }`}>Đặt làm tài khoản nguồn mặc định</p>
+              <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">Tự động chọn khi thêm giao dịch mới</p>
+            </div>
+          </div>
+          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+            isDefault
+              ? 'bg-amber-400 dark:bg-amber-500 border-amber-400 dark:border-amber-500'
+              : 'border-gray-300 dark:border-slate-600'
+          }`}>
+            {isDefault && (
+              <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
           </div>
         </div>
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
-  Home, Wallet, PieChart, BarChart3, User, 
+  Home, Wallet, PieChart, BarChart3, User, StickyNote,
   ChevronRight, LogOut, ShieldCheck 
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -17,6 +17,7 @@ const TABS = [
   { name: 'Tài khoản', path: '/accounts', icon: Wallet, desc: 'Quản lý ví & tài sản' },
   { name: 'Kế hoạch', path: '/plan', icon: PieChart, desc: 'Ngân sách & dự báo' },
   { name: 'Thống kê', path: '/statistics', icon: BarChart3, desc: 'Báo cáo chi tiết' },
+  { name: 'Ghi chú', path: '/notes', icon: StickyNote, desc: 'Ghi nhớ & Việc cần làm' },
   { name: 'Cài đặt', path: '/settings', icon: User, desc: 'Cấu hình ứng dụng' },
 ];
 export function SidebarNav() {

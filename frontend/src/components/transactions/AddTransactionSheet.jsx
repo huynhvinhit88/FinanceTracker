@@ -266,6 +266,21 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
       // để đảm bảo ngày bạn chọn luôn được giữ đúng theo múi giờ địa phương.
       transactionDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
 
+      const fromAcc = await db.accounts.get(accountId);
+      let balanceAfterSource = null;
+      if (fromAcc) {
+        const diff = (type === 'income') ? rawAmount : -rawAmount;
+        balanceAfterSource = fromAcc.balance + diff;
+      }
+
+      let balanceAfterDest = null;
+      if (type === 'transfer' && toAccountId) {
+        const toAcc = await db.accounts.get(toAccountId);
+        if (toAcc) {
+          balanceAfterDest = toAcc.balance + rawAmount;
+        }
+      }
+
       const payload = {
         id: crypto.randomUUID(),
         account_id: accountId,
@@ -277,7 +292,9 @@ export function AddTransactionSheet({ isOpen, onClose, onSuccess, initialData })
         note: note.trim() || (type === 'repayment' ? `Trả nợ ${loans.find(l=>l.id===loanId)?.name}` : ''),
         loan_id: isLoanMode ? loanId : null,
         loan_payment_type: isLoanMode ? repaymentType : null,
-        loan_principal_amount: isLoanMode ? principalRaw : 0
+        loan_principal_amount: isLoanMode ? principalRaw : 0,
+        balance_after_source: balanceAfterSource,
+        balance_after_dest: balanceAfterDest
       };
 
       await db.transactions.add(payload);

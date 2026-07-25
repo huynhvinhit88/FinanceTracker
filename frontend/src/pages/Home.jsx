@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../lib/db';
-import { ArrowDownRight, ArrowRightLeft, TrendingUp, TrendingDown } from 'lucide-react';
+import { ArrowDownRight, ArrowRightLeft, TrendingUp, TrendingDown, StickyNote } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 import { EditTransactionSheet } from '../components/transactions/EditTransactionSheet';
 import { useGlobalRefresh } from '../hooks/useGlobalRefresh';
@@ -18,6 +18,7 @@ export default function Home() {
   const [investments, setInvestments] = useState([]);
   const [loans, setLoans] = useState([]);
   const [goals, setGoals] = useState([]);
+  const [recentNotes, setRecentNotes] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
@@ -50,6 +51,9 @@ export default function Home() {
       const goalData = await db.goals.toArray();
       setGoals(goalData);
 
+      const notesData = await db.notes.orderBy('created_at').reverse().limit(5).toArray();
+      setRecentNotes(notesData || []);
+
       const catData = await db.categories.toArray();
 
       // Fetch Recent Transactions for List (Limit 20)
@@ -67,9 +71,8 @@ export default function Home() {
           account: sourceAccount,
           to_account: destAccount,
           category: catData.find(c => c.id === tx.category_id),
-          // Số dư hiện tại trong DB đã phản ánh giao dịch này (sau giao dịch)
-          balance_after_source: sourceAccount?.balance ?? null,
-          balance_after_dest: (tx.type === 'transfer' && destAccount) ? (destAccount?.balance ?? null) : null,
+          balance_after_source: tx.balance_after_source ?? sourceAccount?.balance ?? null,
+          balance_after_dest: tx.balance_after_dest ?? ((tx.type === 'transfer' && destAccount) ? (destAccount?.balance ?? null) : null),
         };
       });
 
@@ -239,6 +242,18 @@ export default function Home() {
             <p className="text-sm text-gray-400 dark:text-slate-400 font-bold uppercase tracking-widest">Hôm nay, {new Date().toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
             <h1 className="text-3xl lg:text-4xl font-black text-gray-900 dark:text-slate-100 tracking-tight mt-1">Tổng quan</h1>
           </div>
+          <button
+            onClick={() => navigate('/notes')}
+            className="flex items-center space-x-2 px-4 py-2.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-2xl hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all font-bold text-xs shadow-sm border border-indigo-100 dark:border-indigo-800/30 active:scale-95 shrink-0"
+          >
+            <StickyNote size={18} />
+            <span>Ghi chú</span>
+            {recentNotes.filter(n => !n.is_completed).length > 0 && (
+              <span className="w-5 h-5 bg-indigo-600 text-white rounded-full text-[10px] flex items-center justify-center font-black ml-1">
+                {recentNotes.filter(n => !n.is_completed).length}
+              </span>
+            )}
+          </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
@@ -353,6 +368,61 @@ export default function Home() {
             )}
           </div>
         </div>
+
+        {/* Notes Widget Section */}
+        {recentNotes.length > 0 && (
+          <div className="mt-8 lg:mt-12 bg-white dark:bg-slate-800 p-6 lg:p-8 rounded-2xl lg:rounded-3xl border border-gray-100 dark:border-white/10 shadow-sm transition-colors">
+            <div className="flex items-center justify-between mb-5 px-1">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                  <StickyNote size={20} />
+                </div>
+                <div>
+                  <h3 className="font-black text-gray-900 dark:text-slate-100 text-lg tracking-tight">Ghi chú gần đây</h3>
+                  <p className="text-xs text-gray-400 dark:text-slate-500 font-medium">Nhắc nhở & công việc cần làm</p>
+                </div>
+              </div>
+              <button
+                onClick={() => navigate('/notes')}
+                className="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-indigo-600 hover:text-white transition-all active:scale-95"
+              >
+                Quản lý ghi chú
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {recentNotes.slice(0, 3).map(n => (
+                <div
+                  key={n.id}
+                  onClick={() => navigate('/notes')}
+                  className="bg-gray-50/70 dark:bg-slate-900/60 p-4 rounded-2xl border border-gray-100 dark:border-white/5 hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all cursor-pointer flex flex-col justify-between group"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-100/70 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300">
+                        {n.category || 'Tài chính'}
+                      </span>
+                      {n.is_completed && (
+                        <span className="text-[10px] text-emerald-500 font-bold">✓ Xong</span>
+                      )}
+                    </div>
+                    <p className={`font-bold text-sm text-gray-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-1 ${n.is_completed ? 'line-through text-gray-400 dark:text-slate-500' : ''}`}>
+                      {n.title}
+                    </p>
+                    {n.content && (
+                      <p className="text-xs text-gray-500 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
+                        {n.content}
+                      </p>
+                    )}
+                  </div>
+                  <div className="mt-3 pt-2 border-t border-gray-200/40 dark:border-white/5 text-[10px] text-gray-400 dark:text-slate-500 font-medium">
+                    {new Date(n.created_at).toLocaleDateString('vi-VN')}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Recent Transactions Section */}
         <div className="mt-12 lg:mt-16">

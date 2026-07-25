@@ -102,7 +102,8 @@ The stored `transactions.type` is constrained to **`income | expense | transfer`
 
 > **Balances are updated in JS**, not by a DB trigger. `updateAccountBalances(payload, direction)` applies `direction = +1` on add and `direction = -1` to roll back on edit/delete. Do NOT also enable the `process_transaction()` SQL trigger (v6 file) — it would double-count. Run `supabase_schema_v10_disable_balance_trigger.sql` to drop that trigger from the DB.
 >
-> ⚠️ **Numeric-as-string pitfall:** Supabase/PostgREST returns `numeric` columns (`accounts.balance`, `transactions.amount`, …) as **strings**. The `+` operator would then concatenate instead of add (`"1000000" + 50000 → "100000050000"`), corrupting balances. `lib/db.js` now coerces numeric columns back to `Number` on read (`coerceNumericFields` / `NUMERIC_FIELDS`) so JS math works. Still defensively `Number(x) || 0` when adding new numeric fields not yet listed there.
+> **Balance after transaction columns (Migration V14)**:
+> Table `transactions` contains optional columns `balance_after_source` (numeric) and `balance_after_dest` (numeric). When a new transaction is created, the system snapshot-calculates `balance_after_source = account.balance (+/-) amount` (and `balance_after_dest = to_account.balance + amount` for transfers) and persists it directly to DB. Existing historical transactions continue to fallback gracefully to current account balance. Editing/deleting a transaction does not trigger recalculation of existing historical balance_after columns.
 
 **`category_id` on transfers**: As of the latest update, transfer transactions **CAN have a `category_id`**. When present, the transfer amount is **included in category-based spending statistics** (Statistics page, pie chart, and monthly detail). Transfers without `category_id` are excluded from category stats. This enables use-cases like tracking monthly savings deposits ("Gửi tiết kiệm") as a categorized expense in reports.
 
@@ -358,3 +359,13 @@ formatCurrency(1500000) // → "1.500.000" (vi-VN locale, dots as thousand separ
 `${(amount / 1e9).toFixed(2)} tỷ ₫`   // ≥ 1 billion
 `${(amount / 1e6).toFixed(1)} triệu ₫` // ≥ 1 million
 ```
+
+---
+
+## Notes Feature (`notes` Table & `/notes` Route)
+
+The **Ghi chú** feature enables users to record financial reminders (e.g. temporary savings book withdrawals) and app enhancement notes.
+- **Table**: `notes` (`id`, `user_id`, `title`, `content`, `category`, `is_completed`, `created_at`, `updated_at`).
+- **Dynamic Categories**: Categories are stored as string values (e.g. `'Tài chính'`, `'Ứng dụng'`) and support custom user-defined categories. Category filter chips in `Notes.jsx` dynamically aggregate categories from the user's notes.
+- **Timestamping**: Displays formatted creation timestamp (`created_at`) on note cards.
+- **Integrations**: Standalone screen `/notes`, desktop `SidebarNav` menu item, header shortcut, and a recent notes widget on `Home.jsx`.

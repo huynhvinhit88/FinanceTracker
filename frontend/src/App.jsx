@@ -10,6 +10,7 @@ import Plan from './pages/Plan';
 import Statistics from './pages/Statistics';
 import Settings from './pages/Settings';
 import TransactionsList from './pages/TransactionsList';
+import Notes from './pages/Notes';
 import Login from './pages/auth/Login';
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
             </Route>
             {/* Standalone screens without bottom tab bar */}
             <Route path="/transactions" element={<TransactionsList />} />
+            <Route path="/notes" element={<Notes />} />
           </Route>
 
           {/* Fallback */}

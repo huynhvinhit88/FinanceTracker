@@ -226,7 +226,8 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
             amount: savings.principal_amount,
             date: txDate,
             type: 'transfer',
-            note: `Nhận gốc tất toán: ${savings.name}`
+            note: `Nhận gốc tất toán: ${savings.name}`,
+            balance_after_source: account.balance + savings.principal_amount
           });
         } else {
           const today = new Date();
@@ -259,6 +260,10 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
 
         // 2.b Tạo giao dịch nhận lãi (Thu nhập) nếu có — bỏ qua khi lãi đã được gộp vào sổ mới.
         if (actualInterest > 0 && !includeInterestInNewBook) {
+          const balanceAfterInterest = isReinvesting 
+            ? (account.balance + actualInterest)
+            : (account.balance + savings.principal_amount + actualInterest);
+
           await db.transactions.add({
             id: crypto.randomUUID(),
             account_id: settleAccountId,
@@ -266,7 +271,8 @@ export function EditSavingsSheet({ isOpen, onClose, savings, onSuccess }) {
             amount: actualInterest,
             date: txDate,
             type: 'income',
-            note: isReinvesting ? `Lãi tái tục: ${savings.name}` : `Lãi tất toán: ${savings.name}`
+            note: isReinvesting ? `Lãi tái tục: ${savings.name}` : `Lãi tất toán: ${savings.name}`,
+            balance_after_source: balanceAfterInterest
           });
         }
       }

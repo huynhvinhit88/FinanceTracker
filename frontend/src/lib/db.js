@@ -66,7 +66,7 @@ function deserializeSettingRow(row) {
 // → Ép các cột này về Number ngay khi đọc để khôi phục hành vi cũ.
 const NUMERIC_FIELDS = {
   accounts: ['balance'],
-  transactions: ['amount', 'loan_principal_amount'],
+  transactions: ['amount', 'loan_principal_amount', 'balance_after_source', 'balance_after_dest'],
   loans: ['total_amount', 'interest_rate', 'term_months', 'minimum_payment', 'payment_date', 'next_payment_amount', 'remaining_principal', 'principal_amount'],
   budgets: ['amount'],
   investments: ['buy_price', 'quantity', 'current_price', 'initial_amount', 'interest_rate', 'return_rate', 'loan_amount'],
@@ -338,7 +338,8 @@ export const db = {
   budgets: new SupabaseTableWrapper('budgets'),
   investments: new SupabaseTableWrapper('investments'),
   savings: new SupabaseTableWrapper('savings'),
-  goals: new SupabaseTableWrapper('goals')
+  goals: new SupabaseTableWrapper('goals'),
+  notes: new SupabaseTableWrapper('notes')
 };
 
 export async function updateLastModified() {

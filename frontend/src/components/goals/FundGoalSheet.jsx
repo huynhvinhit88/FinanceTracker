@@ -48,6 +48,9 @@ export function FundGoalSheet({ isOpen, onClose, onSuccess, goal }) {
     setError('');
 
     try {
+      const account = await db.accounts.get(accountId);
+      const balanceAfter = account ? account.balance - rawAmount : null;
+
       // 1. Create Expense Transaction
       await db.transactions.add({
         id: crypto.randomUUID(),
@@ -55,7 +58,8 @@ export function FundGoalSheet({ isOpen, onClose, onSuccess, goal }) {
         amount: rawAmount,
         type: 'expense',
         date: new Date().toISOString(),
-        note: `Góp quỹ: ${goal.name}`
+        note: `Góp quỹ: ${goal.name}`,
+        balance_after_source: balanceAfter
       });
 
       // 2. Update Goal Current Amount

@@ -123,7 +123,8 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
         amount: principalAmount,
         date: txDate.toISOString(),
         type: 'transfer',
-        note: `Mở sổ tiết kiệm: ${name.trim()}`
+        note: `Mở sổ tiết kiệm: ${name.trim()}`,
+        balance_after_source: account.balance - principalAmount
       });
 
       // 3. Lưu sổ tiết kiệm

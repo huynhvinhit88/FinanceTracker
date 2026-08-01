@@ -26,6 +26,9 @@ export default function TransactionsList() {
 
   const [accountFilter, setAccountFilter] = useState('all'); // 'all' hoặc account_id
   const [accounts, setAccounts] = useState([]); // danh sách tài khoản cho dropdown lọc
+
+  const [categoryFilter, setCategoryFilter] = useState('all'); // 'all' hoặc category_id
+  const [categories, setCategories] = useState([]); // danh sách danh mục cho dropdown lọc
   
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
@@ -43,10 +46,11 @@ export default function TransactionsList() {
     if (node) observer.current.observe(node);
   }, [loading, hasMore]);
 
-  // Tải danh sách tài khoản (một lần) cho dropdown lọc theo tài khoản
+  // Tải danh sách tài khoản và danh mục (một lần) cho dropdown lọc
   useEffect(() => {
     if (!user) return;
     db.accounts.orderBy('name').toArray().then(setAccounts).catch(err => console.error(err));
+    db.categories.orderBy('sort_order').toArray().then(setCategories).catch(err => console.error(err));
   }, [user]);
 
   // Reset and Refetch when filter changes
@@ -55,23 +59,23 @@ export default function TransactionsList() {
     setPage(0);
     setHasMore(true);
     // Explicitly call fetch for page 0 to avoid race conditions
-    fetchTransactions(0, filterType, timeFilterType, timeFilterValue, accountFilter, true);
-  }, [filterType, timeFilterType, timeFilterValue, accountFilter, user]); // Refetch fully when filter changes
+    fetchTransactions(0, filterType, timeFilterType, timeFilterValue, accountFilter, categoryFilter, true);
+  }, [filterType, timeFilterType, timeFilterValue, accountFilter, categoryFilter, user]); // Refetch fully when filter changes
 
   // Fetch more when page changes (except 0, which is handled above)
   useEffect(() => {
     if (page > 0) {
-      fetchTransactions(page, filterType, timeFilterType, timeFilterValue, accountFilter, false);
+      fetchTransactions(page, filterType, timeFilterType, timeFilterValue, accountFilter, categoryFilter, false);
     }
   }, [page]);
 
   // Tự fetch lại trang đầu khi thêm giao dịch từ nút "+" toàn cục
   useGlobalRefresh(() => {
     setPage(0);
-    fetchTransactions(0, filterType, timeFilterType, timeFilterValue, accountFilter, true);
+    fetchTransactions(0, filterType, timeFilterType, timeFilterValue, accountFilter, categoryFilter, true);
   });
 
-  const fetchTransactions = async (pageIndex, currentFilter, tFilterType, tFilterValue, accFilter, isReset) => {
+  const fetchTransactions = async (pageIndex, currentFilter, tFilterType, tFilterValue, accFilter, catFilter, isReset) => {
     if (!user) return;
     setLoading(true);
 
@@ -84,6 +88,8 @@ export default function TransactionsList() {
         if (tFilterType === 'date' && tFilterValue && !tx.date.startsWith(tFilterValue)) return false;
         // Lọc theo tài khoản: với chuyển tiền, khớp cả tài khoản nguồn lẫn đích.
         if (accFilter !== 'all' && tx.account_id !== accFilter && tx.to_account_id !== accFilter) return false;
+        // Lọc theo danh mục
+        if (catFilter !== 'all' && tx.category_id !== catFilter) return false;
         return true;
       });
 
@@ -150,6 +156,15 @@ export default function TransactionsList() {
     );
   };
 
+  // Lọc danh mục theo loại giao dịch đang chọn (nếu có)
+  const filteredCategories = categories.filter(c => {
+    if (filterType === 'all') return true;
+    if (filterType === 'expense') return c.type === 'expense';
+    if (filterType === 'income') return c.type === 'income';
+    if (filterType === 'transfer') return c.type === 'transfer' || c.type === 'savings';
+    return true;
+  });
+
   return (
     <div className="bg-gray-50 dark:bg-slate-950 min-h-screen transition-colors duration-300">
       {/* App Bar pinned top */}
@@ -174,7 +189,10 @@ export default function TransactionsList() {
           ].map(filter => (
             <button
               key={filter.id}
-              onClick={() => setFilterType(filter.id)}
+              onClick={() => {
+                setFilterType(filter.id);
+                setCategoryFilter('all');
+              }}
               className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all flex-shrink-0 ${
                 filterType === filter.id 
                   ? 'bg-gray-900 dark:bg-indigo-600 text-white shadow-md' 
@@ -186,7 +204,7 @@ export default function TransactionsList() {
           ))}
         </div>
 
-        {/* Date Filter */}
+        {/* Date, Category & Account Filter */}
         <div className="px-4 pb-3 pt-1 flex items-center space-x-2 overflow-x-auto hide-scrollbar">
           <select 
             value={timeFilterType}
@@ -225,6 +243,24 @@ export default function TransactionsList() {
               className="bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 px-3 py-1.5 rounded-xl text-sm font-medium outline-none border border-transparent focus:border-indigo-500 transition-colors"
             />
           )}
+
+          {/* Lọc theo danh mục */}
+          <select
+            value={categoryFilter}
+            onChange={e => setCategoryFilter(e.target.value)}
+            className={`px-3 py-1.5 rounded-xl text-sm font-medium outline-none border transition-colors cursor-pointer flex-shrink-0 ${
+              categoryFilter !== 'all'
+                ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/40'
+                : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 border-transparent focus:border-indigo-500'
+            }`}
+          >
+            <option value="all" className="bg-white text-gray-900 dark:bg-slate-800 dark:text-slate-100">Tất cả danh mục</option>
+            {filteredCategories.map(cat => (
+              <option key={cat.id} value={cat.id} className="bg-white text-gray-900 dark:bg-slate-800 dark:text-slate-100">
+                {cat.icon ? `${cat.icon} ` : ''}{cat.name}
+              </option>
+            ))}
+          </select>
 
           {/* Lọc theo tài khoản */}
           <select
@@ -350,7 +386,8 @@ export default function TransactionsList() {
           setTimeFilterType('all');
           setTimeFilterValue('');
           setAccountFilter('all');
-          fetchTransactions(0, 'all', 'all', '', 'all', true);
+          setCategoryFilter('all');
+          fetchTransactions(0, 'all', 'all', '', 'all', 'all', true);
         }}
       />
 

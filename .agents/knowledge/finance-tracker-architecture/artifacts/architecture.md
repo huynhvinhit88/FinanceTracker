@@ -60,7 +60,7 @@ frontend/src/
 │   ├── Plan.jsx                # Budget planning (default & monthly modes) + long-range net-worth projection
 │   ├── Statistics.jsx          # Income/expense charts, Thu hộ/Chi hộ reconciliation (savings analysis was moved to the Accounts → Savings tab)
 │   ├── Settings.jsx            # Tools, category mgmt, Google Drive, export, wipe, dark mode, change password, sign out
-│   ├── TransactionsList.jsx    # Full scrollable transaction history with type/time/account filters (account filter matches source OR destination on transfers)
+│   ├── TransactionsList.jsx    # Full scrollable transaction history with type/time/category/account filters (account filter matches source OR destination on transfers)
 │   └── auth/Login.jsx          # Supabase email/password sign-in & sign-up
 └── components/
     ├── layout/

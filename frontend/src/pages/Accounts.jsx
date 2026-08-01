@@ -605,59 +605,6 @@ export default function Accounts() {
           </div>
         </div>
 
-        <div>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-gray-900 dark:text-slate-100 text-lg">Các Sổ Tiết Kiệm</h3>
-            <button onClick={() => setIsAddSavingsOpen(true)} className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold active:scale-95 transition-transform"><Plus size={18} /></button>
-          </div>
-
-          {/* Bộ chọn cách nhóm danh sách sổ tiết kiệm (đa tiêu chí, lồng nhau theo thứ tự bấm) */}
-          {visibleSavings.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 mb-5">
-              {groupOptions.map(opt => {
-                const order = savingsGroupBy.indexOf(opt.id); // -1 nếu chưa chọn
-                const active = order !== -1;
-                return (
-                  <button
-                    key={opt.id}
-                    onClick={() => toggleSavingsGroupBy(opt.id)}
-                    className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all flex-shrink-0 flex items-center gap-1.5 ${
-                      active
-                        ? 'bg-emerald-600 dark:bg-emerald-600 text-white shadow-md'
-                        : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    {active && (
-                      <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-white/25 text-[10px] font-black">{order + 1}</span>
-                    )}
-                    {opt.label}
-                  </button>
-                );
-              })}
-              {savingsGroupBy.length > 0 && (
-                <button
-                  onClick={() => setSavingsGroupBy([])}
-                  className="px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 transition-colors flex-shrink-0"
-                >
-                  Xóa nhóm
-                </button>
-              )}
-            </div>
-          )}
-
-          {visibleSavings.length === 0 && <p className="text-gray-500 dark:text-slate-500 text-sm text-center py-6">Chưa có sổ tiết kiệm nào.</p>}
-
-          {/* Chế độ phẳng (không nhóm) */}
-          {visibleSavings.length > 0 && savingsGroupBy.length === 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 lg:gap-8">
-              {visibleSavings.map(renderSavingsCard)}
-            </div>
-          )}
-
-          {/* Chế độ nhóm (có thể lồng nhiều cấp) */}
-          {visibleSavings.length > 0 && savingsGroupBy.length > 0 && renderSavingsGroupList(groups)}
-        </div>
-
         {/* --- PHÂN TÍCH TIẾT KIỆM (chuyển từ trang Thống kê) --- */}
         {visibleSavings.length > 0 && (
           <div>
@@ -823,6 +770,59 @@ export default function Accounts() {
             </div>
           </div>
         )}
+
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold text-gray-900 dark:text-slate-100 text-lg">Các Sổ Tiết Kiệm</h3>
+            <button onClick={() => setIsAddSavingsOpen(true)} className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold active:scale-95 transition-transform"><Plus size={18} /></button>
+          </div>
+
+          {/* Bộ chọn cách nhóm danh sách sổ tiết kiệm (đa tiêu chí, lồng nhau theo thứ tự bấm) */}
+          {visibleSavings.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 mb-5">
+              {groupOptions.map(opt => {
+                const order = savingsGroupBy.indexOf(opt.id); // -1 nếu chưa chọn
+                const active = order !== -1;
+                return (
+                  <button
+                    key={opt.id}
+                    onClick={() => toggleSavingsGroupBy(opt.id)}
+                    className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all flex-shrink-0 flex items-center gap-1.5 ${
+                      active
+                        ? 'bg-emerald-600 dark:bg-emerald-600 text-white shadow-md'
+                        : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    {active && (
+                      <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-white/25 text-[10px] font-black">{order + 1}</span>
+                    )}
+                    {opt.label}
+                  </button>
+                );
+              })}
+              {savingsGroupBy.length > 0 && (
+                <button
+                  onClick={() => setSavingsGroupBy([])}
+                  className="px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 transition-colors flex-shrink-0"
+                >
+                  Xóa nhóm
+                </button>
+              )}
+            </div>
+          )}
+
+          {visibleSavings.length === 0 && <p className="text-gray-500 dark:text-slate-500 text-sm text-center py-6">Chưa có sổ tiết kiệm nào.</p>}
+
+          {/* Chế độ phẳng (không nhóm) */}
+          {visibleSavings.length > 0 && savingsGroupBy.length === 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 lg:gap-8">
+              {visibleSavings.map(renderSavingsCard)}
+            </div>
+          )}
+
+          {/* Chế độ nhóm (có thể lồng nhiều cấp) */}
+          {visibleSavings.length > 0 && savingsGroupBy.length > 0 && renderSavingsGroupList(groups)}
+        </div>
       </div>
     );
   };

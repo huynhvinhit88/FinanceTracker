@@ -56,7 +56,7 @@ frontend/src/
 │   └── loanCalculator.js       # calculateLoanSchedule — amortization + early-payoff simulation
 ├── pages/
 │   ├── Home.jsx                # Dashboard — net worth, spending pie, recent transactions (nút "+" thêm giao dịch nay là FAB toàn cục ở AppLayout)
-│   ├── Accounts.jsx            # 4 tabs (Cash / Savings / Investment / Loans). The Savings tab also hosts the savings analysis (cơ cấu theo hạng mục/tài khoản + lịch trình đáo hạn), moved here from Statistics
+│   ├── Accounts.jsx            # 4 tabs (Cash / Savings / Investment / Loans). The Savings tab also hosts the savings analysis (cơ cấu theo hạng mục/tài khoản + lịch trình đáo hạn, placed above the savings books list), moved here from Statistics
 │   ├── Plan.jsx                # Budget planning (default & monthly modes) + long-range net-worth projection
 │   ├── Statistics.jsx          # Income/expense charts, Thu hộ/Chi hộ reconciliation (savings analysis was moved to the Accounts → Savings tab)
 │   ├── Settings.jsx            # Tools, category mgmt, Google Drive, export, wipe, dark mode, change password, sign out

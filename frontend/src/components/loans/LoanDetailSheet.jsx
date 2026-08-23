@@ -56,6 +56,57 @@ function RateInput({ label, value, onChange, className = '' }) {
   );
 }
 
+function ScheduleCellInput({ value, onChange, disabled, className = '', placeholder = '-' }) {
+  const [editing, setEditing] = useState(false);
+  const [tempText, setTempText] = useState('');
+
+  if (disabled) {
+    return (
+      <span className={`text-[10px] font-bold text-gray-400 dark:text-slate-500 ${className}`}>
+        {value > 0 ? formatCurrency(value) : '-'}
+      </span>
+    );
+  }
+
+  const handleFocus = () => {
+    setEditing(true);
+    setTempText(value ? formatCurrency(value) : '');
+  };
+
+  const handleBlur = () => {
+    setEditing(false);
+    const parsed = parseCurrencyInput(tempText);
+    onChange(parsed);
+  };
+
+  const handleChange = (e) => {
+    const raw = e.target.value;
+    const clean = raw.replace(/[^\d]/g, '');
+    const num = clean ? parseInt(clean, 10) : 0;
+    setTempText(num ? formatCurrency(num) : '');
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.target.blur();
+    }
+  };
+
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      value={editing ? tempText : (value > 0 ? formatCurrency(value) : '')}
+      onFocus={handleFocus}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+      placeholder={placeholder}
+      className={`w-20 sm:w-24 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-indigo-500 rounded-lg px-2 py-1 text-right text-[10px] font-black text-gray-900 dark:text-slate-100 outline-none transition-all ${className}`}
+    />
+  );
+}
+
 export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
   const { user } = useAuth();
   const { updateLoan, deleteLoan, getLoanTransactions } = useLoans();
@@ -66,6 +117,7 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
   const [historicalEvents, setHistoricalEvents] = useState([]);
   const [isAddTxOpen, setIsAddTxOpen] = useState(false);
   const [quickPayData, setQuickPayData] = useState(null);
+  const [customOverrides, setCustomOverrides] = useState({});
 
   // Edit form state
   const { displayValue: displayPrincipal, value: principalEdit, handleInputChange: handlePrincipalChange, setExternalValue: setExternalPrincipal, suffix } = useCurrencyInput('');
@@ -85,6 +137,7 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
   useEffect(() => {
     if (isOpen && loan) {
       setMode('view');
+      setCustomOverrides(loan.custom_overrides || {});
       fetchInvestments();
       getLoanTransactions(loan.id).then(setHistoricalEvents);
     }
@@ -136,8 +189,26 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
       extraPayment: loan.extra_payment,
       offsetThreshold: loan.offset_threshold,
       periods: loan.periods || [],
+      customOverrides,
     }, historicalEvents, loan.remaining_principal);
-  }, [loan, historicalEvents]);
+  }, [loan, historicalEvents, customOverrides]);
+
+  const handleOverrideChange = async (month, field, val) => {
+    const updated = {
+      ...customOverrides,
+      [month]: {
+        ...(customOverrides[month] || {}),
+        [field]: val,
+      }
+    };
+    setCustomOverrides(updated);
+    try {
+      await updateLoan(loan.id, { custom_overrides: updated });
+      onUpdated?.();
+    } catch (err) {
+      console.warn('Không thể lưu custom_overrides lên Supabase:', err);
+    }
+  };
 
   const { result, schedule } = scheduleData;
   const principalTotal = loan?.total_amount || loan?.principal_amount || 1;
@@ -303,6 +374,7 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                           <th className="px-3 py-3">Lãi</th>
                           <th className="px-3 py-3 text-blue-600 dark:text-indigo-400">Tổng</th>
                           <th className="px-3 py-3 text-red-600 dark:text-rose-400 bg-red-50/50 dark:bg-rose-900/10">Tất toán</th>
+                          <th className="px-3 py-3 text-purple-600 dark:text-indigo-400">Ngân sách</th>
                           <th className="px-3 py-3 text-emerald-600 dark:text-emerald-400">Ví tích lũy</th>
                           <th className="px-3 py-3 pr-4">Dư nợ</th>
                           <th className="px-3 py-3 text-center"></th>
@@ -328,10 +400,25 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                               {formatCurrency(row.total)}
                             </td>
                             <td className="px-3 py-2.5 text-[10px] font-black text-red-600 dark:text-rose-400">
-                              {row.prepay > 0 ? formatCurrency(row.prepay) : '-'}
+                              <ScheduleCellInput
+                                value={row.prepay}
+                                disabled={row.isPast}
+                                onChange={val => handleOverrideChange(row.month, 'prepay', val)}
+                              />
+                            </td>
+                            <td className="px-3 py-2.5 text-[10px] font-bold text-purple-600 dark:text-indigo-400">
+                              <ScheduleCellInput
+                                value={row.budget}
+                                disabled={row.isPast}
+                                onChange={val => handleOverrideChange(row.month, 'budget', val)}
+                              />
                             </td>
                             <td className="px-3 py-2.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                              {row.accumulated > 0 ? formatCurrency(row.accumulated) : '-'}
+                              <ScheduleCellInput
+                                value={row.accumulated}
+                                disabled={row.isPast}
+                                onChange={val => handleOverrideChange(row.month, 'accumulated', val)}
+                              />
                             </td>
                             <td className="px-3 py-2.5 pr-4 text-[10px] font-black text-gray-900 dark:text-slate-100 font-black">
                               {formatCurrency(row.remaining)}

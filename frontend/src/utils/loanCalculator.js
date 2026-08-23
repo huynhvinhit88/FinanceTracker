@@ -19,6 +19,7 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
     startDate,
     firstPaymentDate,
     periods = [],
+    customOverrides = {},
   } = profile;
 
   const p = Number(principal);
@@ -94,7 +95,12 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
     if (remaining <= 10) break;
     actualMonths = m;
 
-    const { rate: r, budget: currentMonthBudget } = getPeriodParams(m);
+    const { rate: r, budget: periodBudget } = getPeriodParams(m);
+    const overrideObj = customOverrides[m] || customOverrides[String(m)] || {};
+
+    let currentMonthBudget = (overrideObj.budget !== undefined && overrideObj.budget !== null && overrideObj.budget !== '')
+      ? Number(overrideObj.budget)
+      : periodBudget;
 
     let currentPayDate;
     if (m === 1) {
@@ -128,6 +134,7 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
     const hasPayoffEvent = eventsThisMonth.some(e => e.loan_payment_type === 'payoff');
 
     const isFuture = currentPayDate >= currentMonthStart;
+    const isPast = !isFuture;
     let adjustment = 0;
 
     // ĐỒNG BỘ DỮ LIỆU (ANCHORING): Chỉ thực hiện một lần khi bắt đầu chạm đến vùng "Hiện tại/Tương lai"
@@ -181,50 +188,71 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
 
     const interestThisMonth = remaining * (r / 100) * (daysPeriod / 365);
     totalInterest += interestThisMonth;
-    remaining -= (principalThisMonth + prepayThisMonth);
 
     const currentBankPayment = principalThisMonth + interestThisMonth;
     let automatedPrepay = 0;
     let penaltyPaid = 0;
 
-    if (hasActualTransactions) {
-      // XÁC ĐỊNH PHÍ PHẠT THỰC TẾ
-      // Phí phạt = Tổng tiền thực đóng - (Gốc định kỳ + Gốc tất toán + Lãi tính toán)
-      const actualTotalPaid = eventsThisMonth.reduce((sum, e) => sum + (e.amount || 0), 0);
-      penaltyPaid = Math.max(0, actualTotalPaid - (principalThisMonth + prepayThisMonth + interestThisMonth));
-      totalPenalty += penaltyPaid;
-    } else if (threshold > 0 && remaining > 0) {
-      // CHẠY MÔ PHỎNG TẤT TOÁN TỰ ĐỘNG
-      // Chỉ kích hoạt nếu kỳ này CHƯA có giao dịch thực tế và Dư nợ vẫn còn
-      const pRate = getPenaltyRate(m);
-      const targetPrepay = Math.min(threshold, remaining);
-      const penaltyForTarget = targetPrepay * (pRate / 100);
-      
-      // Số dư khả năng tích lũy sau khi đóng gốc lãi định kỳ tháng này
-      const potentialAccumulated = accumulatedExtra + currentMonthBudget - currentBankPayment;
+    if (!hasActualTransactions && overrideObj.prepay !== undefined && overrideObj.prepay !== null && overrideObj.prepay !== '') {
+      const customPrepayVal = Math.max(0, Number(overrideObj.prepay));
+      const maxPrepayAllowed = Math.max(0, remaining - principalThisMonth);
+      prepayThisMonth = Math.min(customPrepayVal, maxPrepayAllowed);
 
-      if (potentialAccumulated >= (targetPrepay + penaltyForTarget)) {
-        automatedPrepay = targetPrepay;
-        penaltyPaid = penaltyForTarget;
-        
+      const pRate = getPenaltyRate(m);
+      penaltyPaid = prepayThisMonth * (pRate / 100);
+      totalPenalty += penaltyPaid;
+
+      remaining -= (principalThisMonth + prepayThisMonth);
+      if (prepayThisMonth > 0) {
+        freePrincipalMonths += prepayThisMonth / basePrincipal;
+      }
+    } else {
+      remaining -= (principalThisMonth + prepayThisMonth);
+
+      if (hasActualTransactions) {
+        // XÁC ĐỊNH PHÍ PHẠT THỰC TẾ
+        // Phí phạt = Tổng tiền thực đóng - (Gốc định kỳ + Gốc tất toán + Lãi tính toán)
+        const actualTotalPaid = eventsThisMonth.reduce((sum, e) => sum + (e.amount || 0), 0);
+        penaltyPaid = Math.max(0, actualTotalPaid - (principalThisMonth + prepayThisMonth + interestThisMonth));
         totalPenalty += penaltyPaid;
-        remaining -= automatedPrepay;
+      } else if (threshold > 0 && remaining > 0) {
+        // CHẠY MÔ PHỎNG TẤT TOÁN TỰ ĐỘNG
+        // Chỉ kích hoạt nếu kỳ này CHƯA có giao dịch thực tế và Dư nợ vẫn còn
+        const pRate = getPenaltyRate(m);
+        const targetPrepay = Math.min(threshold, remaining);
+        const penaltyForTarget = targetPrepay * (pRate / 100);
         
-        // Cập nhật số tháng không cần trả gốc (giảm áp lực dòng tiền)
-        freePrincipalMonths += automatedPrepay / basePrincipal;
+        // Số dư khả năng tích lũy sau khi đóng gốc lãi định kỳ tháng này
+        const potentialAccumulated = accumulatedExtra + currentMonthBudget - currentBankPayment;
+
+        if (potentialAccumulated >= (targetPrepay + penaltyForTarget)) {
+          automatedPrepay = targetPrepay;
+          penaltyPaid = penaltyForTarget;
+          
+          totalPenalty += penaltyPaid;
+          remaining -= automatedPrepay;
+          
+          // Cập nhật số tháng không cần trả gốc (giảm áp lực dòng tiền)
+          freePrincipalMonths += automatedPrepay / basePrincipal;
+        }
       }
     }
 
     // CẬP NHẬT VÍ TÍCH LŨY (Theo thực tế dòng tiền ra vào)
-    if (currentMonthBudget > 0) {
-      const totalOutflow = principalThisMonth + interestThisMonth + prepayThisMonth + automatedPrepay + penaltyPaid;
-      accumulatedExtra += (currentMonthBudget - totalOutflow);
+    const totalOutflow = principalThisMonth + interestThisMonth + prepayThisMonth + automatedPrepay + penaltyPaid;
+    accumulatedExtra += (currentMonthBudget - totalOutflow);
+
+    // Ghi đè Ví tích lũy nếu người dùng chỉnh sửa cho kỳ hiện tại/tương lai
+    if (!isPast && overrideObj.accumulated !== undefined && overrideObj.accumulated !== null && overrideObj.accumulated !== '') {
+      accumulatedExtra = Number(overrideObj.accumulated);
     }
 
     schedule.push({
       month: m,
       date: currentPayDate.toLocaleDateString('vi-VN'),
       dateObj: new Date(currentPayDate),
+      isPast,
+      budget: Math.round(currentMonthBudget),
       interest: Math.round(interestThisMonth),
       principal: Math.round(principalThisMonth),
       prepay: Math.round(prepayThisMonth + automatedPrepay),

@@ -130,12 +130,12 @@ The `calculateLoanSchedule` utility employs a hybrid historical-simulation appro
 2. **Transition Point**: At the current month, if the simulated remaining balance diverges from `loan.remaining_principal` (e.g., due to missing historical entries before using the app), it forces a self-correction (`adjustment`) so the projection snaps back to real data.
 3. **Future Periods**: Continues the standard simulation cleanly using the exact updated `loan.remaining_principal`, including automated principal offsets if budget surplus exceeds the threshold.
 
-### Payoff vs. Periodic Distinction (Bug Fix)
-When processing historical transactions, the algorithm distinguishes between `loan_payment_type`:
-- **`'payoff'`**: The **entire `loan_principal_amount`** is classified as `prepayThisMonth` (shown in "Tất toán" column). `principalThisMonth = 0`.
-- **`'periodic'`** (default): Split between `principalThisMonth` (up to `basePrincipal`) and `prepayThisMonth` (excess).
-
-> **Without this check**, a payoff of 100M in a loan with basePrincipal=100M would be misclassified as a normal monthly principal, causing 0 to appear in the "Tất toán" column and incorrect future projections.
+### Custom Schedule Overrides (`custom_overrides`)
+The schedule table in `LoanDetailSheet.jsx` allows per-month inline editing for current and future periods (`isPast = false`):
+- **Tất toán (Prepayment)**: User can enter custom prepay amount for period $m$. `calculateLoanSchedule` deducts this custom prepay, computes penalty, and recalculates remaining balance and future schedule. Past periods (`isPast = true`) remain read-only.
+- **Ngân sách (Monthly Budget)**: Displays monthly budget (defaults to `extra_payment` or period budget). Editable for $m \ge \text{current month}$, recalculating cash flow and accumulated savings for subsequent months.
+- **Ví tích lũy (Accumulated Savings Wallet)**: Editable for $m \ge \text{current month}$ to align with real-world savings, setting a new baseline for future accumulation.
+Overrides are persisted on the loan record as `custom_overrides: { [month]: { prepay, budget, accumulated } }`.
 
 ---
 

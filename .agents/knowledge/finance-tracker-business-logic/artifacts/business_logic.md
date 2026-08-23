@@ -167,7 +167,7 @@ Common steps:
 - If `receiveAmount > 0` → `destAccount.balance += receiveAmount`.
 - **Principal transaction** (non-reinvest only): a `type: 'transfer'` tx categorized as "Tất toán sổ tiết kiệm" (auto-created savings category if missing), note `Nhận gốc tất toán: <name>`.
 - **Interest income transaction**: `type: 'income'`, `amount: actualInterest`, created **only when `actualInterest > 0` AND interest is NOT folded into the new book** (i.e. skipped in the lãi-kép mode). Note `Lãi tái tục: <name>` (reinvest) or `Lãi tất toán: <name>` (settle).
-- **New book on reinvest**: cloned with same `interest_rate`/`term_months`, fresh `start_date`/`maturity_date`, name suffixed `(Tái tục)`, and `principal_amount` per the table above.
+- **New book on reinvest**: cloned with customizable `interest_rate` (defaults to old `interest_rate`) and customizable `maturity_date` (defaults to today + `term_months`), `start_date` set to today, name suffixed `(Tái tục)`, and `principal_amount` per the table above.
 - Finally `db.savings.update(id, { status: 'settled' })` on the old book.
 
 ### 3. Auto-Renewal (`lib/savingsService.js` → `processAutoRenewals`)

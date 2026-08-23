@@ -62,7 +62,7 @@ function ScheduleCellInput({ value, onChange, disabled, className = '', placehol
 
   if (disabled) {
     return (
-      <span className={`text-[10px] font-bold text-gray-400 dark:text-slate-500 ${className}`}>
+      <span className={`text-[10px] font-bold opacity-50 ${className}`}>
         {value > 0 ? formatCurrency(value) : '-'}
       </span>
     );
@@ -102,7 +102,7 @@ function ScheduleCellInput({ value, onChange, disabled, className = '', placehol
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
       placeholder={placeholder}
-      className={`w-20 sm:w-24 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-indigo-500 rounded-lg px-2 py-1 text-right text-[10px] font-black text-gray-900 dark:text-slate-100 outline-none transition-all ${className}`}
+      className={`w-20 sm:w-24 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-indigo-500 rounded-lg px-2 py-1 text-right text-[10px] font-black outline-none transition-all ${className}`}
     />
   );
 }
@@ -399,24 +399,27 @@ export function LoanDetailSheet({ isOpen, onClose, loan, onUpdated }) {
                             <td className="px-3 py-2.5 text-[10px] font-black text-gray-900 dark:text-slate-100 bg-gray-50/30 dark:bg-slate-700/30">
                               {formatCurrency(row.total)}
                             </td>
-                            <td className="px-3 py-2.5 text-[10px] font-black text-red-600 dark:text-rose-400">
+                            <td className="px-3 py-2.5 text-[10px] font-black">
                               <ScheduleCellInput
                                 value={row.prepay}
                                 disabled={row.isPast}
+                                className="text-red-600 dark:text-rose-400"
                                 onChange={val => handleOverrideChange(row.month, 'prepay', val)}
                               />
                             </td>
-                            <td className="px-3 py-2.5 text-[10px] font-bold text-purple-600 dark:text-indigo-400">
+                            <td className="px-3 py-2.5 text-[10px] font-bold">
                               <ScheduleCellInput
                                 value={row.budget}
                                 disabled={row.isPast}
+                                className="text-purple-600 dark:text-indigo-400"
                                 onChange={val => handleOverrideChange(row.month, 'budget', val)}
                               />
                             </td>
-                            <td className="px-3 py-2.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                            <td className="px-3 py-2.5 text-[10px] font-bold">
                               <ScheduleCellInput
                                 value={row.accumulated}
                                 disabled={row.isPast}
+                                className="text-emerald-600 dark:text-emerald-400"
                                 onChange={val => handleOverrideChange(row.month, 'accumulated', val)}
                               />
                             </td>

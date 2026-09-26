@@ -89,11 +89,23 @@ export default function Plan() {
       setTargetProjectionMonth(targetMonthRec.value);
     }
 
-    const lockKey = `is_savings_locked_${user.id}`;
+    const baseD = new Date();
+    const currentMonthStr = `${baseD.getFullYear()}-${String(baseD.getMonth() + 1).padStart(2, '0')}`;
+    const lockKey = `savings_locked_month_${user.id}`;
     const lockData = await db.settings.get(lockKey);
-    if (lockData && lockData.value !== undefined) {
-      setIsSavingsLocked(lockData.value === 'true' || lockData.value === true);
+    let isLocked = false;
+    if (lockData && lockData.value) {
+      isLocked = lockData.value === currentMonthStr;
+    } else {
+      const oldLockKey = `is_savings_locked_${user.id}`;
+      const oldLockData = await db.settings.get(oldLockKey);
+      if (oldLockData && (oldLockData.value === 'true' || oldLockData.value === true)) {
+        isLocked = true;
+        await db.settings.put({ key: lockKey, value: currentMonthStr });
+        await db.settings.delete(oldLockKey);
+      }
     }
+    setIsSavingsLocked(isLocked);
 
     // Migration & Load: Expected Total Savings Map
     const etKey = `expected_total_savings_map_${user.id}`;
@@ -133,8 +145,14 @@ export default function Plan() {
   const handleLockSavingsChange = async (checked) => {
     setIsSavingsLocked(checked);
     if (user) {
-      const lockKey = `is_savings_locked_${user.id}`;
-      await db.settings.put({ key: lockKey, value: checked ? 'true' : 'false' });
+      const baseD = new Date();
+      const currentMonthStr = `${baseD.getFullYear()}-${String(baseD.getMonth() + 1).padStart(2, '0')}`;
+      const lockKey = `savings_locked_month_${user.id}`;
+      if (checked) {
+        await db.settings.put({ key: lockKey, value: currentMonthStr });
+      } else {
+        await db.settings.delete(lockKey);
+      }
     }
   };
 

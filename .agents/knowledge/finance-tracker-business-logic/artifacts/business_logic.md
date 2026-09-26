@@ -216,7 +216,7 @@ The per-month plan table starts at the **real current month** (i=0) and accumula
 - **Checkbox "Chốt tiết kiệm tháng này" (`isSavingsLocked`)**:
   - **CHECKED (ON)**: Base `cumulativeSavings` for i=0 row starts at `currentTotalSavings − currentMonthSaving`. When month 0 `currentMonthSaving` is added in the loop, row 0 "Tổng tích luỹ" resolves to exactly `currentTotalSavings` (tổng số tiền các sổ tiết kiệm thuộc hạng mục 'tiết kiệm').
   - **UNCHECKED (OFF)**: Base `cumulativeSavings` for i=0 row starts at `currentTotalSavings`. When month 0 `currentMonthSaving` is added in the loop, row 0 "Tổng tích luỹ" resolves to `currentTotalSavings + currentMonthSaving` (tổng sổ tiết kiệm + dư ra của tháng hiện tại).
-  - Preference is saved in `db.settings` key `is_savings_locked_<user_id>`.
+  - Preference is bound to the current real month in `db.settings` key `savings_locked_month_<user_id>` (storing format `YYYY-MM`). When real time transitions to a new month, the checkbox automatically evaluates to **OFF** for the new month.
 
 ---
 

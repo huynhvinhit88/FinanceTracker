@@ -51,6 +51,7 @@ export default function Plan() {
     return `${d.getFullYear()}-12`;
   });
   const [showPlanTable, setShowPlanTable] = useState(true);
+  const [isSavingsLocked, setIsSavingsLocked] = useState(false);
   const { displayValue: displayManualSaving, value: manualSaving, handleInputChange: handleManualSavingChange, setExternalValue: setManualSaving } = useCurrencyInput('');
 
   useEffect(() => {
@@ -88,6 +89,12 @@ export default function Plan() {
       setTargetProjectionMonth(targetMonthRec.value);
     }
 
+    const lockKey = `is_savings_locked_${user.id}`;
+    const lockData = await db.settings.get(lockKey);
+    if (lockData && lockData.value !== undefined) {
+      setIsSavingsLocked(lockData.value === 'true' || lockData.value === true);
+    }
+
     // Migration & Load: Expected Total Savings Map
     const etKey = `expected_total_savings_map_${user.id}`;
     let etData = await db.settings.get(etKey);
@@ -121,6 +128,14 @@ export default function Plan() {
       }
     }
     if (spData && spData.value) setSavingsPlan(spData.value);
+  };
+
+  const handleLockSavingsChange = async (checked) => {
+    setIsSavingsLocked(checked);
+    if (user) {
+      const lockKey = `is_savings_locked_${user.id}`;
+      await db.settings.put({ key: lockKey, value: checked ? 'true' : 'false' });
+    }
   };
 
   const handleExpectedTotalSavingsChange = async (e) => {
@@ -617,6 +632,20 @@ export default function Plan() {
 
               {showPlanTable && (
                 <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-100 dark:border-white/5 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                  <div className="p-4 bg-gray-50/70 dark:bg-slate-800/40 border-b border-gray-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-3 px-6">
+                    <span className="text-xs font-bold text-gray-700 dark:text-slate-300">Chi tiết kế hoạch từng tháng</span>
+                    <label className="flex items-center space-x-2 cursor-pointer select-none bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-gray-100 dark:border-white/5 shadow-sm active:scale-95 transition-all">
+                      <input 
+                        type="checkbox" 
+                        checked={isSavingsLocked}
+                        onChange={(e) => handleLockSavingsChange(e.target.checked)}
+                        className="w-4 h-4 rounded border-gray-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-gray-700 dark:text-slate-300">
+                        Chốt tiết kiệm tháng này
+                      </span>
+                    </label>
+                  </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-center divide-y divide-gray-50 dark:divide-white/5 tabular-nums">
                       <thead className="bg-gray-50/50 dark:bg-slate-800/50">
@@ -634,15 +663,15 @@ export default function Plan() {
                           const baseD = new Date(); baseD.setDate(1);
                           const currentMonthKey = `${baseD.getFullYear()}-${String(baseD.getMonth() + 1).padStart(2, '0')}`;
                           const curOverride = savingsPlan[currentMonthKey];
-                          // Tích luỹ DỰ KIẾN của tháng hiện tại = thu dự kiến − chi dự kiến (hoặc giá trị ghi đè).
-                          const currentMonthProjected = curOverride !== undefined ? curOverride : calculateMonthlyStats(currentMonthKey).surplus;
-                          
-                          const prevD = new Date(baseD); prevD.setMonth(prevD.getMonth() - 1);
-                          const prevMonthKey = `${prevD.getFullYear()}-${String(prevD.getMonth() + 1).padStart(2, '0')}`;
-                          const prevSnapshot = actualTotalSavingsMap[prevMonthKey];
-                          const valueA = prevSnapshot ? prevSnapshot.amount : fallbackValueA;
-                          
-                          let cumulativeSavings = valueA;
+                          const statsCur = calculateMonthlyStats(currentMonthKey);
+                          const curMonthSaving = curOverride !== undefined ? curOverride : statsCur.surplus;
+
+                          // Nếu check on (isSavingsLocked): Tổng tích luỹ tháng hiện tại = currentTotalSavings (tổng sổ tiết kiệm 'tiết kiệm').
+                          // Nếu check off (!isSavingsLocked): Tổng tích luỹ tháng hiện tại = currentTotalSavings + curMonthSaving (tổng sổ tiết kiệm + dư ra).
+                          let cumulativeSavings = isSavingsLocked 
+                            ? (currentTotalSavings - curMonthSaving)
+                            : currentTotalSavings;
+
                           return Array.from({ length: Math.min(60, projectionMonths + 1) }).map((_, i) => {
                             const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + i);
                             const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;

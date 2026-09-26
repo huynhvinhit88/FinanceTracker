@@ -213,15 +213,10 @@ projectedNW = currentNW compounded monthly at (weightedAnnualRate / 12)
 ### Cumulative Savings Plan Table ("Tổng tích luỹ" column)
 The per-month plan table starts at the **real current month** (i=0) and accumulates each month's `monthSaving` (= planned surplus `income − expense`, or the user override) into a running `cumulativeSavings`.
 
-- **Base (starting value)** = `currentTotalSavings − currentMonthProjected`, i.e. the **actual accumulation up to BEFORE the current month**.
-  - `currentTotalSavings` = sum of `principal_amount` of active savings books whose category name is exactly **"tiết kiệm"** (the real accumulated total *as of now*).
-  - `currentMonthProjected` = the **projected** surplus of the current month = `thu dự kiến − chi dự kiến` (`calculateMonthlyStats(currentMonthKey).surplus`, or the per-month override if set). It is **NOT** the actual savings opened this month.
-- **Why subtract the projected current month:** the i=0 row adds `monthSaving(currentMonth)` (which equals `currentMonthProjected`), so the two cancel and the current-month row resolves to exactly `currentTotalSavings`. The projected surplus then only accrues from the **next** month onward:
-  ```
-  Tổng tích luỹ (tháng hiện tại) = (currentTotalSavings − currentMonthProjected) + monthSaving(currentMonth)
-                                 = currentTotalSavings
-  ```
-  matching the requested definition: *tổng tích luỹ thực tế đến trước tháng hiện tại (= tổng tích luỹ thực − tích luỹ **dự kiến** của tháng hiện tại) + tích luỹ dự kiến của tháng hiện tại*.
+- **Checkbox "Chốt tiết kiệm tháng này" (`isSavingsLocked`)**:
+  - **CHECKED (ON)**: Base `cumulativeSavings` for i=0 row starts at `currentTotalSavings − currentMonthSaving`. When month 0 `currentMonthSaving` is added in the loop, row 0 "Tổng tích luỹ" resolves to exactly `currentTotalSavings` (tổng số tiền các sổ tiết kiệm thuộc hạng mục 'tiết kiệm').
+  - **UNCHECKED (OFF)**: Base `cumulativeSavings` for i=0 row starts at `currentTotalSavings`. When month 0 `currentMonthSaving` is added in the loop, row 0 "Tổng tích luỹ" resolves to `currentTotalSavings + currentMonthSaving` (tổng sổ tiết kiệm + dư ra của tháng hiện tại).
+  - Preference is saved in `db.settings` key `is_savings_locked_<user_id>`.
 
 ---
 

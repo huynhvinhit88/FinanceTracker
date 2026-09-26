@@ -359,6 +359,20 @@ formatCurrency(1500000) // → "1.500.000" (vi-VN locale, dots as thousand separ
 
 ---
 
+## Date Formatting Standards (`formatDate`)
+
+Always use `formatDate(dateInput)` from `src/utils/format.js` for rendering display dates in UI components.
+
+```js
+import { formatDate } from '../utils/format';
+
+formatDate('2026-11-26') // → "26/11/2026"
+formatDate(new Date())   // → "26/09/2026"
+```
+
+- **Concise DD/MM/YYYY**: Avoid `toLocaleDateString('vi-VN')` in UI rendering because mobile Safari/WebKit formats it as long verbose strings (`ngày 26 thg 11, 2026`), causing vertical wrapping and line offset issues in mobile input boxes and grid cards.
+- **Date Inputs (`<input type="date">`)**: Native date inputs use WebKit rules in `index.css` (`min-w-0`, `white-space: nowrap`, `color-scheme: light dark`) to prevent text wrapping on mobile screens.
+
 ## Notes Feature (`notes` Table & `/notes` Route)
 
 The **Ghi chú** feature enables users to record financial reminders (e.g. temporary savings book withdrawals) and app enhancement notes.

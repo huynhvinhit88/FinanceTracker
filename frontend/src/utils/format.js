@@ -30,10 +30,30 @@ export const fromViDecimal = (str) => {
   return parseFloat(String(str).replace(',', '.')) || 0;
 };
 
-export const formatDate = (dateStr) => {
-  if (!dateStr) return '';
-  // Chỉ lấy phần ngày (YYYY-MM-DD) — chịu được cả chuỗi date-only lẫn timestamp đầy đủ.
-  const [y, m, d] = String(dateStr).slice(0, 10).split('-');
-  return `${d}/${m}/${y}`;
+export const formatDate = (dateInput) => {
+  if (!dateInput) return '';
+  if (dateInput instanceof Date) {
+    if (isNaN(dateInput.getTime())) return '';
+    const d = String(dateInput.getDate()).padStart(2, '0');
+    const m = String(dateInput.getMonth() + 1).padStart(2, '0');
+    const y = dateInput.getFullYear();
+    return `${d}/${m}/${y}`;
+  }
+  const str = String(dateInput).trim();
+  if (str.includes('-')) {
+    const parts = str.slice(0, 10).split('-');
+    if (parts.length === 3) {
+      const [y, m, d] = parts;
+      return `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`;
+    }
+  }
+  const dObj = new Date(str);
+  if (!isNaN(dObj.getTime())) {
+    const d = String(dObj.getDate()).padStart(2, '0');
+    const m = String(dObj.getMonth() + 1).padStart(2, '0');
+    const y = dObj.getFullYear();
+    return `${d}/${m}/${y}`;
+  }
+  return str;
 };
 

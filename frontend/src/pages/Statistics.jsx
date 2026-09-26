@@ -11,7 +11,7 @@ import {
   PieChart as PieChartIcon, ChevronRight as ChevronRightIcon,
   Info, ArrowLeftRight, AlertCircle
 } from 'lucide-react';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, formatDate } from '../utils/format';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { useGlobalRefresh } from '../hooks/useGlobalRefresh';
 
@@ -722,7 +722,7 @@ export default function Statistics() {
                       <div key={tx.id || idx} className="flex items-center justify-between p-4">
                         <div className="flex-1 truncate pr-3">
                           <p className="text-sm font-bold text-gray-800 dark:text-slate-200 truncate">{tx.note || 'Thu hộ'}</p>
-                          <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5">{new Date(tx.date).toLocaleDateString('vi-VN')}</p>
+                          <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5">{formatDate(tx.date)}</p>
                         </div>
                         <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 tabular-nums shrink-0">+{formatCurrency(tx.amount)}₫</span>
                       </div>
@@ -746,7 +746,7 @@ export default function Statistics() {
                       <div key={tx.id || idx} className="flex items-center justify-between p-4">
                         <div className="flex-1 truncate pr-3">
                           <p className="text-sm font-bold text-gray-800 dark:text-slate-200 truncate">{tx.note || 'Chi hộ'}</p>
-                          <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5">{new Date(tx.date).toLocaleDateString('vi-VN')}</p>
+                          <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5">{formatDate(tx.date)}</p>
                         </div>
                         <span className="text-sm font-black text-rose-500 dark:text-rose-400 tabular-nums shrink-0">-{formatCurrency(tx.amount)}₫</span>
                       </div>

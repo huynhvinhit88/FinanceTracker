@@ -3,7 +3,7 @@ import { db } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowDownRight, ArrowRightLeft } from 'lucide-react';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, formatDate } from '../utils/format';
 import { EditTransactionSheet } from '../components/transactions/EditTransactionSheet';
 import { GlobalAddTransactionFab } from '../components/layout/GlobalAddTransactionFab';
 import { useGlobalRefresh } from '../hooks/useGlobalRefresh';
@@ -127,7 +127,7 @@ export default function TransactionsList() {
 
   // Group transactions by date
   const groupedTransactions = transactions.reduce((acc, tx) => {
-    const dateStr = new Date(tx.date).toLocaleDateString('vi-VN');
+    const dateStr = formatDate(tx.date);
     if (!acc[dateStr]) acc[dateStr] = [];
     acc[dateStr].push(tx);
     return acc;

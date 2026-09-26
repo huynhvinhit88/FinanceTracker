@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../lib/db';
 import { ArrowDownRight, ArrowRightLeft, TrendingUp, TrendingDown, StickyNote } from 'lucide-react';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, formatDate } from '../utils/format';
 import { EditTransactionSheet } from '../components/transactions/EditTransactionSheet';
 import { useGlobalRefresh } from '../hooks/useGlobalRefresh';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
@@ -239,7 +239,7 @@ export default function Home() {
         {/* Header */}
         <div className="flex justify-between items-center mb-8 mt-4 px-1">
           <div>
-            <p className="text-sm text-gray-400 dark:text-slate-400 font-bold uppercase tracking-widest">Hôm nay, {new Date().toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+            <p className="text-sm text-gray-400 dark:text-slate-400 font-bold uppercase tracking-widest">Hôm nay, {formatDate(new Date())}</p>
             <h1 className="text-3xl lg:text-4xl font-black text-gray-900 dark:text-slate-100 tracking-tight mt-1">Tổng quan</h1>
           </div>
           <button
@@ -416,7 +416,7 @@ export default function Home() {
                     )}
                   </div>
                   <div className="mt-3 pt-2 border-t border-gray-200/40 dark:border-white/5 text-[10px] text-gray-400 dark:text-slate-500 font-medium">
-                    {new Date(n.created_at).toLocaleDateString('vi-VN')}
+                    {formatDate(n.created_at)}
                   </div>
                 </div>
               ))}
@@ -470,7 +470,7 @@ export default function Home() {
                         {isIncome ? '+' : isTransfer ? '' : '-'}{formatCurrency(tx.amount)} đ
                       </p>
                       <p className="text-[10px] lg:text-xs text-gray-400 dark:text-slate-500 font-medium">
-                        {new Date(tx.date).toLocaleDateString('vi-VN')} • {new Date(tx.date).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                        {formatDate(tx.date)} • {new Date(tx.date).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </div>

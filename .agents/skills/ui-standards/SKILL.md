@@ -15,22 +15,12 @@ Tài liệu này quy định các tiêu chuẩn về giao diện (UI) và trải
 
 ## 2. Nhập liệu Số tiền (Currency Input)
 
-Ứng dụng hỗ trợ hai cơ chế nhập liệu linh hoạt thông qua hook `useCurrencyInput`:
+Ứng dụng áp dụng **Cơ chế Nhập Đầy Đủ (Full Mode)** cho tất cả các ô số tiền thông qua hook `useCurrencyInput`:
 
-- **Cơ chế Viết tắt (Shortcut Mode - x1000)**:
-    - **Áp dụng cho**: Thêm giao dịch (Thu, Chi, Chuyển khoản) và Lập kế hoạch ngân sách (Dự thu/Dự chi hàng tháng).
-    - **Hành vi**: Tự động nhân giá trị nhập với 1.000 (Ví dụ: gõ `50` -> lưu `50.000`).
-    - **Giao diện**: Hiển thị hậu tố `.000 ₫` mờ ở cuối ô nhập.
-
-- **Cơ chế Đầy đủ (Full Mode)**:
-    - **Áp dụng cho**: Số dư tài khoản, Mục tiêu tiết kiệm, Sổ tiết kiệm, Tài sản đầu tư, Khoản vay, và Tab **Trả nợ** trong Thêm giao dịch.
-    - **Hành vi**: Nhập số thực đầy đủ, không tự động nhân thêm.
-    - **Giao diện**: Hiển thị hậu tố ` ₫` để xác nhận đơn vị tiền tệ.
-
-- **Kỹ thuật chung**:
-    - Không tự động thêm dấu phân cách hàng ngàn trong khi gõ để tránh nhảy con trỏ.
-    - Sử dụng `inputMode="numeric"` để mở bàn phím số trên mobile.
-    - Luôn sử dụng hook `useCurrencyInput(initialValue, { useShortcut: boolean })`.
+- **Hành vi**: Nhập số thực đầy đủ (gõ `50000` -> lưu & hiển thị `50.000 ₫`, gõ `500` -> `500 ₫`). Không tự động nhân 1.000.
+- **Tự động định dạng**: Tự động nhóm dấu phân cách hàng ngàn `.` giúp người dùng dễ quan sát con số chính xác mà không bị nhảy con trỏ.
+- **Giao diện**: Hiển thị hậu tố ` ₫` để xác nhận đơn vị tiền tệ.
+- **Kỹ thuật**: Sử dụng `inputMode="numeric"` để mở bàn phím số gọn gàng trên mobile. Luôn sử dụng hook `useCurrencyInput(initialValue, { allowNegative: boolean })`.
 
 ## 3. Lãi suất (Interest Rates)
 

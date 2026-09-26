@@ -18,7 +18,7 @@ export default function Notes() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'pending', 'completed'
+  const [statusFilter, setStatusFilter] = useState('pending'); // 'all', 'pending', 'completed'
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState(null);

@@ -379,4 +379,5 @@ The **Ghi chú** feature enables users to record financial reminders (e.g. tempo
 - **Table**: `notes` (`id`, `user_id`, `title`, `content`, `category`, `is_completed`, `created_at`, `updated_at`).
 - **Dynamic Categories**: Categories are stored as string values (e.g. `'Tài chính'`, `'Ứng dụng'`) and support custom user-defined categories. Category filter chips in `Notes.jsx` dynamically aggregate categories from the user's notes.
 - **Timestamping**: Displays formatted creation timestamp (`created_at`) on note cards.
+- **Default Status Filter**: When opening `/notes`, `statusFilter` defaults to `'pending'` (chỉ lọc ghi chú chưa xong) to prioritize actionable items. Users can switch filters between "Chưa xong", "Tất cả", and "Đã hoàn thành".
 - **Integrations**: Standalone screen `/notes`, desktop `SidebarNav` menu item, header shortcut, and a recent notes widget on `Home.jsx`.

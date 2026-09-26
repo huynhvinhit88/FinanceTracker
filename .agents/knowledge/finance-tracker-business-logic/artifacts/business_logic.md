@@ -199,6 +199,8 @@ For a given category and month, the effective budget is resolved as:
 1. Look for a budget WITH `month === selectedMonth` (specific override)
 2. If none: fallback to budget WHERE `month === null` (default budget)
 
+> **Validation Note**: Budget items support `amount >= 0` (`AddBudgetSheet.jsx` & `EditBudgetSheet.jsx`). Users can create/edit budget plan items with `amount = 0`.
+
 ### Net Worth Projection
 ```
 projectedNW = currentNW compounded monthly at (weightedAnnualRate / 12)  

@@ -64,8 +64,8 @@ export function AddBudgetSheet({ isOpen, onClose, onSuccess, initialMonth }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (rawAmount <= 0) {
-      setError('Hạn mức ngân sách phải lớn hơn 0');
+    if (rawAmount < 0 || rawAmount === '' || isNaN(rawAmount)) {
+      setError('Hạn mức ngân sách phải lớn hơn hoặc bằng 0');
       return;
     }
     if (!categoryId) {

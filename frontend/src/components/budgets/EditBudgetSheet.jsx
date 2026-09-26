@@ -27,8 +27,8 @@ export function EditBudgetSheet({ isOpen, onClose, budget, onSuccess, viewMonth 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (rawAmount <= 0) {
-      setError('Số tiền phải lớn hơn 0');
+    if (rawAmount < 0 || rawAmount === '' || isNaN(rawAmount)) {
+      setError('Số tiền phải lớn hơn hoặc bằng 0');
       return;
     }
     

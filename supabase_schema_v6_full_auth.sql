@@ -142,7 +142,7 @@ CREATE TABLE budgets (
   id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id uuid REFERENCES auth.users ON DELETE CASCADE NOT NULL,
   category_id uuid REFERENCES categories(id) ON DELETE CASCADE NOT NULL,
-  amount numeric NOT NULL CHECK (amount > 0),
+  amount numeric NOT NULL CHECK (amount >= 0),
   month text, -- Format 'YYYY-MM'
   type text DEFAULT 'monthly',
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,

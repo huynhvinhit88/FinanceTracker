@@ -24,6 +24,7 @@ export default function Statistics() {
   
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [savingsList, setSavingsList] = useState([]);
   const [savingsMap, setSavingsMap] = useState({});
   const [editingSavingsMonth, setEditingSavingsMonth] = useState(null);
   const [editSavingsValue, setEditSavingsValue] = useState('');
@@ -50,6 +51,7 @@ export default function Statistics() {
         .toArray();
 
       const catData = await db.categories.toArray();
+      const allSavRaw = await db.savings.toArray();
 
       // Fetch savings map
       const mapKey = `actual_total_savings_map_${user.id}`;
@@ -65,6 +67,7 @@ export default function Statistics() {
 
       setTransactions(allTxRaw);
       setCategories(catData);
+      setSavingsList(allSavRaw);
     } catch (err) {
       console.error('Error fetching statistics data:', err);
     } finally {
@@ -150,9 +153,11 @@ export default function Statistics() {
       month: `T${i + 1}`,
       income: [],
       expense: [],
+      savings: [],
       transfer: []
     }));
 
+    // 1. Transaction aggregations (Income, Expense, Transfer)
     transactions.forEach(tx => {
       const month = new Date(tx.date).getMonth();
       const cat = categories.find(c => c.id === tx.category_id);
@@ -178,15 +183,63 @@ export default function Statistics() {
       catEntry.amount += tx.amount;
     });
 
-    // Sort categories by amount within each month
+    // 2. Savings aggregations by category per month:
+    // Cách tính: Tổng số tiền mở sổ tiết kiệm - Tổng số tiền tất toán (không tái tục) theo từng hạng mục trong tháng
+    savingsList.forEach(sav => {
+      const cat = categories.find(c => c.id === sav.category_id);
+      const categoryName = cat ? cat.name : 'Chưa phân loại';
+      const categoryIcon = cat ? cat.icon : '🐷';
+      const principal = Number(sav.principal_amount) || 0;
+
+      // Check opening date (Mở sổ)
+      if (sav.start_date) {
+        const startDate = new Date(sav.start_date);
+        if (!isNaN(startDate.getTime()) && startDate.getFullYear() === selectedYear) {
+          const startMonth = startDate.getMonth();
+          if (startMonth >= 0 && startMonth < 12) {
+            let catEntry = data[startMonth].savings.find(c => c.name === categoryName);
+            if (!catEntry) {
+              catEntry = { name: categoryName, icon: categoryIcon, opened: 0, settled: 0, amount: 0 };
+              data[startMonth].savings.push(catEntry);
+            }
+            catEntry.opened += principal;
+          }
+        }
+      }
+
+      // Check settlement date (Tất toán không tái tục)
+      if (sav.status === 'settled' && !sav.auto_renew) {
+        const settleDateStr = sav.maturity_date || sav.start_date;
+        if (settleDateStr) {
+          const settleDate = new Date(settleDateStr);
+          if (!isNaN(settleDate.getTime()) && settleDate.getFullYear() === selectedYear) {
+            const settleMonth = settleDate.getMonth();
+            if (settleMonth >= 0 && settleMonth < 12) {
+              let catEntry = data[settleMonth].savings.find(c => c.name === categoryName);
+              if (!catEntry) {
+                catEntry = { name: categoryName, icon: categoryIcon, opened: 0, settled: 0, amount: 0 };
+                data[settleMonth].savings.push(catEntry);
+              }
+              catEntry.settled += principal;
+            }
+          }
+        }
+      }
+    });
+
+    // Compute net amount (opened - settled) and sort categories within each month
     data.forEach(m => {
+      m.savings.forEach(cat => {
+        cat.amount = cat.opened - cat.settled;
+      });
       m.income.sort((a, b) => b.amount - a.amount);
       m.expense.sort((a, b) => b.amount - a.amount);
+      m.savings.sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
       m.transfer.sort((a, b) => b.amount - a.amount);
     });
 
     return data;
-  }, [transactions, categories]);
+  }, [transactions, categories, savingsList, selectedYear]);
 
   // --- THU HỘ / CHI HỘ RECONCILIATION ---
   const thuHoChiHoData = useMemo(() => {
@@ -435,6 +488,7 @@ export default function Statistics() {
                         type: 'monthly_category',
                         income: catData?.income || [],
                         expense: catData?.expense || [],
+                        savings: catData?.savings || [],
                         transfer: catData?.transfer || []
                       })}>
                         {row.month}
@@ -444,18 +498,21 @@ export default function Statistics() {
                         type: 'monthly_category',
                         income: catData?.income || [],
                         expense: catData?.expense || [],
+                        savings: catData?.savings || [],
                         transfer: catData?.transfer || []
                       })}>{formatCurrency(row.income)}</td>
                       <td className="px-5 py-5 text-rose-500 dark:text-rose-400" onClick={() => handleOpenDetail(`Chi tiết ${row.month}`, {
                         type: 'monthly_category',
                         income: catData?.income || [],
                         expense: catData?.expense || [],
+                        savings: catData?.savings || [],
                         transfer: catData?.transfer || []
                       })}>{formatCurrency(row.expense)}</td>
                       <td className={`px-5 py-5 ${row.net >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-orange-500 dark:text-orange-400'}`} onClick={() => handleOpenDetail(`Chi tiết ${row.month}`, {
                         type: 'monthly_category',
                         income: catData?.income || [],
                         expense: catData?.expense || [],
+                        savings: catData?.savings || [],
                         transfer: catData?.transfer || []
                       })}>
                         {row.net > 0 ? '+' : ''}{formatCurrency(row.net)}
@@ -686,6 +743,39 @@ export default function Statistics() {
                   </div>
                 </div>
               )}
+              {/* Savings Section */}
+              {detailSheet.items.savings && detailSheet.items.savings.length > 0 && (
+                <div>
+                  <h4 className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-3 px-1">Tiết kiệm</h4>
+                  <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-100 dark:border-white/5 divide-y divide-gray-50 dark:divide-white/5 shadow-sm">
+                    {detailSheet.items.savings.map((cat, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-lg">{cat.icon}</div>
+                          <div>
+                            <span className="text-sm font-bold text-gray-800 dark:text-slate-200 block">{cat.name}</span>
+                            {(cat.opened > 0 || cat.settled > 0) && (
+                              <span className="text-[10px] font-medium text-gray-400 dark:text-slate-500 block mt-0.5">
+                                {cat.opened > 0 ? `Mở: +${formatCurrency(cat.opened)}₫` : ''}
+                                {cat.opened > 0 && cat.settled > 0 ? ' • ' : ''}
+                                {cat.settled > 0 ? `Tất toán: -${formatCurrency(cat.settled)}₫` : ''}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <span className={`text-sm font-black ${
+                          cat.amount > 0 ? 'text-emerald-600 dark:text-emerald-400'
+                          : cat.amount < 0 ? 'text-rose-500 dark:text-rose-400'
+                          : 'text-gray-500'
+                        }`}>
+                          {cat.amount > 0 ? '+' : ''}{formatCurrency(cat.amount)}₫
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Transfer Section */}
               {detailSheet.items.transfer && detailSheet.items.transfer.length > 0 && (
                 <div>
@@ -704,7 +794,7 @@ export default function Statistics() {
                 </div>
               )}
               
-              {detailSheet.items.income.length === 0 && detailSheet.items.expense.length === 0 && (!detailSheet.items.transfer || detailSheet.items.transfer.length === 0) && (
+              {detailSheet.items.income.length === 0 && detailSheet.items.expense.length === 0 && (!detailSheet.items.savings || detailSheet.items.savings.length === 0) && (!detailSheet.items.transfer || detailSheet.items.transfer.length === 0) && (
                 <div className="text-center py-10 text-gray-400 italic">Không có giao dịch nào trong tháng này</div>
               )}
             </div>

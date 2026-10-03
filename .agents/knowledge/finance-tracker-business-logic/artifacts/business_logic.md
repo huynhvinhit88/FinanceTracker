@@ -192,9 +192,9 @@ savAnnualInterest = activeSavings.reduce((s, x) => {
 
 ### 5. Detailed Monthly Savings Statistics Breakdown (`Statistics.jsx`)
 In the detailed monthly category modal (`detailSheet` with `type: 'monthly_category'`), a dedicated **Tiết kiệm** section is displayed directly **ABOVE** the **Chuyển khoản (Trích lập)** section.
-- **Formula per category in a month**: `Net Savings = Total Opened Amount - Total Settled Amount (non-auto-renew)`
-  - **Mở sổ (Opened)**: sum of `principal_amount` for books where `start_date` falls in the month.
-  - **Tất toán không tái tục (Settled)**: sum of `principal_amount` for books where `status === 'settled'`, `!auto_renew`, and `maturity_date` (or `start_date`) falls in the month.
+- **Formula per category in a month**: `Net Savings = Total Opened Amount (excluding auto-renewals) - Total Settled Amount (excluding auto-renewals)`
+  - **Mở sổ (Opened)**: sum of `principal_amount` for books where `start_date` falls in the month, **excluding auto-renewed rollover books** (`!name.includes('(Tái tục)')`).
+  - **Tất toán / Rút ra (Settled)**: sum of `principal_amount` for books where `status === 'settled'` that are **NOT rolled over into a new auto-renewed book** (i.e. actual cash withdrawals back to bank accounts).
 - **Display**: Displays category icon, category name, subtitle breakdown (`Mở: +X₫ • Tất toán: -Y₫`), and net amount (positive in emerald green, negative in rose red).
 
 ---

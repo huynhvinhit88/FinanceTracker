@@ -184,15 +184,17 @@ export default function Statistics() {
     });
 
     // 2. Savings aggregations by category per month:
-    // Cách tính: Tổng số tiền mở sổ tiết kiệm - Tổng số tiền tất toán (không tái tục) theo từng hạng mục trong tháng
+    // Cách tính: Tổng số tiền mở sổ tiết kiệm (không tái tục) - Tổng số tiền tất toán/rút ra (không tái tục) theo từng hạng mục trong tháng
     savingsList.forEach(sav => {
       const cat = categories.find(c => c.id === sav.category_id);
       const categoryName = cat ? cat.name : 'Chưa phân loại';
       const categoryIcon = cat ? cat.icon : '🐷';
       const principal = Number(sav.principal_amount) || 0;
 
-      // Check opening date (Mở sổ)
-      if (sav.start_date) {
+      const isRolloverNewBook = sav.name && (sav.name.includes('(Tái tục)') || sav.name.includes('Tái tục'));
+
+      // Check opening date (Mở sổ thực tế - Bỏ qua các sổ do tái tục tạo ra)
+      if (sav.start_date && !isRolloverNewBook) {
         const startDate = new Date(sav.start_date);
         if (!isNaN(startDate.getTime()) && startDate.getFullYear() === selectedYear) {
           const startMonth = startDate.getMonth();
@@ -207,20 +209,31 @@ export default function Statistics() {
         }
       }
 
-      // Check settlement date (Tất toán không tái tục)
-      if (sav.status === 'settled' && !sav.auto_renew) {
-        const settleDateStr = sav.maturity_date || sav.start_date;
-        if (settleDateStr) {
-          const settleDate = new Date(settleDateStr);
-          if (!isNaN(settleDate.getTime()) && settleDate.getFullYear() === selectedYear) {
-            const settleMonth = settleDate.getMonth();
-            if (settleMonth >= 0 && settleMonth < 12) {
-              let catEntry = data[settleMonth].savings.find(c => c.name === categoryName);
-              if (!catEntry) {
-                catEntry = { name: categoryName, icon: categoryIcon, opened: 0, settled: 0, amount: 0 };
-                data[settleMonth].savings.push(catEntry);
+      // Check settlement date (Tất toán / Rút tiền thực tế - Bỏ qua nếu sổ này được tái tục sang sổ mới)
+      if (sav.status === 'settled') {
+        const baseName = sav.name ? sav.name.replace(/\(Tái tục\)/gi, '').trim() : '';
+        const isRolledOverToAnotherBook = savingsList.some(other => 
+          other.id !== sav.id &&
+          other.name &&
+          (other.name.includes('(Tái tục)') || other.name.includes('Tái tục')) &&
+          baseName && other.name.includes(baseName) &&
+          new Date(other.start_date) >= new Date(sav.start_date)
+        );
+
+        if (!isRolledOverToAnotherBook) {
+          const settleDateStr = sav.maturity_date || sav.start_date;
+          if (settleDateStr) {
+            const settleDate = new Date(settleDateStr);
+            if (!isNaN(settleDate.getTime()) && settleDate.getFullYear() === selectedYear) {
+              const settleMonth = settleDate.getMonth();
+              if (settleMonth >= 0 && settleMonth < 12) {
+                let catEntry = data[settleMonth].savings.find(c => c.name === categoryName);
+                if (!catEntry) {
+                  catEntry = { name: categoryName, icon: categoryIcon, opened: 0, settled: 0, amount: 0 };
+                  data[settleMonth].savings.push(catEntry);
+                }
+                catEntry.settled += principal;
               }
-              catEntry.settled += principal;
             }
           }
         }

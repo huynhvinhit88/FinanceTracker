@@ -1,3 +1,5 @@
+import { formatDate } from './format';
+
 /**
  * Shared loan calculation utility.
  * Used by LoanCalculatorSheet (UI) and Settings (export).
@@ -249,7 +251,7 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
 
     schedule.push({
       month: m,
-      date: currentPayDate.toLocaleDateString('vi-VN'),
+      date: formatDate(currentPayDate),
       dateObj: new Date(currentPayDate),
       isPast,
       budget: Math.round(currentMonthBudget),
@@ -277,7 +279,7 @@ export function calculateLoanSchedule(profile, historicalEvents = [], actualRema
     actualMonths,
     monthsSaved: n - actualMonths,
     interestSaved: Math.round(baseTotalInterest - (totalInterest + totalPenalty)),
-    payoffDateStr: payoffDate.toLocaleDateString('vi-VN', { month: '2-digit', year: 'numeric' }),
+    payoffDateStr: formatDate(payoffDate),
     totalYears: Math.floor(actualMonths / 12),
     totalRemMonths: actualMonths % 12,
   };

@@ -21,6 +21,7 @@ import { DriveFilePicker } from '../components/settings/DriveFilePicker';
 import { LoanCalculatorSheet } from '../components/tools/LoanCalculatorSheet';
 import { CompoundInterestSheet } from '../components/tools/CompoundInterestSheet';
 import { calculateLoanSchedule } from '../utils/loanCalculator';
+import { formatDate } from '../utils/format';
 
 export default function Settings() {
   const { user, signOut } = useAuth();
@@ -350,7 +351,7 @@ export default function Settings() {
     const accs = await db.accounts.toArray();
     
     const rows = txs.map(t => ({
-      'Ngày': new Date(t.date).toLocaleDateString('vi-VN'),
+      'Ngày': formatDate(t.date),
       'Loại': t.type === 'income' ? 'Thu' : (t.type === 'expense' ? 'Chi' : 'Chuyển'),
       'Hạng mục': cats.find(c => c.id === t.category_id)?.name || 'Khác',
       'Tài khoản': accs.find(a => a.id === t.account_id)?.name || 'N/A',
@@ -383,7 +384,7 @@ export default function Settings() {
       'Mục tiêu': g.name,
       'Mục tiêu (đ)': g.target_amount,
       'Hiện có (đ)': g.current_amount,
-      'Hạn chót': g.deadline ? new Date(g.deadline).toLocaleDateString('vi-VN') : '',
+      'Hạn chót': g.deadline ? formatDate(g.deadline) : '',
       'Trạng thái': g.status
     }));
     return downloadCSV(toCSV(['Mục tiêu', 'Mục tiêu (đ)', 'Hiện có (đ)', 'Hạn chót', 'Trạng thái'], rows), 'Muc_tieu_tiet_kiem.csv');

@@ -165,7 +165,10 @@ Each settings section follows this pattern:
   </div>
 )}
 
-### Specialized Input Components
+#### Date Display (Shortest Format: DD/MM/YY)
+All date displays across mobile and desktop must use `formatDate(date)` from `src/utils/format.js`.
+- **Format**: `DD/MM/YY` (e.g. `03/10/26`).
+- **Shortest footprint**: Saves UI space on mobile cards, tables, badge tags, and sheets.
 
 #### RateInput (with Vietnamese decimal comma)
 Standard for interest rates and percentages:

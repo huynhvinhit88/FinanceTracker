@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { db } from '../../lib/db';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { Landmark, List } from 'lucide-react';
-import { formatCurrency, toViDecimal, fromViDecimal } from '../../utils/format';
+import { formatCurrency, toViDecimal, fromViDecimal, formatDate } from '../../utils/format';
 
 export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
   const { user } = useAuth();
@@ -47,13 +47,7 @@ export function AddSavingsSheet({ isOpen, onClose, onSuccess }) {
       const cat = savingsCategories.find(c => c.id === categoryId);
       const catName = cat ? cat.name : '';
       
-      let formattedDate = '';
-      if (startDate) {
-        const dateParts = startDate.split('-');
-        if (dateParts.length === 3) {
-          formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0].slice(-2)}`;
-        }
-      }
+      const formattedDate = startDate ? formatDate(startDate) : '';
 
       const generated = [accName, catName, formattedDate].filter(Boolean).join(' ');
       setName(generated);

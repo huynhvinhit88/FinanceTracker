@@ -32,28 +32,45 @@ export const fromViDecimal = (str) => {
 
 export const formatDate = (dateInput) => {
   if (!dateInput) return '';
+
   if (dateInput instanceof Date) {
     if (isNaN(dateInput.getTime())) return '';
     const d = String(dateInput.getDate()).padStart(2, '0');
     const m = String(dateInput.getMonth() + 1).padStart(2, '0');
-    const y = dateInput.getFullYear();
+    const y = String(dateInput.getFullYear()).slice(-2);
     return `${d}/${m}/${y}`;
   }
+
   const str = String(dateInput).trim();
-  if (str.includes('-')) {
-    const parts = str.slice(0, 10).split('-');
+  if (!str) return '';
+
+  if (str.includes('/')) {
+    const parts = str.split('/');
     if (parts.length === 3) {
-      const [y, m, d] = parts;
-      return `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`;
+      const [d, m, y] = parts;
+      const yearShort = y.trim().slice(-2);
+      return `${d.trim().padStart(2, '0')}/${m.trim().padStart(2, '0')}/${yearShort}`;
     }
   }
+
+  if (str.includes('-')) {
+    const datePart = str.split('T')[0];
+    const parts = datePart.split('-');
+    if (parts.length === 3) {
+      const [y, m, d] = parts;
+      const yearShort = y.trim().slice(-2);
+      return `${d.trim().padStart(2, '0')}/${m.trim().padStart(2, '0')}/${yearShort}`;
+    }
+  }
+
   const dObj = new Date(str);
   if (!isNaN(dObj.getTime())) {
     const d = String(dObj.getDate()).padStart(2, '0');
     const m = String(dObj.getMonth() + 1).padStart(2, '0');
-    const y = dObj.getFullYear();
+    const y = String(dObj.getFullYear()).slice(-2);
     return `${d}/${m}/${y}`;
   }
+
   return str;
 };
 
